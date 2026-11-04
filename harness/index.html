@@ -82,6 +82,25 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel-2);border:1px 
 </style>
 </head>
 <body>
+<script>
+/* Guard: this page is 2SK's internal test bench. It must never be embedded in
+   a page — a client's CMS iframe once picked it up as a content component and
+   put our configuration controls on a live page. If we are framed, replace the
+   whole document with a notice instead of the tool. */
+if (window.top !== window) {
+  document.documentElement.innerHTML =
+    '<body style="margin:0;font:15px/1.6 system-ui,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;' +
+    'background:#f4f5f7;color:#1c2128;display:grid;place-items:center;min-height:100vh;padding:24px">' +
+    '<div style="max-width:520px;background:#fff;border:1px solid #e2e5ea;border-radius:10px;padding:24px">' +
+    '<div style="font:600 11px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.09em;text-transform:uppercase;color:#e97824">2SK · internal tool</div>' +
+    '<h1 style="font-size:18px;margin:8px 0 10px">This is a test bench, not page content</h1>' +
+    '<p style="margin:0 0 12px;color:#68707b">It was embedded in an iframe. The test bench is only for people testing the iframe component — it should not appear on a live page.</p>' +
+    '<p style="margin:0 0 8px;color:#68707b">Remove this component and use the content blocks instead:</p>' +
+    '<ul style="margin:0;padding-left:18px;color:#3a4149;font-size:13.5px">' +
+    '<li><code>?part=input</code> · <code>?part=result</code> · <code>?part=pay</code> · <code>?part=receipt</code></li>' +
+    '</ul></div></body>';
+}
+</script>
 <header>
   <div>
     <h1>Iframe Test Bench <span class="pill">POC</span></h1>
