@@ -26,16 +26,16 @@ Measured on the live widget at ten widths from 320px to 1440px. **Set exactly th
 
 | # | Block | URL | Height to set | Content range (320–1440px) |
 |---|---|---|---|---|
-| 1 | Calculator | `/embed/?part=input` | **1100px** | 776 – 1059 |
-| 2 | Result | `/embed/?part=result` | **800px** | 378 – 718 |
-| 3 | Payment | `/embed/?part=pay` | **1100px** | 834 – 1058 |
-| 4 | Receipt | `/embed/?part=receipt` | **700px** | 385 – 620 |
+| 1 | Calculator | `/embed/?part=input` | **1000px** | 800 – 990 |
+| 2 | Result | `/embed/?part=result` | **750px** | 400 – 727 |
+| 3 | Payment | `/embed/?part=pay` | **1100px** | 849 – 1068 |
+| 4 | Receipt | `/embed/?part=receipt` | **600px** | 400 – 543 |
 
 Why four blocks rather than one tall frame: with a mandatory height, one embed means either a 3,700px block (absurd) or an internal scrollbar inside a 900px box — and a nested scroll container on a phone is where QR donations die. Four short blocks let the **page** scroll, which every donor already knows how to do. `qa/poc_test.py` asserts each block stays inside its declared height at 390px and 1440px, so the table cannot silently drift.
 
 Each block is **stateless**. The QR is amountless and the payment copy does not print the donor's figure, so nothing has to travel between frames — no relay script, no donor amount crossing an origin boundary.
 
-**If the component can take a different height per breakpoint**, or accepts a CSS value instead of an integer (`min(1100px, 95vh)`), say so: that removes the remaining vertical slack on desktop (input 956px of content in a 1100px box) and we will hand you a two-number set instead.
+**If the component can take a different height per breakpoint**, or accepts a CSS value instead of an integer (`min(1100px, 95vh)`), say so: that removes the remaining vertical slack on desktop (input 951px of content in a 1000px box) and we will hand you a two-number set instead.
 
 ### Required iframe attributes
 
@@ -45,7 +45,7 @@ Each block is **stateless**. The QR is amountless and the payment copy does not 
   src="https://<host>/embed/?part=input"
   title="慈善捐款扣稅計算機"
   scrolling="no"
-  style="width:100%;border:0;height:1100px"
+  style="width:100%;border:0;height:1000px"
   loading="lazy"></iframe>
 ```
 

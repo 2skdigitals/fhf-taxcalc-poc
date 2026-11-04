@@ -23,7 +23,7 @@ The component requires a height, so the experience is four blocks, each sized to
 Work in **their Optimizely staging**, not on the bench alone. The bench tells you what the widget does; staging tells you what *their component* does to it.
 
 ### Step 1 — the four blocks render at their declared heights
-`input` 1100 · `result` 800 · `pay` 1100 · `receipt` 700. Confirm each renders and that **no internal scrollbar** appears. If one clips, record the width — we adjust the block, not the number.
+`input` 1000 · `result` 750 · `pay` 1100 · `receipt` 600. Confirm each renders and that **no internal scrollbar** appears. If one clips, record the width — we adjust the block, not the number.
 
 **Fail signature:** blank box, or "refused to connect" → a header/CSP problem on their side (INTERFACE §2).
 

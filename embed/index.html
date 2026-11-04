@@ -160,6 +160,13 @@ html[data-embed="part"] #deeplink-test,
 html[data-embed="part"] .wrap > p.fine{display:none}
 body[data-part="calc"] .wrap > p.fine{display:block;margin-top:14px}
 
+/* A fixed-height block has slack by definition (one number, every width), so the
+   content sits at the top. Centring it leaves a void above and below, which reads
+   as a broken block; a bottom margin reads as a section with breathing room. */
+html[data-embed="part"] .wrap,
+body[data-part] .wrap{min-height:100vh;padding-block:2px}
+body[data-part] .card{width:100%}
+
 /* debug overlay */
 #dbg{position:fixed;right:8px;bottom:8px;z-index:99;font:11px/1.45 ui-monospace,Menlo,monospace;background:rgba(1,1,78,.92);color:#fff;padding:8px 10px;border-radius:6px;max-width:min(320px,70vw);pointer-events:none;display:none}
 #dbg.on{display:block}
@@ -240,8 +247,7 @@ body[data-part="calc"] .wrap > p.fine{display:block;margin-top:14px}
         <option value="r15">HK$2,132,500 – 5,000,000 — 標準 15%</option>
         <option value="r16">HK$5,000,000 以上 — 標準 16%</option>
       </select>
-      <p class="note">唔知道都可以 —— 我哋會顯示 2% 至 17% 嘅估算範圍（最低同最高）；想睇確實數字，揀一個入息範圍就得。
-      入息低於約 HK$145,000（單身免稅額）嘅話，可能未需要繳交薪俸稅，呢筆捐款就扣唔到稅。
+      <p class="note">入息低於約 HK$145,000（單身免稅額）嘅話，可能未需要繳交薪俸稅，呢筆捐款就扣唔到稅。
       入息越高邊際稅率通常越高（最高 17%）；但入息淨額超過約 HK$2,132,500 之後，稅局會改用<b>標準稅率</b>計算
       （首 HK$500 萬 15%，超過部分 16%），所以最頂兩級嘅比率反而回落 —— 呢個係香港薪俸稅嘅設計，唔係計錯。</p>
     </fieldset>

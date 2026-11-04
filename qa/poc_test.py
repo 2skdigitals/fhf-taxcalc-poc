@@ -206,23 +206,24 @@ with sync_playwright() as pw:
           [] if (fit == "fixed" and taller) else [f"data-fit={fit!r} taller={taller}"])
 
     # ---------------------------------------------------------------- H · fixed-height parts
-    BUDGET = {"input": 1100, "result": 800, "pay": 1100, "receipt": 700}
-    for w in (390, 1440):
+    # The real acceptance test: open each block at the height the client will set,
+    # and assert the content does not overflow that box at any width.
+    BUDGET = {"input": 1000, "result": 750, "pay": 1100, "receipt": 600}
+    for w in (320, 390, 768, 1440):
         for part, budget in BUDGET.items():
-            pf = browser.new_page(viewport={"width": w, "height": 400}, is_mobile=(w < 600), has_touch=(w < 600))
+            pf = browser.new_page(viewport={"width": w, "height": budget}, is_mobile=(w < 600), has_touch=(w < 600))
             pf.goto(f"{BASE}/embed/?part={part}", wait_until="load")
-            pf.wait_for_timeout(400)
-            h = pf.evaluate("()=>Math.ceil(document.getElementById('root').getBoundingClientRect().height)+4")
+            pf.wait_for_timeout(450)
+            ov = pf.evaluate("()=>({sh:document.documentElement.scrollHeight, ch:document.documentElement.clientHeight})")
             vis = pf.evaluate("()=>[...document.querySelectorAll('section')].filter(s=>getComputedStyle(s).display!=='none').map(s=>s.id)")
             errs = []
-            if h > budget:
-                errs.append(f"content {h}px exceeds the declared {budget}px")
+            if ov["sh"] > budget + 1:
+                errs.append(f"content overflows the {budget}px box by {ov['sh'] - budget}px")
             if len(vis) != 1:
                 errs.append(f"expected one visible section, got {vis}")
-            ow = pf.evaluate("()=>document.documentElement.scrollWidth > document.documentElement.clientWidth + 1")
-            if ow:
+            if pf.evaluate("()=>document.documentElement.scrollWidth > document.documentElement.clientWidth + 1"):
                 errs.append("horizontal overflow")
-            check(f"part '{part}' fits its declared height at {w}px ({h}/{budget})", errs)
+            check(f"part '{part}' fits {budget}px at {w}px", errs)
             pf.close()
 
     # ---------------------------------------------------------------- G · the bench
