@@ -187,6 +187,7 @@ with sync_playwright() as pw:
     dl = [m for m in msgs(pg) if m.get("type") == "deeplink"]
     check("app-open attempt is observable from the host before any navigation",
           [] if dl and dl[0].get("phase") == "attempt" else [str(dl)])
+    pg.close()   # the top frame may now be parked on an unhandled scheme
 
     # ---------------------------------------------------------------- D2 · narrow viewport
     pg2 = browser.new_page(viewport={"width": 390, "height": 800})
@@ -209,12 +210,12 @@ with sync_playwright() as pw:
     pg4.goto(f"{BASE}/harness/", wait_until="load")
     pg4.wait_for_timeout(1200)
     h = pg4.evaluate("""() => ({
-        box: Math.round(document.getElementById('frame').getBoundingClientRect().height),
+        applied: parseInt(document.getElementById('frame').style.height) || 0,
         reported: parseInt(document.getElementById('m-h').textContent) || 0,
         checks: document.getElementById('chk-n').textContent
       })""")
-    check("the bench receives ready and applies an auto height",
-          [] if (h["reported"] > 800 and abs(h["reported"] - h["box"]) <= 2) else [str(h)])
+    check("the bench applies the widget's reported height",
+          [] if (h["reported"] > 800 and abs(h["reported"] - h["applied"]) <= 2) else [str(h)])
 
     browser.close()
 

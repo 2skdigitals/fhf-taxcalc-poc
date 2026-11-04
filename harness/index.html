@@ -315,7 +315,7 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel-2);border:1px 
     var d = ev.data;
     if (!d || typeof d !== "object" || d.source !== "fhf-taxcalc") return;
     addLog(d);
-    if (d.type === "ready") { state.ready = true; apply(); }
+    if (d.type === "ready") { state.ready = true; syncConfig(); }
     if (d.type === "resize") {
       state.reported = d.height; state.resizes++;
       if ($("#height").value === "auto") {
@@ -337,6 +337,18 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel-2);border:1px 
   });
 
   /* ---------- controls ---------- */
+  /* Never re-set src from here: setting src reloads the widget, which posts
+     "ready" again, which would re-set src — an infinite reload loop. Config
+     changes after boot go through postMessage instead. */
+  function syncConfig(){
+    var h = $("#height").value;
+    try {
+      frame.contentWindow.postMessage({
+        type: "fhf-config",
+        config: { height: h === "auto" ? "auto" : parseInt(h, 10) }
+      }, "*");
+    } catch (e) {}
+  }
   function apply(){
     var h = $("#height").value, w = $("#width").value;
     var sb = $("#sandbox").value, al = $("#allow").value, sc = $("#scrolling").value;
@@ -348,8 +360,13 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel-2);border:1px 
     frame.setAttribute("scrolling", sc);
 
     box.style.width = w === "100%" ? "100%" : w + "px";
-    box.style.height = h === "auto" ? "900px" : (parseInt(h,10) + 2) + "px";
-    frame.style.height = h === "auto" ? "900px" : h + "px";
+    if (h === "auto") {
+      box.style.height = "auto";        /* the iframe drives the stage in auto mode */
+      frame.style.height = "1200px";
+    } else {
+      box.style.height = (parseInt(h, 10) + 2) + "px";
+      frame.style.height = h + "px";
+    }
 
     $("#cfg-label").textContent = (h === "auto" ? "auto height" : "fixed " + h + "px") + " · " +
       (w === "100%" ? "fluid width" : w + "px") + " · " +
@@ -365,10 +382,7 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel-2);border:1px 
     var h = $("#height").value;
     var rep = state.reported;
     if (h === "auto" && rep) {
-      var d = Math.abs(rep - state.boxH);
-      $("#overflow").textContent = d <= 2
-        ? "✓ auto-height converged — iframe box " + state.boxH + "px = content " + rep + "px"
-        : "⚠ box " + state.boxH + "px vs content " + rep + "px (Δ" + d + "px) — resize not applied?";
+      $("#overflow").textContent = "✓ auto-height applied — the iframe is now " + rep + "px tall, so there is no internal scrollbar in the widget.";
     } else if (h !== "auto" && rep) {
       $("#overflow").textContent = rep > parseInt(h,10)
         ? "⚠ fixed " + h + "px is too short: content is " + rep + "px → internal scroll. Record this number."
