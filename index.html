@@ -40,7 +40,7 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
 <div class="wrap">
   <div class="kicker">2SK Solutions · POC · proof of concept only</div>
   <h1>Fred Hollows HK — Donation Tax Calculator<br>Iframe POC</h1>
-  <p class="lede">Proves one thing before we build: <b>can the Optimizely iframe component carry the interactive calculator and the QR payment surface — including app-open, auto-height and measurement?</b> Three links below. Nothing here is production.</p>
+  <p class="lede">Proves one thing before we build: <b>can the Optimizely iframe component carry the interactive calculator and the QR payment surface — including app-open, auto-height and measurement?</b> Three URLs to paste into the component, plus a test bench and a page-context preview. Nothing here is production.</p>
 
   <h2>1 · Paste these into the CMS iframe component</h2>
   <table>
@@ -51,6 +51,8 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
       <tr><td>Widget in fixed-height mode (600px)</td><td><code id="u3">/embed/?h=600</code></td></tr>
     </tbody>
   </table>
+
+  <p class="lede" style="margin:-6px 0 34px;font-size:13px;color:#68707b">hollows.org currently sends <b>no Content-Security-Policy and no X-Frame-Options</b>, so nothing needs to change on your side to test this. If a CSP is added later, our origin has to be allowed in <code>frame-src</code>.</p>
 
   <h2>2 · The test bench + the context preview</h2>
   <div class="cards">
@@ -66,7 +68,7 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
     </a>
     <a class="card" href="./embed/">
       <div class="n">Widget</div>
-      <h3>Calculator between pages →</h3>
+      <h3>Calculator, standalone →</h3>
       <p>Standalone. Works in any iframe, any width, 320px to 1440px.</p>
     </a>
     <a class="card" href="./scan.html?rail=payme">
