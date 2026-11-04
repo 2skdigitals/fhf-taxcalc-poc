@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>GA4 + GTM setup — FHF tax calculator blocks</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--bg:#f4f5f7;--panel:#fff;--line:#e2e5ea;--ink:#1c2128;--muted:#68707b;--accent:#e97824;--navy:#01014E;
+  --sans:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;font-size:15px}
+.doc{max-width:860px;margin:0 auto;padding:34px 22px 90px}
+h1{font-size:clamp(1.5rem,3vw,2rem);letter-spacing:-.02em;line-height:1.2;margin:0 0 8px}
+h2{font-size:1.12rem;margin:38px 0 10px;padding-top:16px;border-top:1px solid var(--line);letter-spacing:-.01em}
+h3{font-size:.98rem;margin:22px 0 8px}
+p,li{color:#2c333c}
+ul,ol{padding-left:22px}
+li{margin-bottom:5px}
+code{font-family:var(--mono);font-size:.86em;background:#eef0f3;border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+pre{background:#0f1b2d;color:#d8e6f5;padding:14px 16px;border-radius:8px;overflow:auto;font-size:12.5px;line-height:1.55}
+pre code{background:none;border:0;color:inherit;padding:0;font-size:inherit}
+table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;overflow:hidden;margin:14px 0}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;background:#fafbfc}
+tr:last-child td{border-bottom:0}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8f1;border:1px solid #f0dcc4;border-radius:8px;color:#7a4f1f}
+blockquote p{margin:0;color:inherit}
+hr{border:0;border-top:1px solid var(--line);margin:30px 0}
+strong{color:#12161b}
+a{color:var(--navy);text-underline-offset:3px}
+.tag{display:inline-block;font:600 10.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+@media print{body{background:#fff}.doc{max-width:none;padding:0}h2{page-break-after:avoid}table,pre{page-break-inside:avoid}}
+</style>
+</head>
+<body><div class="doc">
+<div class="tag">2SK · implementation guide</div>
+<h1 id="setup-guide-ga4-gtm-for-the-fhf-tax-calculator-blocks">Setup guide — GA4 + GTM for the FHF tax-calculator blocks</h1>
+<p><strong>Who this is for:</strong> whoever sets this up under <strong>2SK's own Google account</strong> (not the client's).
+<strong>Time:</strong> 35–45 minutes, once. No code, no publish on the client side.
+<strong>Why we own it:</strong> we have view-only access to the client's GA/GTM, and the bridge tag would have to run on their page. We can't touch it, so the container runs inside our block instead, and we grant them viewer access to our property.</p>
+<p>Read §11 before you start — it explains what this configuration can and cannot measure, and it changes how the numbers get reported.</p>
+<hr />
+<h2 id="0-before-you-start">0 · Before you start</h2>
+<table>
+<thead>
+<tr>
+<th>You need</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A Google account <strong>outside the client's org</strong></td>
+<td>Use <code>2skdigitals@</code>. If the account is inside a Fred Hollows/Zoom/partner org, consent screens will block you — as they already did with the client's OAuth client</td>
+</tr>
+<tr>
+<td>Admin on the GA4 account you create</td>
+<td>You're creating a new one, so you are the admin</td>
+</tr>
+<tr>
+<td>Admin on the GTM account you create</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>The four block URLs</td>
+<td><code>…/embed/?part=input</code> · <code>result</code> · <code>pay</code> · <code>receipt</code></td>
+</tr>
+</tbody>
+</table>
+<p>Two things you do <strong>not</strong> need: the client's GTM container, or any change to hollows.org.</p>
+<hr />
+<h2 id="1-create-the-ga4-property">1 · Create the GA4 property</h2>
+<ol>
+<li>Go to <strong>analytics.google.com</strong> and sign in as <code>2skdigitals@</code>.</li>
+<li>Bottom-left <strong>Admin</strong> (gear icon).</li>
+<li>In the <strong>Account</strong> column: <strong>Create → Account</strong>.
+   - Account name: <code>2SK Solutions</code>
+   - Tick the data-sharing boxes (harmless, and it enables benchmarking later)
+   - Next.</li>
+<li><strong>Create property</strong>:
+   - Property name: <code>FHF Tax Calculator POC</code>
+   - Reporting time zone: <strong>(GMT+08:00) Hong Kong Time</strong>
+   - Currency: <strong>Hong Kong Dollar (HKD)</strong>
+   - Next → industry <strong>Other</strong>, business size <strong>Small</strong> → Next.
+   - Business objectives: pick <strong>Examine user behaviour</strong> (any choice works; it only pre-fills reports) → <strong>Create</strong>.</li>
+<li><strong>Data collection → Web</strong>:
+   - Website URL: <code>https://2skdigitals.github.io/fhf-taxcalc-poc/</code>
+   - Stream name: <code>POC blocks</code>
+   - <strong>Create stream</strong>.</li>
+<li>On the stream details panel, copy the <strong>Measurement ID</strong>: <code>G-XXXXXXXXXX</code>. Write it down — you need it in §5 and §6.</li>
+</ol>
+<blockquote>
+<p>Skip the "Install with Google tag" panel. GTM will install it, in §5.</p>
+</blockquote>
+<hr />
+<h2 id="2-create-six-custom-dimensions">2 · Create six custom dimensions</h2>
+<p>GA4 records event parameters whether or not the dimension exists — but <strong>without it you cannot read them in reports</strong>. Do this <em>before</em> the first traffic, or values land as <code>(not set)</code>.</p>
+<p><strong>Admin → Custom definitions → Custom dimensions → Create custom dimension</strong>, six times:</p>
+<table>
+<thead>
+<tr>
+<th>Dimension name</th>
+<th>Scope</th>
+<th>Event parameter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rail</td>
+<td>Event</td>
+<td><code>rail</code></td>
+</tr>
+<tr>
+<td>Device state</td>
+<td>Event</td>
+<td><code>state</code></td>
+</tr>
+<tr>
+<td>Donation type</td>
+<td>Event</td>
+<td><code>donation_type</code></td>
+</tr>
+<tr>
+<td>Income band</td>
+<td>Event</td>
+<td><code>band</code></td>
+</tr>
+<tr>
+<td>Cap state</td>
+<td>Event</td>
+<td><code>cap_state</code></td>
+</tr>
+<tr>
+<td>Host page</td>
+<td>Event</td>
+<td><code>host_page</code></td>
+</tr>
+</tbody>
+</table>
+<p>Spelling matters — these are the exact keys the widget sends. Dimensions take up to 24 h to appear in reports; collection starts immediately.</p>
+<hr />
+<h2 id="3-create-the-gtm-container">3 · Create the GTM container</h2>
+<ol>
+<li>Go to <strong>tagmanager.google.com</strong>, same account.</li>
+<li><strong>Create Account</strong>:
+   - Account name: <code>2SK Solutions</code>
+   - Country: <strong>Hong Kong</strong>
+   - Share data with Google: tick → Continue.</li>
+<li><strong>Container setup</strong>:
+   - Name: <code>fhf-taxcalc-poc</code>
+   - Target platform: <strong>Web</strong>
+   - <strong>Create</strong> → accept the terms.</li>
+<li>Copy the <strong>Container ID</strong>: <code>GTM-XXXXXXX</code>.</li>
+</ol>
+<blockquote>
+<p>Do <strong>not</strong> paste the two <code>&lt;script&gt;</code> snippets GTM offers into anything. Our block loads the container itself (§7).</p>
+</blockquote>
+<hr />
+<h2 id="4-six-data-layer-variables">4 · Six data-layer variables</h2>
+<p><strong>Variables → New → Data Layer Variable</strong>, six times. Name them exactly, and set <em>Data Layer Variable Name</em> to the parameter:</p>
+<table>
+<thead>
+<tr>
+<th>Variable name</th>
+<th>Data Layer Variable Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DLV - rail</code></td>
+<td><code>rail</code></td>
+</tr>
+<tr>
+<td><code>DLV - state</code></td>
+<td><code>state</code></td>
+</tr>
+<tr>
+<td><code>DLV - donation_type</code></td>
+<td><code>donation_type</code></td>
+</tr>
+<tr>
+<td><code>DLV - band</code></td>
+<td><code>band</code></td>
+</tr>
+<tr>
+<td><code>DLV - cap_state</code></td>
+<td><code>cap_state</code></td>
+</tr>
+<tr>
+<td><code>DLV - host_page</code></td>
+<td><code>host_page</code></td>
+</tr>
+</tbody>
+</table>
+<p>Leave <em>Data Layer Version</em> on <strong>2</strong>.</p>
+<hr />
+<h2 id="5-one-trigger">5 · One trigger</h2>
+<p><strong>Triggers → New → Trigger Configuration → Custom Event</strong></p>
+<ul>
+<li>Trigger name: <code>CE — FHF widget events</code></li>
+<li>This trigger fires on: <strong>Some Custom Events</strong></li>
+<li>Event name: <strong>matches RegEx</strong> (use the dropdown, not "equals")</li>
+<li>Value:</li>
+</ul>
+<pre><code>^(calc_started|calc_result_shown|qr_view|rail_click|email_capture|receipt_request|receipt_fulfilled|donation_self_report)$
+</code></pre>
+<ul>
+<li><strong>Save</strong>.</li>
+</ul>
+<p>One trigger for all eight events. Do not create eight.</p>
+<hr />
+<h2 id="6-two-tags">6 · Two tags</h2>
+<h3 id="6a-google-tag-the-ga4-configuration">6a · Google Tag (the GA4 configuration)</h3>
+<p><strong>Tags → New → Tag Configuration → Google Analytics → Google Tag</strong></p>
+<ul>
+<li>Tag name: <code>GA4 — config</code></li>
+<li>Tag ID: <code>G-XXXXXXXXXX</code> (from §1)</li>
+<li><strong>Configuration settings → Fields to set → Add row</strong>:</li>
+<li>Field name: <code>page_location</code></li>
+<li>Value: <code>{{DLV - host_page}}</code></li>
+<li>Triggering: <strong>Initialization – All Pages</strong></li>
+</ul>
+<p>Why the field override matters: the Google Tag is running <em>inside our iframe</em>, so GA4 would otherwise record every hit as <code>2skdigitals.github.io/…</code>. This makes the reports show the real hollows.org page (taken from <code>document.referrer</code> inside the frame).</p>
+<ul>
+<li><strong>Save</strong>.</li>
+</ul>
+<h3 id="6b-ga4-event-the-eight-events">6b · GA4 Event (the eight events)</h3>
+<p><strong>Tags → New → Tag Configuration → Google Analytics → Google Analytics: GA4 Event</strong></p>
+<ul>
+<li>Tag name: <code>GA4 — FHF widget event</code></li>
+<li>Measurement ID: <code>G-XXXXXXXXXX</code></li>
+<li>Event Name: type <code>{{</code> and choose the built-in <strong>Event</strong> variable → <code>{{Event}}</code></li>
+<li><strong>Event Parameters → Add row</strong>, five times:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Parameter name</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rail</code></td>
+<td><code>{{DLV - rail}}</code></td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td><code>{{DLV - state}}</code></td>
+</tr>
+<tr>
+<td><code>donation_type</code></td>
+<td><code>{{DLV - donation_type}}</code></td>
+</tr>
+<tr>
+<td><code>band</code></td>
+<td><code>{{DLV - band}}</code></td>
+</tr>
+<tr>
+<td><code>cap_state</code></td>
+<td><code>{{DLV - cap_state}}</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Triggering: <strong>CE — FHF widget events</strong> (from §5)</li>
+<li><strong>Save</strong>.</li>
+</ul>
+<blockquote>
+<p><code>{{Event}}</code> is a built-in variable. Do not create a data-layer variable for it — that's the mistake this setup most often hits.</p>
+</blockquote>
+<hr />
+<h2 id="7-publish-then-wire-the-four-blocks">7 · Publish, then wire the four blocks</h2>
+<ol>
+<li>Top right <strong>Submit → Publish Version</strong> → name it <code>POC v1</code> → <strong>Publish</strong>.</li>
+<li>Add <code>&amp;gtm=GTM-XXXXXXX</code> to each block URL:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Block</th>
+<th>URL</th>
+<th>Height</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Calculator</td>
+<td><code>…/embed/?part=input&amp;gtm=GTM-XXXXXXX</code></td>
+<td>1000</td>
+</tr>
+<tr>
+<td>Result</td>
+<td><code>…/embed/?part=result&amp;gtm=GTM-XXXXXXX</code></td>
+<td>750</td>
+</tr>
+<tr>
+<td>Payment</td>
+<td><code>…/embed/?part=pay&amp;gtm=GTM-XXXXXXX</code></td>
+<td>1100</td>
+</tr>
+<tr>
+<td>Receipt</td>
+<td><code>…/embed/?part=receipt&amp;gtm=GTM-XXXXXXX</code></td>
+<td>650</td>
+</tr>
+</tbody>
+</table>
+<ol start="3">
+<li>Paste these into the four CMS components. That is the entire client-side change — <strong>none of it is on their page's code</strong>, only in the iframe <code>src</code> field of the component they already built.</li>
+</ol>
+<hr />
+<h2 id="8-verify-15-minutes">8 · Verify (15 minutes)</h2>
+<p>Work in this order — each step isolates one layer.</p>
+<p><strong>8.1 · The block itself.</strong> Open <code>…/embed/?part=input&amp;debug=1&amp;gtm=GTM-XXXXXXX</code> directly.
+Open DevTools → Console. Type an amount. You must see <code>[fhf-taxcalc] calc_started {…}</code> and <code>calc_result_shown</code>. If not, the problem is the widget, not GA.</p>
+<p><strong>8.2 · dataLayer.</strong> In the same console: <code>window.dataLayer</code>. Expect <code>fhf_init</code> (with <code>host_page</code>), <code>gtm.js</code>, then your events. If <code>fhf_init</code> is missing, the container never loaded — check the ID.</p>
+<p><strong>8.3 · GTM received it.</strong> In GTM, <strong>Preview</strong> → <em>Tag Assistant</em> → enter the <strong>block URL</strong> (not the client's page) → connect. Interact. The Custom Event trigger should record <code>calc_started</code>, and both tags should show as <strong>Fired</strong>.</p>
+<p><strong>8.4 · GA4 received it.</strong> <strong>GA4 → Admin → DebugView</strong>. Interact with the block again. Events appear within seconds, with their parameters attached.</p>
+<p><strong>8.5 · Realtime.</strong> GA4 → Reports → Realtime. Events show within ~60 s of ordinary traffic.</p>
+<p><strong>8.6 · No amounts, ever.</strong> Open any event in DebugView and check its parameters: <code>band</code> must be <code>band</code>/<code>unknown</code>, never a number. If a figure appears, stop — that is a build regression, and the automated test (<code>qa/poc_test.py</code>) would have failed before it shipped.</p>
+<p><strong>8.7 · Our own harness, if you want a second opinion.</strong> <code>…/fhf-taxcalc-poc/events/</code> runs the bridge on a page we control and shows every payload with an honesty check.</p>
+<hr />
+<h2 id="9-grant-the-client-viewer-access">9 · Grant the client viewer access</h2>
+<p><strong>GA4:</strong> Admin → <strong>Property access management</strong> → blue <strong>+</strong> → <em>Add users</em>
+- Email: the address they give us (e.g. <code>hkinfo@hollows.org</code> plus the marketing lead)
+- <strong>Viewer</strong> only. Do not grant Editor or Marketer.
+- Untick "Notify new users by email" if you want to tell them yourself.</p>
+<p><strong>GTM:</strong> Admin → <strong>User Management</strong> (container level) → <strong>+</strong> → <em>Add new user</em>
+- Same addresses
+- <strong>Container permissions: Read</strong> — <em>not</em> Publish
+- Save.</p>
+<p>What they can then see: our property's reports and DebugView (read), and our container's configuration (read, no changes). They cannot alter tags or the property.</p>
+<hr />
+<h2 id="10-optional-automate-it-next-time">10 · Optional: automate it next time</h2>
+<p>If we want the API route instead of clicking, it needs a Google Cloud project <strong>we</strong> own — the one already in the repo (<code>fred-hollows-501315</code>) belongs to the client's org, which is why consent is blocked. New project under <code>2skdigitals@</code> → <em>APIs &amp; Services</em> → enable <strong>Google Analytics Admin API</strong> and <strong>Tag Manager API</strong> → <em>OAuth consent screen</em> (External, Testing, add <code>2skdigitals@</code> as a test user) → <em>Credentials</em> → <strong>OAuth client ID → Desktop app</strong> → download the JSON to <code>~/2SK/fred-hollows/credentials/2sk-oauth-client.json</code>.</p>
+<p>Then <code>ops/google-auth.py</code> runs against it and <code>ops/provision-ga-gtm.py</code> creates everything in this document — property, stream, dimensions, container, variables, trigger, three tags, published version — in about 40 seconds, idempotently.</p>
+<hr />
+<h2 id="11-what-this-configuration-measures-and-what-it-does-not">11 · What this configuration measures — and what it does not</h2>
+<p>The container runs inside a third-party iframe. Browsers partition storage for that context (Safari ITP, Chrome's storage partitioning), so GA4's <code>client_id</code> fragments per page load.</p>
+<table>
+<thead>
+<tr>
+<th>Measure</th>
+<th>Reliable?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Event counts — <code>qr_view</code>, <code>rail_click</code>, <code>email_capture</code>, …</td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr>
+<td>Event ratios — <code>rail_click ÷ calc_result_shown</code>, <code>email_capture ÷ qr_view</code></td>
+<td><strong>Yes</strong> — both sides come from the same frame</td>
+</tr>
+<tr>
+<td>Page attribution</td>
+<td><strong>Yes</strong> — via the <code>page_location</code> override in §6a</td>
+</tr>
+<tr>
+<td>Device, geo, referrer</td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr>
+<td>Users, sessions, new-vs-returning</td>
+<td><strong>No.</strong> Do not report these</td>
+</tr>
+<tr>
+<td>Ad-blocked visitors</td>
+<td>Missing, as in any GA4 property</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The six Gate-2 KPIs are event ratios by definition</strong>, so nothing in the success model depends on the unreliable rows. But if anyone asks "how many people used the calculator", the honest answer is "we can count the events, not the people" — until the day we host the page itself, when the container becomes first-party and this caveat disappears.</p>
+<p>Two further limits worth saying out loud:</p>
+<ul>
+<li><strong>QR payments never report back.</strong> GA4 sees the QR view and the rail click; it never sees the money. There is no webhook and no redirect from PayMe/AlipayHK. Any "revenue" number is unmeasurable by design.</li>
+<li><strong><code>receipt_fulfilled</code> is backend-only.</strong> It fires when ops marks a receipt as issued, not from the browser — it cannot be produced by this setup until Phase 1 ships.</li>
+</ul>
+<hr />
+<h2 id="12-troubleshooting">12 · Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No events in dataLayer, no console logs</td>
+<td>container ID missing from the URL, or mistyped</td>
+<td>check <code>&amp;gtm=GTM-…</code> in the component's src</td>
+</tr>
+<tr>
+<td><code>fhf_init</code> present, events absent</td>
+<td>the trigger regex doesn't match</td>
+<td>compare against §5 exactly, including <code>^…$</code></td>
+</tr>
+<tr>
+<td>Tags fire in Preview, nothing in DebugView</td>
+<td>wrong Measurement ID, or the Google Tag is not on <strong>Initialization</strong></td>
+<td>§6a</td>
+</tr>
+<tr>
+<td>Every hit shows the embed URL as the page</td>
+<td><code>page_location</code> override missing</td>
+<td>§6a, Fields to set</td>
+</tr>
+<tr>
+<td>Dimension columns empty</td>
+<td>custom dimension created after data arrived, or a typo in the parameter name</td>
+<td>§2; re-collect</td>
+</tr>
+<tr>
+<td>Each event counted twice</td>
+<td>the container was added in two places</td>
+<td>remove one</td>
+</tr>
+<tr>
+<td><code>band=unknown</code> on every row</td>
+<td>the donor never picked an income bracket</td>
+<td>correct behaviour, not a bug</td>
+</tr>
+<tr>
+<td>A number appears in a parameter</td>
+<td>defect</td>
+<td>stop, report it — the test suite enforces the invariant</td>
+</tr>
+</tbody>
+</table>
+</div></body></html>

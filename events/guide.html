@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Testing GA4 events from the iframe</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--bg:#f4f5f7;--panel:#fff;--line:#e2e5ea;--ink:#1c2128;--muted:#68707b;--accent:#e97824;--navy:#01014E;
+  --sans:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;font-size:15px}
+.doc{max-width:860px;margin:0 auto;padding:34px 22px 90px}
+h1{font-size:clamp(1.5rem,3vw,2rem);letter-spacing:-.02em;line-height:1.2;margin:0 0 8px}
+h2{font-size:1.12rem;margin:38px 0 10px;padding-top:16px;border-top:1px solid var(--line);letter-spacing:-.01em}
+h3{font-size:.98rem;margin:22px 0 8px}
+p,li{color:#2c333c}
+ul,ol{padding-left:22px}
+li{margin-bottom:5px}
+code{font-family:var(--mono);font-size:.86em;background:#eef0f3;border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+pre{background:#0f1b2d;color:#d8e6f5;padding:14px 16px;border-radius:8px;overflow:auto;font-size:12.5px;line-height:1.55}
+pre code{background:none;border:0;color:inherit;padding:0;font-size:inherit}
+table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;overflow:hidden;margin:14px 0}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;background:#fafbfc}
+tr:last-child td{border-bottom:0}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8f1;border:1px solid #f0dcc4;border-radius:8px;color:#7a4f1f}
+blockquote p{margin:0;color:inherit}
+hr{border:0;border-top:1px solid var(--line);margin:30px 0}
+strong{color:#12161b}
+a{color:var(--navy);text-underline-offset:3px}
+.tag{display:inline-block;font:600 10.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+@media print{body{background:#fff}.doc{max-width:none;padding:0}h2{page-break-after:avoid}table,pre{page-break-inside:avoid}}
+</style>
+</head>
+<body><div class="doc">
+<div class="tag">2SK · implementation guide</div>
+<h1 id="testing-ga4-event-tracking-from-the-iframe">Testing GA4 / event tracking from the iframe</h1>
+<p><strong>The rule that governs everything here:</strong> an iframe is a separate document. GA4 and GTM inside the host page <strong>cannot see</strong> anything happening inside our block. The widget posts messages; the host page has to push them into <code>dataLayer</code>. If that one tag is missing, measurement is dark — the page still works, nothing is recorded.</p>
+<p>There is no clever alternative (no cookie sharing, no <code>gtag</code> cross-frame call, no GTM in the iframe). One bridge tag, on the host page, on All Pages.</p>
+<hr />
+<h2 id="level-0-what-the-widget-actually-sends">Level 0 — what the widget actually sends</h2>
+<p>Exactly eight events, coarse-band only:</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Params</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>calc_started</code></td>
+<td><code>page_location</code></td>
+</tr>
+<tr>
+<td><code>calc_result_shown</code></td>
+<td><code>band</code>, <code>donation_type</code>, <code>cap_state</code></td>
+</tr>
+<tr>
+<td><code>qr_view</code></td>
+<td><code>rail</code>, <code>state</code></td>
+</tr>
+<tr>
+<td><code>rail_click</code></td>
+<td><code>rail</code>, <code>state</code></td>
+</tr>
+<tr>
+<td><code>email_capture</code></td>
+<td><code>donation_type</code>, <code>state</code></td>
+</tr>
+<tr>
+<td><code>receipt_request</code></td>
+<td><code>method</code>, <code>has_reference</code></td>
+</tr>
+<tr>
+<td><code>receipt_fulfilled</code></td>
+<td><code>method</code> — backend, not the widget</td>
+</tr>
+<tr>
+<td><code>donation_self_report</code></td>
+<td><code>rail</code>, <code>state</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Hard invariant:</strong> no amount, no income, no marginal rate in any payload. <code>band</code> is a coarse label (<code>band</code> / <code>unknown</code>), never a number. If you ever see a figure in GTM Preview, that is a defect — stop.</p>
+<hr />
+<h2 id="level-1-no-tickets-2-minutes-our-verification-page">Level 1 — no tickets, 2 minutes: our verification page</h2>
+<p><code>https://2skdigitals.github.io/fhf-taxcalc-poc/events/</code></p>
+<p>This page is a working host: it runs the exact bridge tag and shows every event with its payload. Scroll through the four blocks, type an amount, press a rail, submit the receipt form — the right-hand panel fills up.</p>
+<ul>
+<li><strong>Pass:</strong> <code>calc_started</code> → <code>calc_result_shown</code> on the first keystroke, <code>qr_view</code> when block 3 enters the viewport, <code>rail_click</code> on each rail, <code>email_capture</code> + <code>receipt_request</code> on a valid submit, and the <strong>Honesty check</strong> reads <code>clean</code>.</li>
+<li>This proves the contract and the widget. It does <strong>not</strong> prove their container is wired.</li>
+</ul>
+<hr />
+<h2 id="level-2-their-live-page-no-gtm-change-browser-console">Level 2 — their live page, no GTM change: browser console</h2>
+<p>On <code>hollows.org/en-HK/campaigns/2024/tax-deduction/</code>, open DevTools → Console, paste:</p>
+<pre><code class="language-js">window.addEventListener(&quot;message&quot;, e =&gt; {
+  if (e.data &amp;&amp; e.data.source === &quot;fhf-taxcalc&quot;) console.log(&quot;[fhf]&quot;, e.data.type, e.data);
+});
+</code></pre>
+<p>Then interact with the block. You should see <code>ready</code>, <code>resize</code>, then <code>event</code> messages with <code>name</code> and <code>params</code>.</p>
+<ul>
+<li><strong>Pass:</strong> events appear while the page itself has no tag — this proves the widget posts <strong>from inside their component</strong>, across origins, with their markup.</li>
+<li><strong>Fail (nothing at all):</strong> the frame is sandboxed without <code>allow-scripts</code>, or a different URL is embedded.</li>
+<li>This is the cheapest way to settle "does the iframe talk to our page?" without touching GTM.</li>
+</ul>
+<p><em>(Tip: to see the widget's own side, add <code>?debug=1</code> to the block URL in the component — it logs every event to its own console and shows a small overlay.)</em></p>
+<hr />
+<h2 id="level-3-gtm-preview-prove-the-tag">Level 3 — GTM Preview: prove the tag</h2>
+<p>Add <strong>one</strong> Custom HTML tag to their <strong>staging</strong> container, fired on <strong>All Pages</strong>:</p>
+<pre><code class="language-html">&lt;script&gt;
+window.dataLayer = window.dataLayer || [];
+window.addEventListener(&quot;message&quot;, function (e) {
+  var d = e.data;
+  if (!d || d.source !== &quot;fhf-taxcalc&quot;) return;
+  if (d.type === &quot;deeplink&quot;) {
+    dataLayer.push({event:&quot;fhf_deeplink_test&quot;, rail:d.rail, phase:d.phase, blocked:!!d.blocked});
+    return;
+  }
+  if (d.type !== &quot;event&quot;) return;
+  dataLayer.push(Object.assign({event:d.name}, d.params || {}));
+});
+&lt;/script&gt;
+</code></pre>
+<p>Then create the trigger and tags (full click-path in <code>GTM-SETUP.md</code>):</p>
+<ol>
+<li>Trigger <strong>Custom Event</strong>, name matches RegEx:
+   <code>^(calc_started|calc_result_shown|qr_view|rail_click|email_capture|receipt_request|receipt_fulfilled|donation_self_report)$</code></li>
+<li><strong>GA4 Configuration</strong> tag (their Measurement ID) on <em>Initialization – All Pages</em>.</li>
+<li><strong>GA4 Event</strong> tag: Event Name <code>{{Event}}</code>, parameters from Data Layer Variables <code>band</code>, <code>donation_type</code>, <code>rail</code>, <code>state</code>, <code>cap_state</code>.</li>
+</ol>
+<p>Open <strong>Preview</strong>, load the page, interact.</p>
+<ul>
+<li><strong>Pass:</strong> <code>calc_started</code> and <code>calc_result_shown</code> appear <strong>as fired tags</strong> on the Custom Event trigger, with the parameter table populated and no amounts.</li>
+<li><strong>Fail (Preview sees nothing):</strong> the bridge tag is not on All Pages, or the page has a CSP blocking inline scripts (their site does not today).</li>
+<li><strong>Fail (event fires, GA4 tag does not):</strong> the trigger name regex does not match — check the exact spelling, <code>calc_result_shown</code> not <code>calc_result</code>).</li>
+</ul>
+<hr />
+<h2 id="level-4-ga4-debugview-prove-delivery">Level 4 — GA4 DebugView: prove delivery</h2>
+<p>Publish to staging → open <strong>GA4 → Admin → DebugView</strong> → load the page → interact.</p>
+<ul>
+<li>Events appear within ~60 seconds with their parameters.</li>
+<li>Create the custom dimensions first (<code>rail</code>, <code>state</code>, <code>donation_type</code>, <code>band</code>, <code>cap_state</code>) or the parameters are recorded but unreadable in reports.</li>
+</ul>
+<hr />
+<h2 id="what-each-level-proves">What each level proves</h2>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Proves</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 · Our events page</td>
+<td>the widget posts the right events with the right payloads</td>
+<td>2 min, no access</td>
+</tr>
+<tr>
+<td>2 · Console on their page</td>
+<td>it posts from inside <strong>their</strong> component, cross-origin, with their markup</td>
+<td>2 min, no ticket</td>
+</tr>
+<tr>
+<td>3 · GTM Preview</td>
+<td>the bridge tag works and the triggers fire</td>
+<td>one tag + publish to staging</td>
+</tr>
+<tr>
+<td>4 · GA4 DebugView</td>
+<td>the data lands in the property correctly</td>
+<td>one more publish</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="the-failures-worth-knowing-before-you-debug">The failures worth knowing before you debug</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nothing in <code>dataLayer</code>, events visible in console</td>
+<td>bridge tag missing, or not on All Pages</td>
+</tr>
+<tr>
+<td>Events fire in Preview but never in GA4</td>
+<td>Measurement ID wrong, or the config tag is not on <em>Initialization</em></td>
+</tr>
+<tr>
+<td>Only <code>qr_view</code> and <code>rail_click</code> arrive, never <code>calc_*</code></td>
+<td>the calculator block was never touched — those two are scroll-driven</td>
+</tr>
+<tr>
+<td>Duplicate events (each one twice)</td>
+<td>the tag was added twice — once in the container and once hardcoded in the template</td>
+</tr>
+<tr>
+<td>Values like <code>band=unknown</code> on every row</td>
+<td>correct. The donor did not pick a bracket; that is the honest state, not a bug</td>
+</tr>
+<tr>
+<td>A number appears in a payload</td>
+<td><strong>defect.</strong> Stop and report it; the invariant is enforced by test, so it means a build regression</td>
+</tr>
+</tbody>
+</table>
+</div></body></html>
