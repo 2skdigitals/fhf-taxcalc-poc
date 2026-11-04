@@ -47,7 +47,7 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 .meter{display:flex;gap:14px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
 .meter b{color:var(--ink);font-weight:600}
 .frame-box{border:1px solid var(--line);border-radius:8px;background:var(--panel);overflow:auto;resize:vertical;
-  min-height:200px;transition:width .15s}
+  min-height:200px;max-height:72vh;transition:width .15s}
 .frame-box iframe{display:block;width:100%;border:0;background:#fff}
 .overflow-flag{font-family:var(--mono);font-size:11px;padding:4px 8px;border-radius:0 0 6px 6px;background:var(--panel-2);color:var(--muted)}
 .panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
@@ -199,6 +199,11 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel-2);border:1px 
 
     <div class="panels">
       <div class="panel">
+        <h2>Checks <span class="n" id="chk-n">0/9</span></h2>
+        <div class="checks" id="checks"></div>
+      </div>
+
+      <div class="panel">
         <h2>Messages from the widget <span class="n" id="msg-n">0</span></h2>
         <ul class="log" id="log"><li><span class="ty">·</span><span class="p">waiting for the first message…</span></li></ul>
       </div>
@@ -208,11 +213,6 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel-2);border:1px 
         <div style="max-height:280px;overflow:auto">
           <table><thead><tr><th>event</th><th>params</th></tr></thead><tbody id="dl"><tr><td colspan="2" class="empty">No events yet.</td></tr></tbody></table>
         </div>
-      </div>
-
-      <div class="panel">
-        <h2>Checks <span class="n" id="chk-n">0/9</span></h2>
-        <div class="checks" id="checks"></div>
       </div>
 
       <div class="panel">
@@ -382,7 +382,7 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel-2);border:1px 
     var h = $("#height").value;
     var rep = state.reported;
     if (h === "auto" && rep) {
-      $("#overflow").textContent = "✓ auto-height applied — the iframe is now " + rep + "px tall, so there is no internal scrollbar in the widget.";
+      $("#overflow").textContent = "✓ auto-height applied — content is " + rep + "px. This box scrolls; the widget itself has no internal scrollbar.";
     } else if (h !== "auto" && rep) {
       $("#overflow").textContent = rep > parseInt(h,10)
         ? "⚠ fixed " + h + "px is too short: content is " + rep + "px → internal scroll. Record this number."
