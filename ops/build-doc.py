@@ -8,8 +8,37 @@ import sys, re, html
 import markdown
 
 SRC, OUT, TITLE = sys.argv[1], sys.argv[2], sys.argv[3]
-body = markdown.markdown(open(SRC, encoding="utf-8").read(),
-                         extensions=["tables", "fenced_code", "toc", "sane_lists", "attr_list"])
+md = open(SRC, encoding="utf-8").read()
+
+# Markdown needs a blank line + 4-space indent for nested bullets under a
+# numbered item; the sources are written tighter than that and used to collapse
+# the sub-bullets into the parent paragraph. Normalise before rendering.
+lines, fixed = md.split("\n"), []
+
+
+def last_nonempty(seq):
+    for s in reversed(seq):
+        if s.strip():
+            return s
+    return ""
+
+
+for ln in lines:
+    m = re.match(r"^ {2,6}- ", ln)
+    if m:
+        ln = "    - " + ln.strip()[2:]
+        prev = last_nonempty(fixed)
+        if prev and not re.match(r"^ {4}- ", prev):
+            fixed.append("")
+    elif re.match(r"^\d+\. ", ln):
+        # a numbered step after an indented bullet must start a fresh list item
+        prev = last_nonempty(fixed)
+        if re.match(r"^ {4}- ", prev) and (not fixed or fixed[-1].strip()):
+            fixed.append("")
+    fixed.append(ln)
+md = "\n".join(fixed)
+
+body = markdown.markdown(md, extensions=["tables", "fenced_code", "toc", "sane_lists", "attr_list"])
 
 # clickable block URLs inside <code> stay code; nothing to do
 TPL = """<!DOCTYPE html>

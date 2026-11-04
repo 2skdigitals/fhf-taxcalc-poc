@@ -76,21 +76,35 @@ a{color:var(--navy);text-underline-offset:3px}
 <ol>
 <li>Go to <strong>analytics.google.com</strong> and sign in as <code>2skdigitals@</code>.</li>
 <li>Bottom-left <strong>Admin</strong> (gear icon).</li>
-<li>In the <strong>Account</strong> column: <strong>Create → Account</strong>.
-   - Account name: <code>2SK Solutions</code>
-   - Tick the data-sharing boxes (harmless, and it enables benchmarking later)
-   - Next.</li>
-<li><strong>Create property</strong>:
-   - Property name: <code>FHF Tax Calculator POC</code>
-   - Reporting time zone: <strong>(GMT+08:00) Hong Kong Time</strong>
-   - Currency: <strong>Hong Kong Dollar (HKD)</strong>
-   - Next → industry <strong>Other</strong>, business size <strong>Small</strong> → Next.
-   - Business objectives: pick <strong>Examine user behaviour</strong> (any choice works; it only pre-fills reports) → <strong>Create</strong>.</li>
-<li><strong>Data collection → Web</strong>:
-   - Website URL: <code>https://2skdigitals.github.io/fhf-taxcalc-poc/</code>
-   - Stream name: <code>POC blocks</code>
-   - <strong>Create stream</strong>.</li>
-<li>On the stream details panel, copy the <strong>Measurement ID</strong>: <code>G-XXXXXXXXXX</code>. Write it down — you need it in §5 and §6.</li>
+<li>
+<p>In the <strong>Account</strong> column: <strong>Create → Account</strong>.</p>
+<ul>
+<li>Account name: <code>2SK Solutions</code></li>
+<li>Tick the data-sharing boxes (harmless, and it enables benchmarking later)</li>
+<li>Next.</li>
+</ul>
+</li>
+<li>
+<p><strong>Create property</strong>:</p>
+<ul>
+<li>Property name: <code>FHF Tax Calculator POC</code></li>
+<li>Reporting time zone: <strong>(GMT+08:00) Hong Kong Time</strong></li>
+<li>Currency: <strong>Hong Kong Dollar (HKD)</strong></li>
+<li>Next → industry <strong>Other</strong>, business size <strong>Small</strong> → Next.</li>
+<li>Business objectives: pick <strong>Examine user behaviour</strong> (any choice works; it only pre-fills reports) → <strong>Create</strong>.</li>
+</ul>
+</li>
+<li>
+<p><strong>Data collection → Web</strong>:</p>
+<ul>
+<li>Website URL: <code>https://2skdigitals.github.io/fhf-taxcalc-poc/</code></li>
+<li>Stream name: <code>POC blocks</code></li>
+<li><strong>Create stream</strong>.</li>
+</ul>
+</li>
+<li>
+<p>On the stream details panel, copy the <strong>Measurement ID</strong>: <code>G-XXXXXXXXXX</code>. Write it down — you need it in §5 and §6.</p>
+</li>
 </ol>
 <blockquote>
 <p>Skip the "Install with Google tag" panel. GTM will install it, in §5.</p>
@@ -145,15 +159,25 @@ a{color:var(--navy);text-underline-offset:3px}
 <h2 id="3-create-the-gtm-container">3 · Create the GTM container</h2>
 <ol>
 <li>Go to <strong>tagmanager.google.com</strong>, same account.</li>
-<li><strong>Create Account</strong>:
-   - Account name: <code>2SK Solutions</code>
-   - Country: <strong>Hong Kong</strong>
-   - Share data with Google: tick → Continue.</li>
-<li><strong>Container setup</strong>:
-   - Name: <code>fhf-taxcalc-poc</code>
-   - Target platform: <strong>Web</strong>
-   - <strong>Create</strong> → accept the terms.</li>
-<li>Copy the <strong>Container ID</strong>: <code>GTM-XXXXXXX</code>.</li>
+<li>
+<p><strong>Create Account</strong>:</p>
+<ul>
+<li>Account name: <code>2SK Solutions</code></li>
+<li>Country: <strong>Hong Kong</strong></li>
+<li>Share data with Google: tick → Continue.</li>
+</ul>
+</li>
+<li>
+<p><strong>Container setup</strong>:</p>
+<ul>
+<li>Name: <code>fhf-taxcalc-poc</code></li>
+<li>Target platform: <strong>Web</strong></li>
+<li><strong>Create</strong> → accept the terms.</li>
+</ul>
+</li>
+<li>
+<p>Copy the <strong>Container ID</strong>: <code>GTM-XXXXXXX</code>.</p>
+</li>
 </ol>
 <blockquote>
 <p>Do <strong>not</strong> paste the two <code>&lt;script&gt;</code> snippets GTM offers into anything. Our block loads the container itself (§7).</p>
@@ -218,10 +242,14 @@ a{color:var(--navy);text-underline-offset:3px}
 <ul>
 <li>Tag name: <code>GA4 — config</code></li>
 <li>Tag ID: <code>G-XXXXXXXXXX</code> (from §1)</li>
-<li><strong>Configuration settings → Fields to set → Add row</strong>:</li>
+<li>
+<p><strong>Configuration settings → Fields to set → Add row</strong>:</p>
+<ul>
 <li>Field name: <code>page_location</code></li>
 <li>Value: <code>{{DLV - host_page}}</code></li>
 <li>Triggering: <strong>Initialization – All Pages</strong></li>
+</ul>
+</li>
 </ul>
 <p>Why the field override matters: the Google Tag is running <em>inside our iframe</em>, so GA4 would otherwise record every hit as <code>2skdigitals.github.io/…</code>. This makes the reports show the real hollows.org page (taken from <code>document.referrer</code> inside the frame).</p>
 <ul>
