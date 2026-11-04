@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Iframe Test Bench — FHF Tax Calculator POC</title>
+<link rel="icon" href="data:,">
+<style>
+:root{
+  --bg:#0e1116; --panel:#151a21; --panel-2:#1b2229; --line:#252e38;
+  --ink:#e8edf3; --muted:#8d9aa8; --accent:#e97824; --ok:#3ecf8e; --bad:#ff5f56; --warn:#e5b567;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+html[data-theme=light]{
+  --bg:#f4f5f7; --panel:#ffffff; --panel-2:#f7f8fa; --line:#e2e5ea;
+  --ink:#1c2128; --muted:#68707b; --ok:#127a4b; --bad:#c0271f; --warn:#8a5c00;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+a{color:inherit}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
+  padding:14px 20px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:20}
+header h1{font-size:15px;margin:0;font-weight:650;letter-spacing:-.01em}
+header .sub{font-size:12px;color:var(--muted)}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button,select,input[type=text]{font:inherit;font-size:13px;color:var(--ink);background:var(--panel-2);
+  border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+button{cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#0a0909;font-weight:650}
+button.ghost{background:transparent}
+main{display:grid;grid-template-columns:330px 1fr;gap:0;align-items:start}
+@media (max-width:900px){main{grid-template-columns:1fr}}
+aside{border-right:1px solid var(--line);padding:16px;min-height:calc(100vh - 58px);background:var(--panel)}
+@media (max-width:900px){aside{border-right:0;border-bottom:1px solid var(--line);min-height:0}}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.field select,.field input{width:100%}
+.field .hint{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.4}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+.stage{padding:16px;min-width:0}
+.stage-head{display:flex;gap:10px;align-items:baseline;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap}
+.stage-head .t{font-size:12px;color:var(--muted)}
+.meter{display:flex;gap:14px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.meter b{color:var(--ink);font-weight:600}
+.frame-box{border:1px solid var(--line);border-radius:8px;background:var(--panel);overflow:auto;resize:vertical;
+  min-height:200px;transition:width .15s}
+.frame-box iframe{display:block;width:100%;border:0;background:#fff}
+.overflow-flag{font-family:var(--mono);font-size:11px;padding:4px 8px;border-radius:0 0 6px 6px;background:var(--panel-2);color:var(--muted)}
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+@media (max-width:1200px){.panels{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.panel h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  margin:0;padding:9px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.panel h2 .n{font-family:var(--mono);color:var(--ink)}
+.log{max-height:280px;overflow:auto;font-family:var(--mono);font-size:11.5px;margin:0;padding:0;list-style:none}
+.log li{padding:5px 12px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:58px 1fr;gap:8px}
+.log li:last-child{border-bottom:0}
+.log .ty{color:var(--accent);font-weight:600}
+.log .ty.ev{color:#7bb0ff}
+.log .ty.rs{color:var(--ok)}
+.log .p{color:var(--muted);word-break:break-word}
+table{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono)}
+td,th{text-align:left;padding:5px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+tbody tr:last-child td{border-bottom:0}
+.empty{padding:16px 12px;color:var(--muted);font-size:12px}
+.checks{padding:6px 0}
+.checks div{display:grid;grid-template-columns:20px 1fr auto;gap:10px;padding:6px 12px;align-items:start;font-size:12.5px}
+.checks .st{font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--panel-2);color:var(--muted)}
+.checks .st.pass{background:rgba(62,207,142,.14);color:var(--ok)}
+.checks .st.fail{background:rgba(255,95,86,.14);color:var(--bad)}
+.checks .st.wait{background:rgba(229,181,103,.14);color:var(--warn)}
+.checks .why{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+.note{font-size:12px;color:var(--muted);line-height:1.55;padding:12px;border-top:1px solid var(--line)}
+kbd{font-family:var(--mono);font-size:11px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.pill{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;
+  background:rgba(233,120,36,.14);color:var(--accent);font-weight:650}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Iframe Test Bench <span class="pill">POC</span></h1>
+    <div class="sub">Fred Hollows HK · donation tax calculator · proves the Optimizely iframe component config before build</div>
+  </div>
+  <div class="tools">
+    <button id="theme" class="ghost">Light / Dark</button>
+    <button id="reset" class="ghost">Reset</button>
+    <button id="copy" class="primary">Copy test report</button>
+  </div>
+</header>
+
+<main>
+  <aside>
+    <div class="field">
+      <label for="url">Widget URL</label>
+      <input id="url" type="text" spellcheck="false" value="../embed/?debug=1">
+      <div class="hint">Production: the URL you paste into Optimizely's iframe component. Add <kbd>?debug=1</kbd> to see the widget's own height/event overlay.</div>
+    </div>
+
+    <hr>
+    <div class="field">
+      <label for="height">Iframe height mode</label>
+      <select id="height">
+        <option value="auto" selected>auto — postMessage resize (recommended)</option>
+        <option value="480">fixed 480px</option>
+        <option value="600">fixed 600px</option>
+        <option value="700">fixed 700px</option>
+        <option value="800">fixed 800px</option>
+        <option value="900">fixed 900px</option>
+        <option value="1000">fixed 1000px</option>
+        <option value="1200">fixed 1200px</option>
+      </select>
+      <div class="hint">What the CMS component can actually do. If it only accepts a number, use <b>fixed</b> and record the height that avoids internal scroll.</div>
+    </div>
+
+    <div class="field">
+      <label for="width">Container width</label>
+      <select id="width">
+        <option value="100%" selected>100% (fluid)</option>
+        <option value="1440">1440px</option>
+        <option value="1280">1280px</option>
+        <option value="1024">1024px</option>
+        <option value="768">768px</option>
+        <option value="390">390px</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="sandbox">sandbox attribute</label>
+      <select id="sandbox">
+        <option value="" selected>none (no sandbox) — recommended</option>
+        <option value="allow-scripts allow-same-origin">allow-scripts allow-same-origin</option>
+        <option value="allow-scripts allow-same-origin allow-popups allow-top-navigation-by-user-activation">+ allow-popups + allow-top-navigation-by-user-activation</option>
+        <option value="allow-scripts">allow-scripts only (no same-origin)</option>
+      </select>
+      <div class="hint">If their component sets <b>sandbox</b>, app-open and the card link will fail unless the extra tokens are present.</div>
+    </div>
+
+    <div class="field">
+      <label for="allow">allow attribute</label>
+      <select id="allow">
+        <option value="" selected>none</option>
+        <option value="payment">payment</option>
+        <option value="payment; popups">payment; popups</option>
+        <option value="payment; popups; top-navigation-by-user-activation">payment; popups; top-navigation-by-user-activation</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="scrolling">scrolling attribute</label>
+      <select id="scrolling">
+        <option value="auto" selected>auto</option>
+        <option value="no">no (auto-height only)</option>
+      </select>
+    </div>
+
+    <hr>
+    <div class="field">
+      <label for="gtm">GTM container on this host page</label>
+      <input id="gtm" type="text" spellcheck="false" placeholder="GTM-XXXXXXX (optional)">
+      <div class="hint">Paste a container ID to load GTM here and watch the widget's events land in <b>dataLayer</b>. The widget never loads GTM itself — it posts events to the host.</div>
+      <div class="row2" style="margin-top:8px">
+        <button id="loadGtm">Load GTM</button>
+        <button id="clearDl" class="ghost">Clear dataLayer</button>
+      </div>
+    </div>
+
+    <hr>
+    <div class="field" style="margin-bottom:0">
+      <label>How to read this</label>
+      <div class="hint" style="font-size:12px">
+        1. Pick the configuration the CMS component allows.<br>
+        2. Interact with the widget (donate amount, band, rails, receipt form).<br>
+        3. Watch <b>Messages</b> (the iframe contract) and <b>Checks</b> (auto-verdicts).<br>
+        4. <b>Copy test report</b> and send back — that is the evidence we need.
+      </div>
+    </div>
+  </aside>
+
+  <div class="stage">
+    <div class="stage-head">
+      <div class="t" id="cfg-label">auto height · fluid width · no sandbox</div>
+      <div class="meter">
+        <span>reported <b id="m-h">—</b></span>
+        <span>box <b id="m-box">—</b></span>
+        <span>events <b id="m-ev">0</b></span>
+      </div>
+    </div>
+
+    <div class="frame-box" id="frameBox">
+      <iframe id="frame" src="../embed/?debug=1" title="慈善捐款扣稅計算機 — 測試" style="height:900px"></iframe>
+    </div>
+    <div class="overflow-flag" id="overflow">—</div>
+
+    <div class="panels">
+      <div class="panel">
+        <h2>Messages from the widget <span class="n" id="msg-n">0</span></h2>
+        <ul class="log" id="log"><li><span class="ty">·</span><span class="p">waiting for the first message…</span></li></ul>
+      </div>
+
+      <div class="panel">
+        <h2>dataLayer <span class="n" id="dl-n">0</span></h2>
+        <div style="max-height:280px;overflow:auto">
+          <table><thead><tr><th>event</th><th>params</th></tr></thead><tbody id="dl"><tr><td colspan="2" class="empty">No events yet.</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Checks <span class="n" id="chk-n">0/9</span></h2>
+        <div class="checks" id="checks"></div>
+      </div>
+
+      <div class="panel">
+        <h2>The iframe contract</h2>
+        <div class="note" style="border-top:0">
+          <b>Widget → host (postMessage)</b><br>
+          <code>{source:"fhf-taxcalc", type:"ready"}</code><br>
+          <code>{type:"resize", height:1234, fixed:false}</code><br>
+          <code>{type:"event", name:"calc_result_shown", params:{…}}</code><br>
+          <code>{type:"deeplink", rail:"payme", blocked:false}</code><br><br>
+          <b>Host → widget</b><br>
+          <code>{type:"fhf-config", config:{height:"auto"|800}}</code><br>
+          <code>{type:"fhf-consent", marketing:true}</code><br>
+          <code>{type:"fhf-ping"}</code> → <code>{type:"pong", height}</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(s){ return document.querySelector(s); };
+  var frame = $("#frame"), box = $("#frameBox");
+  var state = {msgs:[], dl:[], events:[], reported:0, boxH:0, ready:false, resizes:0, blocked:null};
+
+  /* ---------- checks ---------- */
+  var CHECKS = [
+    {id:"ready",  label:"Widget reports ready",            why:"handshake starts the resize protocol"},
+    {id:"resize", label:"Resize messages arrive",          why:"needs postMessage support in the parent page"},
+    {id:"grow",   label:"Height follows content",          why:"monthly mode + result must not be clipped"},
+    {id:"fit",    label:"Auto mode fits the content",      why:"reported height ≈ iframe box height (±2px)"},
+    {id:"events", label:"Events reach the host",           why:"calc_started / calc_result_shown"},
+    {id:"band",   label:"No income in any payload",        why:"coarse band only — the honesty invariant"},
+    {id:"rail",   label:"Rail click captured",             why:"rail_click fires with rail + state"},
+    {id:"capture",label:"Receipt capture fires",           why:"email_capture → the KPI gate"},
+    {id:"deeplink",label:"App-open attempt observable",    why:"records whether the browser blocked the scheme"}
+  ];
+  function renderChecks(){
+    var el = $("#checks"), pass = 0;
+    el.innerHTML = CHECKS.map(function(c){
+      var r = verdict(c.id); if (r === "pass") pass++;
+      return '<div><span class="st ' + r + '">' + (r === "pass" ? "PASS" : r === "fail" ? "FAIL" : "WAIT") + '</span>' +
+             '<span>' + c.label + '<span class="why">' + c.why + '</span></span>' +
+             '<span class="st">' + c.id + '</span></div>';
+    }).join("");
+    $("#chk-n").textContent = pass + "/" + CHECKS.length;
+  }
+  function verdict(id){
+    var e = state.events.map(function(x){ return x.name; });
+    if (id === "ready")  return state.ready ? "pass" : "wait";
+    if (id === "resize") return state.resizes > 1 ? "pass" : state.resizes === 1 ? "wait" : "wait";
+    if (id === "grow")   return state.resizes > 2 ? "pass" : "wait";
+    if (id === "fit")    return $("#height").value !== "auto" ? (Math.abs(state.reported - state.boxH) <= 2 ? "pass" : "wait") : (Math.abs(state.reported - state.boxH) <= 2 ? "pass" : "wait");
+    if (id === "events") return (e.indexOf("calc_started") >= 0 && e.indexOf("calc_result_shown") >= 0) ? "pass" : "wait";
+    if (id === "band")   return state.events.length ? (state.events.some(function(x){ return /income|rate|amount/.test(JSON.stringify(x.params||{})); }) ? "fail" : "pass") : "wait";
+    if (id === "rail")   return e.indexOf("rail_click") >= 0 ? "pass" : "wait";
+    if (id === "capture")return e.indexOf("email_capture") >= 0 ? "pass" : "wait";
+    if (id === "deeplink") return state.blocked === null ? "wait" : "pass";
+    return "wait";
+  }
+
+  /* ---------- message log ---------- */
+  var log = $("#log");
+  function addLog(m){
+    state.msgs.unshift(m);
+    if (state.msgs.length > 60) state.msgs.length = 60;
+    $("#msg-n").textContent = state.msgs.length;
+    log.innerHTML = state.msgs.map(function(x){
+      var ty = x.type === "event" ? "ev" : x.type === "resize" ? "rs" : "";
+      var p = x.type === "resize" ? "height " + x.height + (x.fixed ? " (fixed host)" : "")
+            : x.type === "event" ? x.name + " " + JSON.stringify(x.params || {})
+            : JSON.stringify(x).slice(0, 160);
+      return '<li><span class="ty ' + ty + '">' + (x.type === "event" ? "event" : x.type) + '</span><span class="p">' + p + '</span></li>';
+    }).join("");
+  }
+
+  /* ---------- dataLayer ---------- */
+  window.dataLayer = window.dataLayer || [];
+  var dlRows = [];
+  function addDl(o){
+    dlRows.unshift(o);
+    $("#dl-n").textContent = dlRows.length;
+    $("#dl").innerHTML = dlRows.map(function(r){
+      var k = r.event || "(config)";
+      var rest = Object.keys(r).filter(function(x){ return x !== "event"; })
+        .map(function(x){ return x + "=" + r[x]; }).join(" ");
+      return "<tr><td>" + k + "</td><td>" + rest + "</td></tr>";
+    }).join("");
+  }
+  var push = window.dataLayer.push;
+  window.dataLayer.push = function(){
+    for (var i = 0; i < arguments.length; i++) addDl(arguments[i]);
+    return push.apply(window.dataLayer, arguments);
+  };
+
+  /* ---------- host side of the contract ---------- */
+  window.addEventListener("message", function(ev){
+    var d = ev.data;
+    if (!d || typeof d !== "object" || d.source !== "fhf-taxcalc") return;
+    addLog(d);
+    if (d.type === "ready") { state.ready = true; apply(); }
+    if (d.type === "resize") {
+      state.reported = d.height; state.resizes++;
+      if ($("#height").value === "auto") {
+        frame.style.height = d.height + "px";
+      }
+      $("#m-h").textContent = d.height + "px";
+      measureBox();
+    }
+    if (d.type === "event") {
+      state.events.push(d);
+      window.dataLayer.push(Object.assign({event: d.name}, d.params || {}));
+      $("#m-ev").textContent = state.events.length;
+    }
+    if (d.type === "deeplink") {
+      state.deeplink = d;
+      state.blocked = d.phase === "result" ? !!d.blocked : "attempt";
+    }
+    renderChecks();
+  });
+
+  /* ---------- controls ---------- */
+  function apply(){
+    var h = $("#height").value, w = $("#width").value;
+    var sb = $("#sandbox").value, al = $("#allow").value, sc = $("#scrolling").value;
+    var url = $("#url").value;
+
+    frame.setAttribute("src", url);
+    if (sb) frame.setAttribute("sandbox", sb); else frame.removeAttribute("sandbox");
+    if (al) frame.setAttribute("allow", al); else frame.removeAttribute("allow");
+    frame.setAttribute("scrolling", sc);
+
+    box.style.width = w === "100%" ? "100%" : w + "px";
+    box.style.height = h === "auto" ? "900px" : (parseInt(h,10) + 2) + "px";
+    frame.style.height = h === "auto" ? "900px" : h + "px";
+
+    $("#cfg-label").textContent = (h === "auto" ? "auto height" : "fixed " + h + "px") + " · " +
+      (w === "100%" ? "fluid width" : w + "px") + " · " +
+      (sb ? "sandboxed" : "no sandbox") + (al ? " · allow=" + al : "");
+
+    state.ready = false; state.resizes = 0; state.reported = 0;
+    renderChecks(); setTimeout(measureBox, 400);
+  }
+  function measureBox(){
+    var r = frame.getBoundingClientRect();
+    state.boxH = Math.round(r.height);
+    $("#m-box").textContent = state.boxH + "px";
+    var h = $("#height").value;
+    var rep = state.reported;
+    if (h === "auto" && rep) {
+      var d = Math.abs(rep - state.boxH);
+      $("#overflow").textContent = d <= 2
+        ? "✓ auto-height converged — iframe box " + state.boxH + "px = content " + rep + "px"
+        : "⚠ box " + state.boxH + "px vs content " + rep + "px (Δ" + d + "px) — resize not applied?";
+    } else if (h !== "auto" && rep) {
+      $("#overflow").textContent = rep > parseInt(h,10)
+        ? "⚠ fixed " + h + "px is too short: content is " + rep + "px → internal scroll. Record this number."
+        : "✓ fixed " + h + "px fits all " + rep + "px of content";
+    }
+  }
+
+  $("#height").addEventListener("change", apply);
+  $("#width").addEventListener("change", apply);
+  $("#sandbox").addEventListener("change", apply);
+  $("#allow").addEventListener("change", apply);
+  $("#scrolling").addEventListener("change", apply);
+  $("#url").addEventListener("change", apply);
+  $("#reset").addEventListener("click", function(){
+    $("#url").value = "../embed/?debug=1"; $("#height").value = "auto"; $("#width").value = "100%";
+    $("#sandbox").value = ""; $("#allow").value = ""; $("#scrolling").value = "auto";
+    state.msgs = []; state.events = []; state.resizes = 0; state.ready = false; state.reported = 0; state.blocked = null;
+    $("#msg-n").textContent = 0; $("#m-ev").textContent = 0; $("#m-h").textContent = "—";
+    log.innerHTML = '<li><span class="ty">·</span><span class="p">waiting for the first message…</span></li>';
+    apply();
+  });
+  $("#theme").addEventListener("click", function(){
+    var h = document.documentElement;
+    h.dataset.theme = h.dataset.theme === "light" ? "dark" : "light";
+  });
+  $("#loadGtm").addEventListener("click", function(){
+    var id = $("#gtm").value.trim();
+    if (!/^GTM-[A-Z0-9]{5,}$/i.test(id)) { alert("Enter a container ID like GTM-ABC1234"); return; }
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({event:"gtm.js", "gtm.start": Date.now()});
+    var s = document.createElement("script");
+    s.async = true; s.src = "https://www.googletagmanager.com/gtm.js?id=" + encodeURIComponent(id);
+    document.head.appendChild(s);
+    $("#gtm").disabled = true;
+  });
+  $("#clearDl").addEventListener("click", function(){
+    dlRows = []; $("#dl").innerHTML = '<tr><td colspan="2" class="empty">No events yet.</td></tr>'; $("#dl-n").textContent = 0;
+  });
+  $("#copy").addEventListener("click", function(){
+    var rep = {
+      when: new Date().toISOString(),
+      widget_url: $("#url").value,
+      config: {
+        height: $("#height").value, width: $("#width").value,
+        sandbox: $("#sandbox").value || "none",
+        allow: $("#allow").value || "none",
+        scrolling: $("#scrolling").value,
+        gtm: $("#gtm").value || null
+      },
+      result: {
+        ready: state.ready, reported_height: state.reported, box_height: state.boxH,
+        resize_messages: state.resizes, deeplink_blocked: state.blocked,
+        events: state.events, dataLayer: dlRows
+      },
+      checks: CHECKS.map(function(c){ return {id:c.id, verdict:verdict(c.id)}; })
+    };
+    var txt = JSON.stringify(rep, null, 2);
+    navigator.clipboard.writeText(txt).then(function(){
+      $("#copy").textContent = "Copied ✓";
+      setTimeout(function(){ $("#copy").textContent = "Copy test report"; }, 1600);
+    }, function(){ window.prompt("Copy this report:", txt); });
+  });
+
+  renderChecks();
+  window.addEventListener("load", function(){ apply(); }, {once:true});
+  new ResizeObserver(measureBox).observe(frame);
+})();
+</script>
+</body>
+</html>

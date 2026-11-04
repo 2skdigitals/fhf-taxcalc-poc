@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>POC — 頁面情境預覽（Optimizely 模擬）</title>
+<link rel="icon" href="data:,">
+<style>
+:root{
+  --orange:#e97824; --navy:#01014E; --field:#F6F6FD; --ink:#282828; --muted:#666;
+  --line:#e8e8f2; --sans:system-ui,-apple-system,"PingFang HK","Noto Sans HK","Microsoft JhengHei",Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);color:var(--ink);line-height:1.65;background:#fff}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+.pocmock{background:#0f1b2d;color:#cfe0f5;font:12.5px/1.5 ui-monospace,Menlo,monospace;padding:8px 20px;text-align:center;letter-spacing:.02em}
+.pocmock b{color:#ffd7a8}
+.sitehdr{border-bottom:1px solid var(--line)}
+.sitehdr .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em}
+.mark{width:26px;height:26px;border-radius:50%;background:var(--orange);display:grid;place-items:center;color:#fff;font-size:13px}
+nav{display:flex;gap:18px;font-size:13px;color:#4a4a55}
+nav a{text-decoration:none;color:inherit}
+.donatebtn{background:var(--orange);color:#0a0909;border-radius:999px;padding:9px 18px;font-size:13px;font-weight:650;text-decoration:none}
+.banner{background:linear-gradient(180deg,#fdf6ee,#fff);border-bottom:1px solid var(--line);padding:10px 0;font-size:13px;text-align:center;color:#8a5a24}
+.hero{padding:56px 0 34px;border-bottom:1px solid var(--line)}
+.hero .eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.hero h1{font-size:clamp(1.9rem,4.6vw,3.2rem);line-height:1.15;letter-spacing:-.02em;margin:0 0 12px;max-width:22ch}
+.hero p{font-size:1.05rem;color:var(--muted);max-width:58ch;margin:0}
+.placeholder{border:1px dashed #c9c9d8;background:#fafaff;border-radius:10px;padding:14px 16px;font-size:12.5px;color:#6a6a7a;margin-top:18px}
+.placeholder b{color:#3d3d4a;letter-spacing:.04em}
+section.block{padding:34px 0;border-bottom:1px solid var(--line)}
+.sec-label{display:flex;align-items:center;gap:10px;margin:0 0 16px}
+.sec-label span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:#eef2ff;color:#324a8a;font-weight:650}
+.sec-label h2{font-size:1.15rem;margin:0}
+#host{max-width:100%}
+#frame{width:100%;border:0;display:block;background:#fff;min-height:400px}
+.snippet{margin-top:14px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.snippet summary{cursor:pointer;padding:10px 14px;font-size:12.5px;color:#4a4a55;background:#fafaff}
+.snippet pre{margin:0;padding:14px;font:11.5px/1.6 ui-monospace,Menlo,monospace;overflow:auto;background:#0f1b2d;color:#cfe0f5}
+footer{padding:30px 0;color:var(--muted);font-size:12.5px}
+.note{font-size:12px;color:var(--muted);margin-top:10px}
+</style>
+</head>
+<body>
+
+<div class="pocmock">POC PREVIEW · <b>hero / banner / FAQ are the CLIENT's to build in Optimizely</b> — shown here as placeholders only. The interactive calculator + QR payment is our iframe.</div>
+
+<header class="sitehdr">
+  <div class="wrap">
+    <div class="brand"><span class="mark">護</span> 護瞳行動 Hong Kong <span style="font-weight:400;font-size:12px;color:#8b8b98">(mock)</span></div>
+    <nav><a href="#">眼睛健康</a><a href="#">我們的工作</a><a href="#">支持我們</a></nav>
+    <a class="donatebtn" href="#">立即捐款</a>
+  </div>
+</header>
+
+<div class="banner">【模擬】推廣橫幅由客戶在 Optimizely 建立 · 31 March 2027 扣稅年度截止</div>
+
+<div class="hero"><div class="wrap">
+  <p class="eyebrow">報稅捐款扣稅懶人包</p>
+  <h1>慈善捐款扣稅計算機</h1>
+  <p>每十個失明個案裡，有九個其實是可以避免的。捐一筆，同時慳稅 —— 一「瞳」看清您實際付出幾多。</p>
+  <div class="placeholder"><b>PLACEHOLDER — CLIENT-BUILT</b> · H1、導語、雙重祝福、31 March 倒數：全部由客戶在 Optimizely 內建立及日後自行修改。我們不交付這一段。</div>
+</div></div>
+
+<section class="block"><div class="wrap">
+  <div class="sec-label"><span>2SK iframe</span><h2>互動計算機 + 二維碼付款</h2></div>
+  <div id="host">
+    <iframe id="frame" src="../embed/" title="慈善捐款扣稅計算機" scrolling="no" style="height:1200px"></iframe>
+  </div>
+  <details class="snippet">
+    <summary>這 7 行就是自動高度的全部 —— 貼一次，所有用同類元件的頁面都會跟住內容調整高度</summary>
+    <pre>&lt;script&gt;
+window.addEventListener("message", function (e) {
+  if (e.data &amp;&amp; e.data.source === "fhf-taxcalc" &amp;&amp; e.data.type === "resize") {
+    var f = document.getElementById("fhf-calc");       // your iframe
+    if (f &amp;&amp; f.contentWindow === e.source) f.style.height = e.data.height + "px";
+  }
+});
+&lt;/script&gt;</pre>
+  </details>
+  <p class="note">沒有這段 script 也能運作 —— 但 iframe 會停在固定高度、內部滾動。有這段 script 就完全無滾動條。</p>
+</div></section>
+
+<section class="block"><div class="wrap">
+  <div class="sec-label"><span>CLIENT</span><h2>報稅扣稅懶人包 — 五大須知</h2></div>
+  <div class="placeholder"><b>PLACEHOLDER — CLIENT-BUILT</b> · FAQ／五大須知繼續由客戶在 Optimizely 維護（現有頁面已有此內容及 FAQPage schema）。我們只提供文案建議表，不交付這一節。</div>
+  <div class="placeholder" style="margin-top:10px"><b>PLACEHOLDER — CLIENT-BUILT</b> · 影響力／護瞳故事／最終 CTA</div>
+</div></section>
+
+<footer><div class="wrap">© The Fred Hollows Foundation (mock preview) · POC only · 計算機為估算，並非稅務建議。</div></footer>
+
+<script>
+/* --- the only integration code the host page needs: auto-height --- */
+window.addEventListener("message", function (e) {
+  if (e.data && e.data.source === "fhf-taxcalc" && e.data.type === "resize") {
+    var f = document.getElementById("frame");
+    if (f && f.contentWindow === e.source) f.style.height = e.data.height + "px";
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>FHF Tax Calculator — Iframe POC</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--bg:#f4f5f7;--panel:#fff;--line:#e2e5ea;--ink:#1c2128;--muted:#68707b;--accent:#e97824;
+  --sans:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;--mono:ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6}
+.wrap{max-width:940px;margin:0 auto;padding:44px 22px 70px}
+.kicker{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(1.6rem,3.4vw,2.2rem);letter-spacing:-.02em;margin:6px 0 10px;line-height:1.15}
+.lede{color:var(--muted);max-width:66ch;margin:0 0 26px}
+h2{font-size:.95rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:34px 0 12px;font-weight:600}
+.cards{display:grid;gap:12px}
+@media (min-width:720px){.cards{grid-template-columns:1fr 1fr}}
+a.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;text-decoration:none;color:inherit;transition:border-color .12s,transform .12s}
+a.card:hover{border-color:var(--accent);transform:translateY(-1px)}
+a.card .n{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:650}
+a.card h3{font-size:1rem;margin:6px 0 4px}
+a.card p{color:var(--muted);font-size:13px;margin:0}
+code{font-family:var(--mono);font-size:12px;background:#eef0f3;border:1px solid var(--line);border-radius:4px;padding:1px 5px;word-break:break-all}
+table{width:100%;border-collapse:collapse;font-size:13px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+td code{background:transparent;border:0;padding:0}
+.note{background:#fff8f1;border:1px solid #f0dcc4;border-radius:10px;padding:14px 16px;font-size:13px;color:#7a4f1f}
+.note b{color:#5b3a14}
+ol{font-size:13.5px;color:#3a4149;padding-left:20px}
+ol li{margin-bottom:6px}
+footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">2SK Solutions · POC · proof of concept only</div>
+  <h1>Fred Hollows HK — Donation Tax Calculator<br>Iframe POC</h1>
+  <p class="lede">Proves one thing before we build: <b>can the Optimizely iframe component carry the interactive calculator and the QR payment surface — including app-open, auto-height and measurement?</b> Three links below. Nothing here is production.</p>
+
+  <h2>1 · Paste these into the CMS iframe component</h2>
+  <table>
+    <thead><tr><th style="width:34%">Purpose</th><th>URL</th></tr></thead>
+    <tbody>
+      <tr><td><b>Widget</b> — the deliverable itself</td><td><code id="u1">/embed/</code></td></tr>
+      <tr><td>Widget with the debug overlay</td><td><code id="u2">/embed/?debug=1</code></td></tr>
+      <tr><td>Widget in fixed-height mode (600px)</td><td><code id="u3">/embed/?h=600</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>2 · The test bench + the context preview</h2>
+  <div class="cards">
+    <a class="card" href="./harness/">
+      <div class="n">Test bench</div>
+      <h3>Iframe test bench →</h3>
+      <p>Flip every component configuration: auto vs fixed height, sandbox, allow, width, GTM. Live message log, dataLayer, auto pass/fail, copyable report.</p>
+    </a>
+    <a class="card" href="./preview/">
+      <div class="n">Context</div>
+      <h3>Page preview →</h3>
+      <p>The widget inside a mock Optimizely page — their chrome, their hero and FAQ as clearly-marked placeholders, the 7-line auto-height snippet.</p>
+    </a>
+    <a class="card" href="./embed/">
+      <div class="n">Widget</div>
+      <h3>Calculator between pages →</h3>
+      <p>Standalone. Works in any iframe, any width, 320px to 1440px.</p>
+    </a>
+    <a class="card" href="./scan.html?rail=payme">
+      <div class="n">QR proof</div>
+      <h3>Scan landing →</h3>
+      <p>Where the test QR points. Scan it with a phone to prove the code renders, scans and resolves.</p>
+    </a>
+  </div>
+
+  <h2>3 · What to record (one pass, five minutes)</h2>
+  <ol>
+    <li>Open the <b>test bench</b>. Leave it on <code>auto</code> height — does the iframe grow with content, no inner scrollbar?</li>
+    <li>Switch to a <b>fixed</b> height. Note the smallest height where nothing is clipped (report the number).</li>
+    <li>If the component sets <b>sandbox</b>, add it in the bench and press <b>“測試叫起 PayMe”</b> — the widget reports whether the browser blocked it.</li>
+    <li>Press the <b>credit-card</b> tile — it must leave the iframe (<code>target="_top"</code>), not render a page inside it.</li>
+    <li>Fill the receipt form and submit — check <b>Checks</b> turns <code>email_capture</code> to PASS.</li>
+    <li>Paste a GTM container ID, load it, re-run the steps — do the events appear in <b>dataLayer</b>?</li>
+    <li>Press <b>Copy test report</b> and send it back.</li>
+  </ol>
+
+  <div class="note">
+    <b>Scope reminder.</b> This POC carries only the interactive calculator, the three donation rails and the receipt capture. Hero, promo banner, FAQ and page SEO stay with the client's Optimizely build. <b>eye-care.today is decommissioned and not used anywhere in this POC.</b> The QR codes are test codes that resolve to the scan page above — not merchant codes.
+  </div>
+
+  <footer>
+    2SK Solutions · POC build v1.0.0 · Tax engine: verified YA 2026/27 constants (35% cap, HK$100 aggregate floor, standard-rate zones) · no amounts or income leave the widget: coarse band only.
+  </footer>
+</div>
+<script>
+(function(){ var b = location.origin + location.pathname.replace(/\/[^/]*$/, "/");
+  document.getElementById("u1").textContent = b + "embed/";
+  document.getElementById("u2").textContent = b + "embed/?debug=1";
+  document.getElementById("u3").textContent = b + "embed/?h=600";
+})();
+</script>
+</body>
+</html>

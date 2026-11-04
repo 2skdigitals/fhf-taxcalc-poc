@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK" data-widget="fhf-taxcalc">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5.0">
+<meta name="robots" content="noindex, nofollow">
+<title>慈善捐款扣稅計算機 — POC</title>
+<link rel="icon" href="data:,">
+<style>
+:root{
+  --orange:#e97824; --orange-h:#d06a1c; --on-action:#0a0909;
+  --navy:#01014E; --field:#F6F6FD; --white:#ffffff;
+  --ink:#282828; --muted:#666; --sage:#A5C8BE;
+  --line:#e8e8f2; --line-2:#d7d7e6; --radius:8px;
+  --sans:system-ui,-apple-system,"PingFang HK","Noto Sans HK","Hiragino Sans HK","Microsoft JhengHei",Helvetica,Arial,sans-serif;
+  --err:#A3161C; --ok:#1a6b3c;
+  --t-eyebrow:.75rem; --t-cap:.8125rem; --t-sm:.9375rem; --t-body:1.0625rem;
+  --t-num:clamp(1.5rem,2.4vw,2.125rem);
+  --panel:20px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:light}
+html,body{margin:0;padding:0;background:transparent}
+body{
+  font-family:var(--sans);font-weight:400;font-size:var(--t-body);line-height:1.65;
+  color:var(--ink);-webkit-font-smoothing:antialiased;overflow-wrap:anywhere;
+}
+img,svg{display:block;max-width:100%}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.wrap{padding:0 0 4px;max-width:960px;margin:0 auto}
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:var(--panel)}
+.card + .card{margin-top:14px}
+.eyebrow{font-size:var(--t-eyebrow);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+h2{font-size:clamp(1.15rem,1.9vw,1.4rem);line-height:1.25;margin:0 0 6px;letter-spacing:-.01em}
+h3{font-size:1rem;line-height:1.35;margin:0 0 6px}
+.lede{font-size:var(--t-sm);color:var(--muted);margin:0 0 18px}
+
+/* ---------- step 1 · inputs ---------- */
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend{font-size:var(--t-sm);font-weight:600;padding:0;margin-bottom:8px}
+.seg{display:flex;gap:6px;background:var(--field);border:1px solid var(--line-2);border-radius:999px;padding:4px}
+.seg label{flex:1;position:relative;text-align:center;font-size:var(--t-sm);cursor:pointer;border-radius:999px;padding:8px 10px}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label:has(input:checked){background:var(--white);box-shadow:0 1px 2px rgba(10,9,9,.12);font-weight:600}
+.seg label:has(input:focus-visible){outline:2px solid var(--navy);outline-offset:2px}
+.field{margin-top:18px}
+.field > label,.field > .glabel{display:block;font-size:var(--t-sm);font-weight:600;margin-bottom:8px}
+.amt{display:flex;align-items:center;gap:8px;border:1px solid var(--line-2);border-radius:var(--radius);padding:10px 12px;background:var(--white)}
+.amt:focus-within{border-color:var(--navy);box-shadow:0 0 0 3px rgba(1,1,78,.08)}
+.amt .pre{color:var(--muted);font-size:var(--t-sm)}
+.amt input{flex:1;border:0;outline:0;font-size:1.25rem;font-weight:600;min-width:0;background:transparent;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips button{border:1px solid var(--line-2);background:var(--white);border-radius:999px;padding:6px 12px;font-size:var(--t-cap);cursor:pointer}
+.chips button:hover{border-color:var(--navy)}
+.hint{font-size:var(--t-cap);color:var(--muted);margin:8px 0 0}
+select#months{width:100%;font:inherit;font-size:var(--t-sm);padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--radius);background:var(--white)}
+.bands{display:grid;gap:4px}
+.bands label{display:grid;grid-template-columns:18px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:9px 10px;cursor:pointer;font-size:var(--t-sm)}
+.bands label:hover{border-color:var(--line-2);background:#fdfdfe}
+.bands input{appearance:none;width:16px;height:16px;border:1.5px solid #9a9aa8;border-radius:50%;margin:0;position:relative}
+.bands input:checked{border-color:var(--navy);border-width:5px}
+.bands label:has(input:checked){border-color:var(--navy);background:#f7f7fe}
+.bands .r{color:var(--muted);font-size:var(--t-cap);font-variant-numeric:tabular-nums;white-space:nowrap}
+.note{font-size:var(--t-cap);color:var(--muted);margin:10px 0 0}
+.note b{color:#4a4a55}
+
+/* ---------- step 2 · result ---------- */
+.hero{border-top:3px solid var(--orange);padding-top:16px}
+.net-label{font-size:var(--t-cap);color:var(--muted);margin:0}
+.net{font-size:clamp(2rem,5.6vw,3rem);font-weight:700;letter-spacing:-.02em;line-height:1.1;margin:2px 0 4px;font-variant-numeric:tabular-nums}
+.net .cur{font-size:.55em;font-weight:600;color:var(--muted);margin-right:2px;vertical-align:.08em}
+.net.is-range{font-size:clamp(1.5rem,4.4vw,2.15rem)}
+.net.swap{opacity:.55}
+.caption{font-size:var(--t-sm);color:var(--muted);margin:0}
+.figs{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);margin:16px 0 0;overflow:hidden}
+.figs > div{background:var(--white);padding:12px 12px 14px}
+.figs dt{font-size:var(--t-cap);color:var(--muted);margin:0 0 4px;line-height:1.35}
+.figs dd{margin:0;font-size:var(--t-num);font-weight:650;letter-spacing:-.01em;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* phones: three across squeezes the money into broken tokens — go label/value rows */
+@media (max-width:560px){
+  .figs{grid-template-columns:1fr}
+  .figs > div{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:10px 12px}
+  .figs dt{margin:0}
+  .figs dd{font-size:1.125rem}
+  .qr-fig img{max-width:126px}
+}
+.assump{display:grid;gap:8px;margin-top:14px;font-size:var(--t-cap);color:var(--muted)}
+.assump > div{display:grid;grid-template-columns:auto 1fr;gap:8px}
+.assump span.k{font-weight:600;color:#4a4a55}
+.assump p{margin:0}
+
+/* ---------- step 3 · payment ---------- */
+.badge{display:inline-flex;align-items:center;gap:7px;font-size:var(--t-eyebrow);letter-spacing:.06em;text-transform:uppercase;color:var(--ok);border:1px solid #cfe3d7;background:#f2f8f4;border-radius:999px;padding:3px 10px;margin-bottom:12px}
+.badge .dot{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.rails{display:grid;gap:8px;margin:0 0 14px}
+.rails a,.rails .rail{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;text-decoration:none;border:1px solid var(--line-2);border-radius:var(--radius);padding:12px 14px;background:var(--white);cursor:pointer;text-align:left;width:100%}
+.rails a:hover,.rails .rail:hover{border-color:var(--navy);background:#fbfbfe}
+.rails .nm{font-weight:600;font-size:var(--t-sm)}
+.rails .sub{font-size:var(--t-cap);color:var(--muted);grid-column:1;line-height:1.45}
+.rails .go{grid-row:1/3;grid-column:2;color:var(--muted)}
+.qr-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 10px}
+.qr-fig{margin:0;border:1px solid var(--line);border-radius:var(--radius);padding:12px;background:var(--white);text-align:center}
+.qr-fig img{margin:0 auto 8px;width:100%;max-width:150px;height:auto;image-rendering:pixelated}
+.qr-fig figcaption{font-size:var(--t-cap);color:var(--muted)}
+.qr-fig .poc{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#a15c1f;margin-top:4px}
+.qr-copy h3{font-size:var(--t-sm);margin-bottom:6px}
+.qr-copy p{font-size:var(--t-sm);color:var(--muted);margin:0 0 8px}
+.qr-copy strong{color:var(--ink);font-variant-numeric:tabular-nums}
+.qr-mob{display:none}
+@media (pointer:coarse){.qr-desk{display:none}.qr-mob{display:block}}
+.alt{font-size:var(--t-sm);margin:0;padding-top:12px;border-top:1px solid var(--line)}
+.alt a{color:var(--navy);text-underline-offset:3px}
+
+/* receipt */
+.rform{display:grid;gap:10px}
+.rrow{display:grid;gap:10px}
+@media (min-width:560px){.rrow{grid-template-columns:1fr 1fr}}
+.rform label{display:block;font-size:var(--t-cap);font-weight:600;margin-bottom:5px}
+.rform input[type=text],.rform input[type=email]{width:100%;font:inherit;font-size:var(--t-sm);padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--radius);background:var(--white)}
+.rform input:focus{border-color:var(--navy);outline:0;box-shadow:0 0 0 3px rgba(1,1,78,.08)}
+.rform .consent{display:flex;gap:9px;align-items:flex-start;font-size:var(--t-cap);color:var(--muted);font-weight:400}
+.rform .consent input{margin-top:3px}
+.msg{font-size:var(--t-cap);margin:4px 0 0;color:var(--err)}
+.msg.ok{color:var(--ok)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--on-action);background:var(--orange);color:var(--on-action);font-weight:650;font-size:var(--t-sm);border-radius:999px;padding:12px 22px;cursor:pointer;width:100%;min-height:48px}
+.btn:hover{background:var(--orange-h)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.fine{font-size:11.5px;color:var(--muted);margin:10px 0 0;line-height:1.5}
+.pocbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px;color:#8a5a24;background:#fdf6ee;border:1px solid #f0dcc4;border-radius:6px;padding:6px 10px;margin-bottom:14px}
+.pocbar b{letter-spacing:.06em}
+
+/* fixed-height host mode: keep the action reachable */
+html[data-fit="fixed"] .wrap{padding-bottom:0}
+
+/* debug overlay */
+#dbg{position:fixed;right:8px;bottom:8px;z-index:99;font:11px/1.45 ui-monospace,Menlo,monospace;background:rgba(1,1,78,.92);color:#fff;padding:8px 10px;border-radius:6px;max-width:min(320px,70vw);pointer-events:none;display:none}
+#dbg.on{display:block}
+#dbg b{color:#ffd7a8}
+</style>
+</head>
+<body>
+<div class="wrap" id="root">
+
+  <div class="pocbar"><b>POC</b><span>示範用 · 二維碼為測試碼，非真實收款碼</span></div>
+
+  <!-- ============ STEP 1 ============ -->
+  <section class="card" id="calculator" aria-labelledby="s1h">
+    <p class="eyebrow">第一步</p>
+    <h2 id="s1h">輸入兩項資料</h2>
+    <p class="lede">一個金額，一個大概嘅入息範圍。就咁多。</p>
+
+    <fieldset>
+      <legend>捐款方式</legend>
+      <div class="seg">
+        <label><input type="radio" name="mode" value="once" checked><span>單次捐款</span></label>
+        <label><input type="radio" name="mode" value="monthly"><span>每月捐款</span></label>
+      </div>
+    </fieldset>
+
+    <div class="field">
+      <label for="gift">您想捐幾多？(HK$)</label>
+      <div class="amt"><span class="pre">HK$</span><input id="gift" type="text" inputmode="numeric" autocomplete="off" value="1,300" aria-describedby="gift-hint"></div>
+      <div class="chips" role="group" aria-label="快速金額">
+        <button type="button" data-amt="300">HK$300</button>
+        <button type="button" data-amt="500">HK$500</button>
+        <button type="button" data-amt="1300">HK$1,300</button>
+        <button type="button" data-amt="3000">HK$3,000</button>
+      </div>
+      <p class="hint" id="gift-hint">直接輸入銀碼，或用上面嘅金額快速揀選。</p>
+    </div>
+
+    <div class="field" id="months-field" hidden>
+      <label for="months">課稅年度內會捐幾個月？</label>
+      <select id="months" aria-describedby="months-hint">
+        <option value="1">1 個月</option><option value="2">2 個月</option><option value="3">3 個月</option>
+        <option value="4">4 個月</option><option value="5">5 個月</option><option value="6">6 個月</option>
+        <option value="7">7 個月</option><option value="8">8 個月</option><option value="9">9 個月</option>
+        <option value="10">10 個月</option><option value="11">11 個月</option><option value="12" selected>12 個月</option>
+      </select>
+      <div class="chips" role="group" aria-label="快速月數">
+        <button type="button" data-mo="3">3 個月</button>
+        <button type="button" data-mo="6">6 個月</button>
+        <button type="button" data-mo="9">9 個月</button>
+        <button type="button" data-mo="12">12 個月</button>
+      </div>
+      <p class="hint" id="months-hint">扣稅係按全年捐款總額計算，所以只捐幾個月嘅話，請填實際月數。</p>
+    </div>
+
+    <fieldset class="field">
+      <legend>您嘅全年應評稅入息大約係？（未扣免稅額；免稅額以 HK$145,000 估算）</legend>
+      <div class="bands">
+        <label><input type="radio" name="band" value="unknown"><span>唔知道 — 顯示範圍</span><span class="r">2% – 17%</span></label>
+        <label><input type="radio" name="band" value="r0"><span>HK$145,000 以下</span><span class="r">未需繳稅</span></label>
+        <label><input type="radio" name="band" value="r2"><span>HK$145,000 – 195,000</span><span class="r">約 2%</span></label>
+        <label><input type="radio" name="band" value="r6"><span>HK$195,000 – 245,000</span><span class="r">約 6%</span></label>
+        <label><input type="radio" name="band" value="r10"><span>HK$245,000 – 295,000</span><span class="r">約 10%</span></label>
+        <label><input type="radio" name="band" value="r14"><span>HK$295,000 – 345,000</span><span class="r">約 14%</span></label>
+        <label><input type="radio" name="band" value="r17" checked><span>HK$345,000 – 2,132,500</span><span class="r">約 17%</span></label>
+        <label><input type="radio" name="band" value="r15"><span>HK$2,132,500 – 5,000,000</span><span class="r">標準 15%</span></label>
+        <label><input type="radio" name="band" value="r16"><span>HK$5,000,000 以上</span><span class="r">標準 16%</span></label>
+      </div>
+      <p class="note">唔知道都可以 —— 我哋會顯示 2% 至 17% 嘅估算範圍（最低同最高）；想睇確實數字，揀一個入息範圍就得。
+      入息低於約 HK$145,000（單身免稅額）嘅話，可能未需要繳交薪俸稅，呢筆捐款就扣唔到稅。
+      入息越高邊際稅率通常越高（最高 17%）；但入息淨額超過約 HK$2,132,500 之後，稅局會改用<b>標準稅率</b>計算
+      （首 HK$500 萬 15%，超過部分 16%），所以最頂兩級嘅比率反而回落 —— 呢個係香港薪俸稅嘅設計，唔係計錯。</p>
+    </fieldset>
+
+    <div class="field" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <a class="btn" href="#result" id="goto-result" style="width:auto;text-decoration:none">查看結果 →</a>
+      <span id="upd" hidden style="font-size:var(--t-cap);color:var(--ok)">結果已更新</span>
+    </div>
+  </section>
+
+  <!-- ============ STEP 2 ============ -->
+  <section class="card hero" id="result" aria-labelledby="s2h">
+    <p class="eyebrow">第二步</p>
+    <h2 id="s2h">您嘅估算結果</h2>
+
+    <p class="net-label" id="net-label">實際付出</p>
+    <p class="net" id="net"><span class="cur">HK$</span>1,079</p>
+    <p class="caption" id="net-caption">呢個先係真正離開您戶口嘅金額。</p>
+    <p class="sr" id="announce" aria-live="polite"></p>
+
+    <dl class="figs">
+      <div><dt id="gift-label">捐款金額</dt><dd id="gift-out">HK$1,300</dd></div>
+      <div><dt id="saved-label">預計慳稅</dt><dd id="saved">−HK$221</dd></div>
+      <div><dt id="rate-label">估算用嘅邊際稅率</dt><dd id="rate">17%</dd></div>
+    </dl>
+
+    <div class="assump">
+      <div><span class="k">假設：</span><p><span id="assumption">應評稅入息 HK$345,000 – 2,132,500 · 邊際稅率 17%。</span> 更改上面任何一項，答案會即時更新。呢個係估算，未計算其他扣除或免稅額。</p></div>
+      <div><span class="k">上限：</span><p id="cap">扣稅上限係應評稅入息嘅 35%（全年合計）；一般捐款金額唔會觸及上限。</p></div>
+    </div>
+  </section>
+
+  <!-- ============ STEP 3 · PAYMENT ============ -->
+  <section class="card" id="payment" aria-labelledby="s3h">
+    <p class="eyebrow">第三步 · 付款方式</p>
+    <h2 id="s3h">三種捐款方式</h2>
+    <p class="lede">PayMe、AlipayHK 二維碼，同埋前往護瞳行動網站嘅信用卡。</p>
+
+    <span class="badge"><span class="dot"></span>POC 測試 <span style="opacity:.6">test mode</span></span>
+    <p class="note" style="margin:0 0 14px">PayMe 同 AlipayHK 用二維碼喺您自己嘅 App 內完成；信用卡就會帶您去護瞳行動現有嘅捐款頁。正式上線時二維碼會換成客戶提供嘅商戶碼。</p>
+
+    <div class="rails">
+      <button class="rail" type="button" data-rail="payme">
+        <span class="nm">PayMe</span>
+        <span class="sub"><span class="qr-desk">用手機掃描下方二維碼完成捐款</span><span class="qr-mob">長按下方二維碼儲存，喺 PayMe 內完成捐款</span></span>
+        <span class="go" aria-hidden="true">→</span>
+      </button>
+      <button class="rail" type="button" data-rail="alipay">
+        <span class="nm">AlipayHK</span>
+        <span class="sub"><span class="qr-desk">用手機掃描下方二維碼完成捐款</span><span class="qr-mob">長按下方二維碼儲存，喺 AlipayHK 內完成捐款</span></span>
+        <span class="go" aria-hidden="true">→</span>
+      </button>
+      <a href="https://www.hollows.org/zh-Hant-HK/donate/" target="_top" rel="noopener" data-rail="card">
+        <span class="nm">信用卡</span>
+        <span class="sub">前往護瞳行動捐款頁，以信用卡完成捐款</span>
+        <span class="go" aria-hidden="true">↗</span>
+      </a>
+    </div>
+
+    <div class="qr-grid">
+      <figure class="qr-fig">
+        <img id="qr-payme" src="../assets/qr-payme.svg" alt="PayMe 測試二維碼（POC，非真實收款碼）" width="150" height="150">
+        <figcaption>PayMe 二維碼<span class="poc">POC 測試碼</span></figcaption>
+      </figure>
+      <figure class="qr-fig">
+        <img id="qr-alipay" src="../assets/qr-alipay.svg" alt="AlipayHK 測試二維碼（POC，非真實收款碼）" width="150" height="150">
+        <figcaption>AlipayHK 二維碼<span class="poc">POC 測試碼</span></figcaption>
+      </figure>
+    </div>
+
+    <div class="qr-copy">
+      <div class="qr-desk">
+        <h3>用手機掃描二維碼捐款</h3>
+        <p>用另一部手機嘅相機或付款 App 掃描，再輸入 <strong class="qr-amount">HK$1,300</strong>。</p>
+      </div>
+      <div class="qr-mob">
+        <h3>用手機捐？長按二維碼，分享到付款 App</h3>
+        <p>長按上面<strong>對應嘅</strong>二維碼儲存圖片（每個 App 一個碼），再打開 <b>PayMe</b> 或 <b>AlipayHK</b>，用該 App 內嘅「掃描」或「相簿」功能揀返嗰張二維碼，然後輸入 <strong class="qr-amount">HK$1,300</strong>。</p>
+      </div>
+      <p class="fine">二維碼為靜態碼，本身唔會帶金額，金額要喺付款 App 內自行輸入。</p>
+    </div>
+
+    <div class="field" style="border-top:1px solid var(--line);padding-top:12px;margin-top:14px">
+      <p class="hint" style="margin:0 0 8px"><b>App 開啟測試（POC）：</b>撳一下睇 iframe 內能唔能夠叫起付款 App。正式版會用商戶提供嘅 deep link。</p>
+      <div class="chips">
+        <button type="button" data-deeplink="payme">測試叫起 PayMe</button>
+        <button type="button" data-deeplink="alipay">測試叫起 AlipayHK</button>
+      </div>
+      <p class="hint" id="deeplink-msg" aria-live="polite"></p>
+    </div>
+
+    <p class="alt"><a href="https://www.hollows.org/zh-Hant-HK/donate/monthly-donation/" target="_top" rel="noopener">想每月捐款？</a></p>
+  </section>
+
+  <!-- ============ RECEIPT CAPTURE ============ -->
+  <section class="card" id="receipt" aria-labelledby="rch">
+    <h2 id="rch" style="font-size:1.05rem">想收到扣稅收據？留低姓名同電郵就得。</h2>
+    <p class="lede" style="margin-bottom:14px">我哋只需要收據抬頭同電郵，用嚟發出正式收據。捐款滿 HK$100 先可以獲發正式收據。</p>
+    <form class="rform" id="rform" novalidate>
+      <div class="rrow">
+        <div>
+          <label for="rname">姓名（收據抬頭）</label>
+          <input id="rname" type="text" autocomplete="name" placeholder="陳大文" aria-describedby="rname-msg">
+          <p class="msg" id="rname-msg" hidden></p>
+        </div>
+        <div>
+          <label for="rmail">電郵</label>
+          <input id="rmail" type="email" autocomplete="email" placeholder="name@example.com" aria-describedby="rmail-msg">
+          <p class="msg" id="rmail-msg" hidden></p>
+        </div>
+      </div>
+      <div class="consent">
+        <input id="consent" type="checkbox">
+        <label for="consent">我同意護瞳行動用我嘅姓名同電郵，為我發出扣稅收據。</label>
+      </div>
+      <button class="btn" type="submit" id="rsubmit">留低資料</button>
+      <p class="msg" id="capture-status" aria-live="polite" hidden></p>
+      <p class="fine">POC 示範：資料只會留喺呢個測試頁嘅記憶體，唔會傳送去任何伺服器，亦唔會儲存。正式版會由 2SK 建嘅收據系統接收，並依客戶指示傳送至其 CRM。</p>
+    </form>
+  </section>
+
+  <p class="fine" style="max-width:70ch">* 計算機只估算<strong>薪俸稅</strong>下嘅捐款扣稅，並非稅務建議。實際可扣稅額以稅務局評定為準。扣稅上限為應評稅入息或利潤嘅 35%，而慳到嘅稅額等於捐款乘以您嘅適用稅率。</p>
+
+  <div id="dbg" aria-hidden="true"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  /* ============================================================
+     FHF HK donation tax calculator — iframe POC widget
+     Tax engine: verified YA2026/27 constants (unchanged from spec).
+     ============================================================ */
+  var V = "1.0.0";
+  var BANDS = {
+    unknown:{rate:null,low:.02,high:.17,range:true,label:"唔知道"},
+    r0:{rate:0,label:"HK$145,000 以下"},
+    r2:{rate:.02,label:"HK$145,000 – 195,000"},
+    r6:{rate:.06,label:"HK$195,000 – 245,000"},
+    r10:{rate:.10,label:"HK$245,000 – 295,000"},
+    r14:{rate:.14,label:"HK$295,000 – 345,000"},
+    r17:{rate:.17,label:"HK$345,000 – 2,132,500"},
+    r15:{rate:.15,label:"HK$2,132,500 – 5,000,000"},
+    r16:{rate:.16,label:"HK$5,000,000 以上"}
+  };
+  var CAP_FLAG_FROM = 50000;
+  var st = {amount:1300, band:"r17", mode:"once", months:12};
+  var touched = false, lastH = 0, sent = {};
+
+  var $ = function (s, r) { return (r||document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+
+  function fmt(n){ return Math.round(n).toLocaleString("en-US"); }
+  function money(n){ return "HK$" + fmt(n); }
+  function clampMonths(v){ var n = parseInt(v,10); if (isNaN(n)) return 12; return Math.min(Math.max(n,1),12); }
+  function digits(s){ var d = String(s).replace(/[^0-9]/g,""); return d === "" ? 0 : Math.min(parseInt(d,10), 99999999); }
+
+  /* ---------- host bridge (postMessage) ---------- */
+  var ORIGINS = null; // null = accept any parent for the POC; production pins an allowlist
+  var host = (function(){ try { return window.parent !== window ? window.parent : null; } catch(e){ return null; } })();
+  function post(msg){
+    if (!host) return;
+    msg.source = "fhf-taxcalc"; msg.v = V;
+    try { host.postMessage(msg, "*"); } catch(e){}
+  }
+  /* exactly eight events, coarse-band only — no income, no rate, no amount */
+  function track(name, params){
+    var p = params || {};
+    post({type:"event", name:name, params:p});
+    if (window.dataLayer && cfg.gtm === "in") window.dataLayer.push(Object.assign({event:name}, p));
+    dbg("event: " + name + " " + JSON.stringify(p));
+    if (name === "calc_result_shown") sent.result = true;
+    if (typeof window.__pocEventLog !== "undefined") { /* test hook */ }
+    try { (window.__pocEvents = window.__pocEvents || []).push({name:name, params:p}); } catch(e){}
+  }
+
+  /* ---------- height protocol ---------- */
+  var ro = null;
+  function measure(){
+    var doc = document.documentElement, b = document.body;
+    return Math.ceil(Math.max(doc.scrollHeight, doc.offsetHeight, b.scrollHeight, b.offsetHeight));
+  }
+  function pushHeight(force){
+    var h = measure();
+    if (!force && Math.abs(h - lastH) < 1) return;
+    lastH = h;
+    post({type:"resize", height:h, fixed: document.documentElement.getAttribute("data-fit") === "fixed"});
+    dbg("resize → " + h);
+  }
+  var raf = 0;
+  function scheduleHeight(){
+    if (raf) return;
+    raf = requestAnimationFrame(function(){ raf = 0; pushHeight(false); });
+  }
+  if (window.ResizeObserver) {
+    ro = new ResizeObserver(scheduleHeight);
+    ro.observe(document.body);
+    ro.observe($("#root"));
+  }
+  window.addEventListener("load", function(){ pushHeight(true); });
+  window.addEventListener("resize", scheduleHeight);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleHeight);
+
+  /* ---------- config from host ---------- */
+  var qs = new URLSearchParams(location.search);
+  var cfg = {
+    height: qs.get("h") || "auto",   // "auto" | number (fixed host height, px)
+    theme: qs.get("theme") || "light",
+    gtm: qs.get("gtm") || "parent",  // "parent" | "in" | "off"
+    locale: qs.get("locale") || "zh-Hant-HK"
+  };
+  if (cfg.height !== "auto") document.documentElement.setAttribute("data-fit","fixed");
+  if (qs.get("debug") === "1") $("#dbg").classList.add("on");
+
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (!d || typeof d !== "object") return;
+    if (d.type === "fhf-config") {
+      if (d.config && d.config.height) {
+        cfg.height = d.config.height;
+        document.documentElement.setAttribute("data-fit", d.config.height === "auto" ? "auto" : "fixed");
+        pushHeight(true);
+      }
+      if (d.config && d.config.reveal) {
+        var el = document.getElementById(d.config.reveal);
+        if (el) el.scrollIntoView({block:"start"});
+      }
+    }
+    if (d.type === "fhf-ping") post({type:"pong", height: measure()});
+    if (d.type === "fhf-consent") cfg.consent = !!d.marketing;
+  }, false);
+
+  function dbg(t){
+    var el = $("#dbg");
+    if (el && el.classList.contains("on")) el.innerHTML = "<b>" + V + "</b> h=" + lastH + "<br>" + t;
+  }
+
+  /* ---------- render ---------- */
+  var annT = 0;
+  function render(){
+    var b = BANDS[st.band];
+    var once = digits(st.amount);
+    var months = clampMonths(st.months);
+    var annual = st.mode === "monthly" ? once * months : once;
+    var isStd = st.band === "r15" || st.band === "r16";
+    var rateWord = isStd ? "標準稅率" : "邊際稅率";
+    var isRange = !!b.range;
+    var rLow = isRange ? b.low : b.rate, rHigh = isRange ? b.high : b.rate;
+    var savedLow = Math.round(annual * rLow), savedHigh = Math.round(annual * rHigh);
+    var netLow = annual - savedHigh, netHigh = annual - savedLow;
+
+    /* hero */
+    var netEl = $("#net");
+    if (annual <= 0) { netEl.innerHTML = '<span class="cur">HK$</span>—'; }
+    else if (isRange) { netEl.innerHTML = '<span class="cur">HK$</span>' + fmt(netLow) + " – " + fmt(netHigh); }
+    else { netEl.innerHTML = '<span class="cur">HK$</span>' + fmt(netHigh); }
+    netEl.classList.toggle("is-range", isRange || annual <= 0);
+
+    $("#net-label").textContent = (st.mode === "monthly" ? "本年度實際付出" : "實際付出") + (annual >= CAP_FLAG_FROM ? "（最少）" : "");
+    var cap = "";
+    if (st.mode === "monthly") {
+      cap = "每月 " + money(once) + " × " + months + " 個月 = 全年合計 " + money(annual) + "。";
+      if (isRange) cap += "入息範圍未指定，所以顯示 2% 至 17% 嘅估算範圍。";
+    } else if (isRange) {
+      cap = "呢個係範圍 —— 由最低 2% 到最高 17%。想睇確實數字，揀一個入息範圍就得。";
+    } else {
+      cap = "呢個先係真正離開您戶口嘅金額。";
+    }
+    $("#net-caption").textContent = cap;
+    $("#gift-label").textContent = st.mode === "monthly" ? "全年捐款總額（" + months + " 個月）" : "捐款金額";
+    $("#gift-out").textContent = money(annual);
+    $("#saved-label").textContent = "預計慳稅" + (annual >= CAP_FLAG_FROM ? "（最多）" : "");
+    $("#saved").textContent = annual <= 0 ? "−HK$0"
+      : isRange ? "−" + money(savedLow) + " 至 −" + money(savedHigh)
+      : "−" + money(savedHigh);
+    $("#rate-label").textContent = "估算用嘅" + rateWord;
+    $("#rate").textContent = isRange ? "2% – 17%" : Math.round(rHigh*100) + "%";
+    $("#assumption").textContent = isRange
+      ? "應評稅入息範圍未指定 · 適用稅率 2% – 17% 之間。"
+      : "應評稅入息 " + b.label + " · " + rateWord + " " + Math.round(rHigh*100) + "%。";
+    $("#cap").textContent = annual >= CAP_FLAG_FROM
+      ? "扣稅上限係應評稅入息嘅 35%（全年合計）。呢個金額比較大，最終可扣稅額可能受 35% 上限限制。"
+      : "扣稅上限係應評稅入息嘅 35%（全年合計）；一般捐款金額唔會觸及上限。";
+
+    $$(".qr-amount").forEach(function(e){ e.textContent = money(annual); });
+
+    /* announce once, settled */
+    clearTimeout(annT);
+    annT = setTimeout(function(){
+      $("#announce").textContent = (st.mode === "monthly" ? "每月 " + money(once) + "，共 " + months + " 個月，全年合計 " + money(annual) + "。" : "捐款 " + money(annual) + "。")
+        + (isRange ? " 估算慳稅由 " + money(savedLow) + " 至 " + money(savedHigh) + "。" : " 估算慳稅 " + money(savedHigh) + "，適用" + rateWord + " " + Math.round(rHigh*100) + "%。");
+    }, 600);
+
+    if (touched) { $("#upd").hidden = false; }
+    scheduleHeight();
+  }
+
+  /* ---------- events ---------- */
+  var started = false;
+  function firstTouch(){
+    if (started) return; started = true;
+    track("calc_started", {page_location: location.href});
+  }
+  var resultT = 0;
+  function resultShown(){
+    clearTimeout(resultT);
+    resultT = setTimeout(function(){
+      track("calc_result_shown", {
+        band: st.band === "unknown" ? "unknown" : "band",
+        donation_type: st.mode,
+        cap_state: digits(st.amount) * (st.mode === "monthly" ? clampMonths(st.months) : 1) >= CAP_FLAG_FROM ? "may_apply" : "unlikely"
+      });
+    }, 800);
+  }
+  var coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  function state(){ return coarse ? "mobile" : "desktop"; }
+
+  /* ---------- wiring ---------- */
+  $("#gift").addEventListener("input", function (e) {
+    firstTouch(); touched = true;
+    var v = digits(e.target.value);
+    st.amount = v;
+    e.target.value = v ? fmt(v) : "";
+    render(); resultShown();
+  });
+  $$("[data-amt]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      firstTouch(); touched = true;
+      st.amount = parseInt(b.dataset.amt,10);
+      $("#gift").value = fmt(st.amount);
+      render(); resultShown();
+    });
+  });
+  $$("input[name=mode]").forEach(function (r) {
+    r.addEventListener("change", function () {
+      firstTouch(); touched = true;
+      st.mode = r.value;
+      $("#months-field").hidden = st.mode !== "monthly";
+      render(); resultShown();
+    });
+  });
+  $("#months").addEventListener("change", function (e) {
+    touched = true; st.months = clampMonths(e.target.value);
+    e.target.value = String(st.months);
+    render(); resultShown();
+  });
+  $$("[data-mo]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      st.months = clampMonths(b.dataset.mo);
+      $("#months").value = String(st.months);
+      touched = true; render(); resultShown();
+    });
+  });
+  $$("input[name=band]").forEach(function (r) {
+    r.addEventListener("change", function () {
+      firstTouch(); touched = true; st.band = r.value;
+      render(); resultShown();
+    });
+  });
+  $("#goto-result").addEventListener("click", function () { render(); scheduleHeight(); });
+
+  /* payment surface */
+  var qrSeen = false;
+  function markQr(){
+    if (qrSeen) return; qrSeen = true;
+    track("qr_view", {rail: "all", state: state()});
+  }
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (ents) {
+      ents.forEach(function (en) { if (en.isIntersecting) markQr(); });
+    }, {threshold: .35}).observe($("#payment"));
+  } else { markQr(); }
+
+  $$("[data-rail]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      track("rail_click", {rail: el.dataset.rail, state: state()});
+      markQr();
+    });
+  });
+
+  $$("[data-deeplink]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var rail = b.dataset.deeplink;
+      var msg = $("#deeplink-msg");
+      var scheme = rail === "payme" ? "payme://" : "alipays://platformapi/startapp";
+      var alive = true;
+
+      /* Report BEFORE attempting: a successful app-open can navigate the top
+         frame away, and a destroyed page cannot send its own verdict. The
+         absence of a follow-up "result" message IS the success signal. */
+      post({type:"deeplink", rail:rail, phase:"attempt"});
+      track("rail_click", {rail: rail + "_app", state: state()});
+
+      msg.textContent = "已嘗試叫起 " + (rail === "payme" ? "PayMe" : "AlipayHK") + "…";
+
+      if (window.top === window) {
+        msg.textContent = "呢一頁未放入 iframe，所以冇得測 App 跳轉 —— 請喺 Test Bench 或 CMS 內嘅 iframe 版本測試。";
+        post({type:"deeplink", rail:rail, phase:"result", blocked:true, reason:"not_framed"});
+        return;
+      }
+
+      try {
+        window.top.location.href = scheme;
+      } catch (e) { alive = false; }
+
+      setTimeout(function () {
+        if (!alive) {
+          msg.textContent = "⚠️ 被 iframe 阻止（需要 allow-top-navigation-by-user-activation）。";
+          post({type:"deeplink", rail:rail, phase:"result", blocked:true});
+          return;
+        }
+        /* still on the page after the attempt → the scheme was not handled */
+        msg.textContent = "頁面仍然停喺呢度 —— 表示瀏覽器／iframe 冇處理呢個 App scheme（iOS Safari 同沙盒 iframe 常見）。正式版需要二維碼或頂層跳轉。";
+        post({type:"deeplink", rail:rail, phase:"result", blocked:true});
+      }, 1200);
+    });
+  });
+
+  /* receipt capture (POC: memory only) */
+  $("#rform").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = $("#rname").value.trim(), mail = $("#rmail").value.trim(), ok = true;
+    $("#rname-msg").hidden = $("#rmail-msg").hidden = true;
+    if (name.length < 2) { $("#rname-msg").textContent = "請輸入收據抬頭姓名。"; $("#rname-msg").hidden = false; ok = false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) { $("#rmail-msg").textContent = "請輸入有效電郵。"; $("#rmail-msg").hidden = false; ok = false; }
+    if (!$("#consent").checked) { $("#capture-status").textContent = "請先勾選同意。"; $("#capture-status").className = "msg"; $("#capture-status").hidden = false; return; }
+    if (!ok) return;
+    var s = $("#capture-status");
+    s.textContent = "多謝您。我哋會喺捐款後跟進發出收據（POC：未接駁後端）。";
+    s.className = "msg ok"; s.hidden = false;
+    track("email_capture", {donation_type: st.mode, state: state()});
+    track("receipt_request", {method: "web_form", has_reference: "no"});
+    $("#rsubmit").disabled = true;
+    $("#rsubmit").textContent = "已收到";
+    scheduleHeight();
+  });
+  ["#rname","#rmail"].forEach(function(sel){ $(sel).addEventListener("input", scheduleHeight); });
+
+  /* ---------- boot ---------- */
+  render();
+  post({type:"ready", height: measure(), contract: 1});
+  setTimeout(function(){ pushHeight(true); }, 60);
+  setTimeout(function(){ pushHeight(true); }, 600);
+  window.__fhfPoc = {version:V, state:function(){return st;}, measure:measure, post:post, track:track};
+})();
+</script>
+</body>
+</html>
