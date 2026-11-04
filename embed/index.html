@@ -457,10 +457,15 @@ body[data-part] .card{width:100%}
   var cfg = {
     height: qs.get("h") || "auto",   // "auto" | number (fixed host height, px)
     theme: qs.get("theme") || "light",
-    gtm: qs.get("gtm") || "parent",  // "parent" | "in" | "off"
+    gtm: qs.get("gtm") || "parent",  // "parent" | "in" | "off" | "GTM-XXXXXXX"
     locale: qs.get("locale") || "zh-Hant-HK",
     debug: qs.get("debug") === "1"
   };
+  /* We cannot modify the host page, so the postMessage bridge is not available
+     for measurement. Passing a container ID loads GTM *inside* this frame
+     instead: standard GTM/GA4, zero client-side change. */
+  var GTM_LOAD_ID = /^GTM-[A-Z0-9]{5,}$/i.test(cfg.gtm) ? cfg.gtm.toUpperCase() : "";
+  if (GTM_LOAD_ID) cfg.gtm = "in";
   if (cfg.height !== "auto") document.documentElement.setAttribute("data-fit","fixed");
   if (qs.get("debug") === "1") $("#dbg").classList.add("on");
 
@@ -574,7 +579,10 @@ body[data-part] .card{width:100%}
   var started = false;
   function firstTouch(){
     if (started) return; started = true;
-    track("calc_started", {page_location: location.href});
+    track("calc_started", {
+      page_location: (document.referrer || "").split("#")[0] || location.href,
+      embed_url: location.href
+    });
   }
   var resultT = 0;
   function resultShown(){
@@ -719,6 +727,24 @@ body[data-part] .card{width:100%}
   ["#rname","#rmail"].forEach(function(sel){ $(sel).addEventListener("input", scheduleHeight); });
 
   /* ---------- boot ---------- */
+  /* Container inside the frame. The host page is never touched, so GTM runs
+     here; document.referrer is the embedding page, which is what reports need
+     in order to group by page rather than by embed URL. */
+  if (GTM_LOAD_ID) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: "fhf_init",
+      host_page: (document.referrer || "").split("#")[0] || "",
+      embed_url: location.href,
+      part: part || "full"
+    });
+    window.dataLayer.push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+    var gs = document.createElement("script");
+    gs.async = true;
+    gs.src = "https://www.googletagmanager.com/gtm.js?id=" + encodeURIComponent(GTM_LOAD_ID);
+    document.head.appendChild(gs);
+  }
+
   render();
   post({type:"ready", height: measure(), contract: 1});
   setTimeout(function(){ pushHeight(true); }, 60);

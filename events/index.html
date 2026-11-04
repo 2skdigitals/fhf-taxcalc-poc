@@ -142,6 +142,7 @@ if (window.top !== window) {
        Any 2+ digit number in a parameter means an amount or an income leaked. */
     var probe = Object.assign({}, p);
     delete probe.page_location;
+    delete probe.embed_url;
     var probeStr = JSON.stringify(probe);
     if (/"amount"|"income"|"rate"|"marginal"|HK\$|\d{2,}/.test(probeStr)) {
       flagged++;

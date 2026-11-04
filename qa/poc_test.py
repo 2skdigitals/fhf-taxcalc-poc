@@ -240,6 +240,18 @@ with sync_playwright() as pw:
           [] if (int(ev["n"]) >= 2 and ev["hon"].strip() == "clean" and ev["rows"] >= 2) else [str(ev)])
     pe.close()
 
+    # ---------------------------------------------------------------- J · container inside the frame
+    pc = browser.new_page(viewport={"width": 390, "height": 900})
+    pc.goto(f"{BASE}/embed/?part=input&gtm=GTM-XXXXXXX", wait_until="load")
+    pc.wait_for_timeout(900)
+    g = pc.evaluate("""() => ({
+        init: (window.dataLayer || []).find(x => x && x.event === 'fhf_init') || null,
+        script: !!document.querySelector('script[src*="googletagmanager.com/gtm.js"]')
+      })""")
+    check("a container ID loads GTM inside the frame and seeds dataLayer with the host page",
+          [] if (g["script"] and g["init"] and "host_page" in g["init"]) else [str(g)])
+    pc.close()
+
     # ---------------------------------------------------------------- G · the bench
     pg4 = browser.new_page(viewport={"width": 1440, "height": 1000})
     pg4.goto(f"{BASE}/harness/", wait_until="load")
