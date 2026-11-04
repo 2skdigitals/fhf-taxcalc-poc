@@ -29,7 +29,7 @@ Measured on the live widget at ten widths from 320px to 1440px. **Set exactly th
 | 1 | Calculator | `/embed/?part=input` | **1000px** | 800 – 990 |
 | 2 | Result | `/embed/?part=result` | **750px** | 400 – 727 |
 | 3 | Payment | `/embed/?part=pay` | **1100px** | 849 – 1068 |
-| 4 | Receipt | `/embed/?part=receipt` | **600px** | 400 – 543 |
+| 4 | Receipt | `/embed/?part=receipt` | **650px** | 400 – 647 |
 
 Why four blocks rather than one tall frame: with a mandatory height, one embed means either a 3,700px block (absurd) or an internal scrollbar inside a 900px box — and a nested scroll container on a phone is where QR donations die. Four short blocks let the **page** scroll, which every donor already knows how to do. `qa/poc_test.py` asserts each block stays inside its declared height at 390px and 1440px, so the table cannot silently drift.
 

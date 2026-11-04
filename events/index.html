@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Event verification — FHF tax calculator blocks</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--bg:#f4f5f7;--panel:#fff;--line:#e2e5ea;--ink:#1c2128;--muted:#68707b;--accent:#e97824;--ok:#127a4b;
+  --sans:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6}
+.top{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line)}
+.top .in{max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.kicker{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:650}
+h1{font-size:15px;margin:0;font-weight:650;letter-spacing:-.01em}
+.spacer{flex:1}
+input,button,select{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:6px 10px;background:#fff;color:var(--ink)}
+button{cursor:pointer}
+button.p{background:var(--accent);border-color:var(--accent);color:#0a0909;font-weight:650}
+.wrap{max-width:1200px;margin:0 auto;padding:18px 20px 60px}
+.note{font-size:13px;color:var(--muted);max-width:80ch;margin:0 0 16px}
+.cols{display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start}
+@media (max-width:1020px){.cols{grid-template-columns:1fr}}
+.frames{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.frames iframe{display:block;width:100%;border:0;background:#fff}
+.frames iframe + iframe{border-top:1px solid var(--line)}
+.side{position:sticky;top:64px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:12px}
+.card h2{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0;padding:9px 12px;
+  border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;font-weight:600}
+.card h2 b{color:var(--ink);font-family:var(--mono);font-size:11px}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px}
+td,th{text-align:left;padding:5px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em}
+tr:last-child td{border-bottom:0}
+.empty{padding:14px 12px;color:var(--muted);font-size:12px}
+.ok{color:var(--ok)}
+.bar{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);flex-wrap:wrap}
+ol{font-size:12.5px;color:#3a4149;padding-left:18px;margin:0}
+ol li{margin-bottom:5px}
+code{font-family:var(--mono);font-size:11.5px;background:#eef0f3;border:1px solid var(--line);border-radius:4px;padding:1px 4px}
+</style>
+</head>
+<body>
+<script>
+/* This page IS a host page: it implements exactly the bridge tag the client
+   will paste into GTM, so events can be verified before anything is published.
+   It is also guarded — if someone embeds this page, show a notice instead. */
+if (window.top !== window) {
+  document.documentElement.innerHTML =
+    '<body style="margin:0;font:15px/1.6 system-ui,sans-serif;background:#f4f5f7;color:#1c2128;display:grid;place-items:center;min-height:100vh;padding:24px">' +
+    '<div style="max-width:520px;background:#fff;border:1px solid #e2e5ea;border-radius:10px;padding:24px">' +
+    '<b style="color:#e97824;font-size:11px;letter-spacing:.09em;text-transform:uppercase">2SK · internal</b>' +
+    '<h1 style="font-size:18px;margin:8px 0">Event verification page</h1>' +
+    '<p style="color:#68707b;margin:0">Open this page directly, not inside an iframe.</p></div></body>';
+}
+</script>
+
+<div class="top"><div class="in">
+  <span class="kicker">2SK · event verification</span>
+  <h1>The four blocks + the GTM bridge, running together</h1>
+  <div class="spacer"></div>
+  <input id="gtm" placeholder="GTM-XXXXXXX (optional)" style="width:180px">
+  <button id="load">Load GTM</button>
+  <button id="clear" class="p">Clear log</button>
+</div></div>
+
+<div class="wrap">
+  <p class="note">Scroll through the four blocks and interact with them. Every event the widget posts appears in the panel on the right, with the exact payload that will be pushed into <code>dataLayer</code>. This page runs the same bridge tag you will add to GTM — so you can verify the contract before anything is published. Paste a container ID to also see the events land in a real container (GTM Preview then shows them as fired tags).</p>
+
+  <div class="cols">
+    <div class="frames">
+      <iframe src="../embed/?part=input"   title="慈善捐款扣稅計算機" scrolling="no" style="height:1000px"></iframe>
+      <iframe src="../embed/?part=result"  title="估算結果" scrolling="no" style="height:750px"></iframe>
+      <iframe src="../embed/?part=pay"     title="捐款方式" scrolling="no" style="height:1100px"></iframe>
+      <iframe src="../embed/?part=receipt" title="扣稅收據" scrolling="no" style="height:650px"></iframe>
+    </div>
+
+    <div class="side">
+      <div class="card">
+        <h2>Events received <b id="n">0</b></h2>
+        <div style="max-height:340px;overflow:auto">
+          <table><thead><tr><th style="width:34%">event</th><th>params</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="2" class="empty">Nothing yet — type an amount in block 1.</td></tr></tbody></table>
+        </div>
+        <div class="bar"><button id="copy">Copy log</button></div>
+      </div>
+
+      <div class="card">
+        <h2>Honesty check <b id="hon" class="ok">—</b></h2>
+        <div style="padding:10px 12px;font-size:12px;color:var(--muted)" id="hontext">
+          Every payload is scanned for an amount, an income figure or a marginal rate. It must never contain one.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>How to read this</h2>
+        <div style="padding:10px 12px">
+          <ol>
+            <li>Type an amount → <code>calc_started</code>, then <code>calc_result_shown</code>.</li>
+            <li>Switch 單次 → 每月 → the same events fire again with <code>donation_type=monthly</code>.</li>
+            <li>Scroll to block 3 → <code>qr_view</code>; press a rail → <code>rail_click</code>.</li>
+            <li>Submit the receipt form → <code>email_capture</code> + <code>receipt_request</code>.</li>
+            <li>Paste their container ID and Load GTM → the same events appear in GTM Preview.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var rowsEl = document.getElementById("rows"), nEl = document.getElementById("n");
+  var hon = document.getElementById("hon"), hontext = document.getElementById("hontext");
+  var count = 0, log = [], flagged = 0;
+
+  window.dataLayer = window.dataLayer || [];
+
+  /* ---- exactly the bridge tag that goes into GTM ---- */
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (!d || d.source !== "fhf-taxcalc") return;
+    if (d.type === "deeplink") {
+      dataLayer.push({event:"fhf_deeplink_test", rail:d.rail, phase:d.phase, blocked:!!d.blocked});
+      return;
+    }
+    if (d.type !== "event") return;
+
+    var p = d.params || {};
+    dataLayer.push(Object.assign({event: d.name}, p));
+    count++;
+    log.push({t:new Date().toISOString(), event:d.name, params:p});
+    nEl.textContent = count;
+
+    var blob = JSON.stringify(p);
+    /* page_location legitimately contains digits (ports, ids) — scan everything else.
+       Any 2+ digit number in a parameter means an amount or an income leaked. */
+    var probe = Object.assign({}, p);
+    delete probe.page_location;
+    var probeStr = JSON.stringify(probe);
+    if (/"amount"|"income"|"rate"|"marginal"|HK\$|\d{2,}/.test(probeStr)) {
+      flagged++;
+      hon.textContent = "LEAK ×" + flagged;
+      hon.className = "";
+      hontext.textContent = "A number appeared in a payload. This is a defect — do not ship.";
+    } else if (count > 0 && flagged === 0) {
+      hon.textContent = "clean";
+      hon.className = "ok";
+    }
+
+    if (count === 1) rowsEl.innerHTML = "";
+    rowsEl.insertAdjacentHTML("afterbegin",
+      "<tr><td>" + d.name + "</td><td>" + (blob === "{}" ? "—" : blob.replace(/[{}"]/g, "").replace(/,/g, ", ")) + "</td></tr>");
+  });
+
+  document.getElementById("clear").addEventListener("click", function(){
+    count = 0; flagged = 0; log = [];
+    nEl.textContent = "0"; hon.textContent = "—"; hon.className = "ok";
+    hontext.textContent = "Every payload is scanned for an amount, an income figure or a marginal rate. It must never contain one.";
+    rowsEl.innerHTML = '<tr><td colspan="2" class="empty">Nothing yet — type an amount in block 1.</td></tr>';
+  });
+
+  document.getElementById("copy").addEventListener("click", function(){
+    var txt = JSON.stringify({when:new Date().toISOString(), events:log}, null, 2);
+    navigator.clipboard.writeText(txt).then(function(){
+      var b = document.getElementById("copy"); b.textContent = "Copied ✓";
+      setTimeout(function(){ b.textContent = "Copy log"; }, 1600);
+    }, function(){ window.prompt("Copy:", txt); });
+  });
+
+  document.getElementById("load").addEventListener("click", function(){
+    var id = document.getElementById("gtm").value.trim();
+    if (!/^GTM-[A-Z0-9]{5,}$/i.test(id)) { alert("Container ID looks like GTM-ABC1234"); return; }
+    dataLayer.push({"gtm.start": Date.now(), event:"gtm.js"});
+    var s = document.createElement("script");
+    s.async = true; s.src = "https://www.googletagmanager.com/gtm.js?id=" + encodeURIComponent(id);
+    document.head.appendChild(s);
+    document.getElementById("gtm").disabled = true;
+    document.getElementById("load").disabled = true;
+    document.getElementById("load").textContent = "GTM loaded";
+  });
+})();
+</script>
+</body>
+</html>

@@ -67,12 +67,12 @@ footer{padding:30px 0;color:var(--muted);font-size:12.5px}
 
 <section class="block"><div class="wrap">
   <div class="sec-label"><span>2SK iframe × 4</span><h2>計算機 → 結果 → 付款 → 收據（固定高度）</h2></div>
-  <p style="font-size:12.5px;color:#666;margin:-6px 0 12px">Each block is its own iframe at the height the CMS component requires: 1000 / 750 / 1100 / 600. The page scrolls; the frames do not.</p>
+  <p style="font-size:12.5px;color:#666;margin:-6px 0 12px">Each block is its own iframe at the height the CMS component requires: 1000 / 750 / 1100 / 650. The page scrolls; the frames do not.</p>
   <div id="host">
     <iframe id="f1" src="../embed/?part=input"   title="第一步 · 計算機" scrolling="no" style="height:1000px"></iframe>
     <iframe id="f2" src="../embed/?part=result"  title="第二步 · 估算結果" scrolling="no" style="height:750px"></iframe>
     <iframe id="f3" src="../embed/?part=pay"     title="第三步 · 付款方式" scrolling="no" style="height:1100px"></iframe>
-    <iframe id="f4" src="../embed/?part=receipt" title="扣稅收據" scrolling="no" style="height:600px"></iframe>
+    <iframe id="f4" src="../embed/?part=receipt" title="扣稅收據" scrolling="no" style="height:650px"></iframe>
   </div>
   <details class="snippet">
     <summary>If the component ever allows auto-height, this 7-line listener replaces the fixed numbers</summary>

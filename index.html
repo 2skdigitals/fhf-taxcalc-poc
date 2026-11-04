@@ -57,15 +57,15 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
   <h2>2 · Fixed height — the four blocks</h2>
   <p class="lede" style="margin-top:-4px">The component requires a height, so the experience ships as <b>four separately embeddable blocks</b> instead of one long frame. The page scrolls between them — no nested scrollbars, which is the thing that kills conversion on phones. Each block is stateless (the QR is amountless, so the payment block needs nothing from the calculator).</p>
   <table>
-    <thead><tr><th style="width:26%">Block</th><th style="width:30%">URL</th><th style="width:20%">Set height</th><th>Content range, measured 320–1440px</th></tr></thead>
+    <thead><tr><th style="width:26%">Block</th><th style="width:30%">URL</th><th style="width:20%">Set height</th><th>Content at their widths (328–1280px)</th></tr></thead>
     <tbody>
-      <tr><td><b>1 · Calculator</b></td><td><code id="p1">/embed/?part=input</code></td><td><b>1000px</b></td><td>800 – 990</td></tr>
+      <tr><td><b>1 · Calculator</b></td><td><code id="p1">/embed/?part=input</code></td><td><b>1000px</b></td><td>750 – 951</td></tr>
       <tr><td><b>2 · Result</b></td><td><code id="p2">/embed/?part=result</code></td><td><b>750px</b></td><td>400 – 727</td></tr>
-      <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>1100px</b></td><td>849 – 1068</td></tr>
-      <tr><td><b>4 · Receipt</b></td><td><code id="p4">/embed/?part=receipt</code></td><td><b>600px</b></td><td>400 – 543</td></tr>
+      <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>1100px</b></td><td>844 – 1051</td></tr>
+      <tr><td><b>4 · Receipt</b></td><td><code id="p4">/embed/?part=receipt</code></td><td><b>650px</b></td><td>400 – 629</td></tr>
     </tbody>
   </table>
-  <p class="lede" style="margin:-6px 0 10px;font-size:13px;color:#68707b">Each height is the measured worst case plus a margin, so nothing clips at any width from 320px to 1440px. If the component can take a <b>different height per breakpoint</b>, tell us and we'll hand you a two-number set instead — that removes the remaining vertical slack on desktop.</p>
+  <p class="lede" style="margin:-6px 0 10px;font-size:13px;color:#68707b">These are the worst cases across every width their page actually produces (iframe 328px on a small phone → 1280px on a wide desktop), plus margin. If the component can take a <b>different height per breakpoint</b>, tell us and we'll hand you a two-number set instead — that removes the remaining vertical slack on desktop.</p>
   <p class="lede" style="margin:0 0 34px;font-size:13px;color:#68707b">All four still work as a single page if you prefer one block: <code>/embed/</code> (≈3700px — not recommended; that is the version with an internal scrollbar).</p>
 
   <h2>3 · The test bench + the context preview</h2>
@@ -85,6 +85,11 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
       <h3>Calculator, standalone →</h3>
       <p>Standalone. Works in any iframe, any width, 320px to 1440px.</p>
     </a>
+    <a class="card" href="./events/">
+      <div class="n">GA / events</div>
+      <h3>Event verification →</h3>
+      <p>The four blocks with the GTM bridge running live: every event, its payload, and a check that no amount ever appears. Paste a container ID to see them in GTM Preview.</p>
+    </a>
     <a class="card" href="./scan.html?rail=payme">
       <div class="n">QR proof</div>
       <h3>Scan landing →</h3>
@@ -95,7 +100,7 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
   <h2>4 · What to record (one pass, five minutes)</h2>
   <ol>
     <li>Paste <b>Block 1</b> at <b>1000px</b>. Confirm it renders and that <b>no internal scrollbar</b> appears (that is the whole point of the height table — the content must fit the box).</li>
-    <li>Repeat for Blocks 2–4 at 750 / 1100 / 600px. If any block clips, tell us the width and we adjust the block, not the number.</li>
+    <li>Repeat for Blocks 2–4 at 750 / 1100 / 650px. If any block clips, tell us the width and we adjust the block, not the number.</li>
     <li>If the component sets a <b>sandbox</b>, add it in the bench first — then confirm the credit-card tile still leaves the iframe and lands on hollows.org/donate.</li>
     <li>Press <b>“測試叫起 PayMe”</b> in the bench and read the message: does the browser let the frame open the wallet app, or is the QR the only mobile path?</li>
     <li>Fill the receipt form and submit — <b>Checks</b> must turn <code>email_capture</code> to PASS.</li>

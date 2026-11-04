@@ -417,6 +417,7 @@ body[data-part] .card{width:100%}
   function track(name, params){
     var p = params || {};
     post({type:"event", name:name, params:p});
+    if (cfg.debug) console.log("[fhf-taxcalc]", name, p);
     if (window.dataLayer && cfg.gtm === "in") window.dataLayer.push(Object.assign({event:name}, p));
     dbg("event: " + name + " " + JSON.stringify(p));
     if (name === "calc_result_shown") sent.result = true;
@@ -457,7 +458,8 @@ body[data-part] .card{width:100%}
     height: qs.get("h") || "auto",   // "auto" | number (fixed host height, px)
     theme: qs.get("theme") || "light",
     gtm: qs.get("gtm") || "parent",  // "parent" | "in" | "off"
-    locale: qs.get("locale") || "zh-Hant-HK"
+    locale: qs.get("locale") || "zh-Hant-HK",
+    debug: qs.get("debug") === "1"
   };
   if (cfg.height !== "auto") document.documentElement.setAttribute("data-fit","fixed");
   if (qs.get("debug") === "1") $("#dbg").classList.add("on");

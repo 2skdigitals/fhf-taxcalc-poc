@@ -207,9 +207,9 @@ with sync_playwright() as pw:
 
     # ---------------------------------------------------------------- H · fixed-height parts
     # The real acceptance test: open each block at the height the client will set,
-    # and assert the content does not overflow that box at any width.
-    BUDGET = {"input": 1000, "result": 750, "pay": 1100, "receipt": 600}
-    for w in (320, 390, 768, 1440):
+    # at the widths their page actually produces (iframe 328px → 1280px).
+    BUDGET = {"input": 1000, "result": 750, "pay": 1100, "receipt": 650}
+    for w in (328, 568, 944, 1280):
         for part, budget in BUDGET.items():
             pf = browser.new_page(viewport={"width": w, "height": budget}, is_mobile=(w < 600), has_touch=(w < 600))
             pf.goto(f"{BASE}/embed/?part={part}", wait_until="load")
@@ -225,6 +225,20 @@ with sync_playwright() as pw:
                 errs.append("horizontal overflow")
             check(f"part '{part}' fits {budget}px at {w}px", errs)
             pf.close()
+
+    # ---------------------------------------------------------------- I · the event verification page
+    pe = browser.new_page(viewport={"width": 1280, "height": 900})
+    pe.goto(f"{BASE}/events/", wait_until="load")
+    pe.wait_for_timeout(1200)
+    ef = pe.frames[1]
+    ef.fill("#gift", "2500")
+    pe.wait_for_timeout(1400)
+    ev = pe.evaluate("""() => ({n: document.getElementById('n').textContent,
+        hon: document.getElementById('hon').textContent,
+        rows: document.querySelectorAll('#rows tr').length})""")
+    check("the event page receives calc_started + calc_result_shown and stays clean",
+          [] if (int(ev["n"]) >= 2 and ev["hon"].strip() == "clean" and ev["rows"] >= 2) else [str(ev)])
+    pe.close()
 
     # ---------------------------------------------------------------- G · the bench
     pg4 = browser.new_page(viewport={"width": 1440, "height": 1000})
