@@ -20,17 +20,32 @@ The host page owns: page copy, SEO, schema, GTM container, consent, navigation, 
 
 ---
 
-## 2 · Required iframe attributes
+## 2 · The component requires a height — so the page ships as four blocks
 
-### Recommended (works out of the box)
+Measured on the live widget at ten widths from 320px to 1440px. **Set exactly these numbers** and every block fits at every width, with no internal scrollbar.
+
+| # | Block | URL | Height to set | Content range (320–1440px) |
+|---|---|---|---|---|
+| 1 | Calculator | `/embed/?part=input` | **1100px** | 776 – 1059 |
+| 2 | Result | `/embed/?part=result` | **800px** | 378 – 718 |
+| 3 | Payment | `/embed/?part=pay` | **1100px** | 834 – 1058 |
+| 4 | Receipt | `/embed/?part=receipt` | **700px** | 385 – 620 |
+
+Why four blocks rather than one tall frame: with a mandatory height, one embed means either a 3,700px block (absurd) or an internal scrollbar inside a 900px box — and a nested scroll container on a phone is where QR donations die. Four short blocks let the **page** scroll, which every donor already knows how to do. `qa/poc_test.py` asserts each block stays inside its declared height at 390px and 1440px, so the table cannot silently drift.
+
+Each block is **stateless**. The QR is amountless and the payment copy does not print the donor's figure, so nothing has to travel between frames — no relay script, no donor amount crossing an origin boundary.
+
+**If the component can take a different height per breakpoint**, or accepts a CSS value instead of an integer (`min(1100px, 95vh)`), say so: that removes the remaining vertical slack on desktop (input 956px of content in a 1100px box) and we will hand you a two-number set instead.
+
+### Required iframe attributes
 
 ```html
 <iframe
-  id="fhf-calc"
-  src="https://<host>/embed/"
+  id="fhf-part-1"
+  src="https://<host>/embed/?part=input"
   title="慈善捐款扣稅計算機"
   scrolling="no"
-  style="width:100%;border:0;height:1200px"
+  style="width:100%;border:0;height:1100px"
   loading="lazy"></iframe>
 ```
 
@@ -56,15 +71,15 @@ allow-scripts allow-same-origin allow-popups allow-top-navigation-by-user-activa
 
 ---
 
-## 3 · Auto-height (the only integration code on the host side)
+## 3 · Auto-height (optional now — the component requires a number)
 
-The widget measures itself and posts its height. The host applies it. **7 lines, pasted once** — either in the page template or inside the CMS component's render view.
+The parts are sized by the table in §2. **You do not need any script.** If the component later allows auto-height, this is the only integration code it takes — a seven-line listener that applies the height the widget reports:
 
 ```html
 <script>
 window.addEventListener("message", function (e) {
   if (e.data && e.data.source === "fhf-taxcalc" && e.data.type === "resize") {
-    var f = document.getElementById("fhf-calc");        // ← your iframe id
+    var f = document.getElementById("fhf-part-1");     // ← your iframe id
     if (f && f.contentWindow === e.source) f.style.height = e.data.height + "px";
   }
 });

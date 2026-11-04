@@ -205,6 +205,26 @@ with sync_playwright() as pw:
     check("fixed-height mode is declared and the content is honestly taller than 600px",
           [] if (fit == "fixed" and taller) else [f"data-fit={fit!r} taller={taller}"])
 
+    # ---------------------------------------------------------------- H · fixed-height parts
+    BUDGET = {"input": 1100, "result": 800, "pay": 1100, "receipt": 700}
+    for w in (390, 1440):
+        for part, budget in BUDGET.items():
+            pf = browser.new_page(viewport={"width": w, "height": 400}, is_mobile=(w < 600), has_touch=(w < 600))
+            pf.goto(f"{BASE}/embed/?part={part}", wait_until="load")
+            pf.wait_for_timeout(400)
+            h = pf.evaluate("()=>Math.ceil(document.getElementById('root').getBoundingClientRect().height)+4")
+            vis = pf.evaluate("()=>[...document.querySelectorAll('section')].filter(s=>getComputedStyle(s).display!=='none').map(s=>s.id)")
+            errs = []
+            if h > budget:
+                errs.append(f"content {h}px exceeds the declared {budget}px")
+            if len(vis) != 1:
+                errs.append(f"expected one visible section, got {vis}")
+            ow = pf.evaluate("()=>document.documentElement.scrollWidth > document.documentElement.clientWidth + 1")
+            if ow:
+                errs.append("horizontal overflow")
+            check(f"part '{part}' fits its declared height at {w}px ({h}/{budget})", errs)
+            pf.close()
+
     # ---------------------------------------------------------------- G · the bench
     pg4 = browser.new_page(viewport={"width": 1440, "height": 1000})
     pg4.goto(f"{BASE}/harness/", wait_until="load")

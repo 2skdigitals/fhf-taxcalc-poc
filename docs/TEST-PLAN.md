@@ -10,11 +10,11 @@
 
 | Purpose | URL |
 |---|---|
-| The widget (what goes in the component) | `https://2skdigitals.github.io/fhf-taxcalc-poc/embed/` |
+| The four fixed-height blocks | `https://2skdigitals.github.io/fhf-taxcalc-poc/embed/?part=input` (then `result`, `pay`, `receipt`) |
 | Test bench — configuration matrix + verdicts | `https://2skdigitals.github.io/fhf-taxcalc-poc/harness/` |
 | Page-context preview (mock Optimizely page) | `https://2skdigitals.github.io/fhf-taxcalc-poc/preview/` |
 
-Nothing is production. QR codes are test codes that resolve to a POC page, not merchant codes.
+The component requires a height, so the experience is four blocks, each sized to a measured number (INTERFACE §2). Nothing is production. QR codes are test codes that resolve to a POC page, not merchant codes.
 
 ---
 
@@ -22,15 +22,10 @@ Nothing is production. QR codes are test codes that resolve to a POC page, not m
 
 Work in **their Optimizely staging**, not on the bench alone. The bench tells you what the widget does; staging tells you what *their component* does to it.
 
-### Step 1 — does it render at all
-Paste the widget URL into the component. Confirm the calculator renders, no console errors, no mixed-content warning, no `X-Frame-Options` refusal.
+### Step 1 — the four blocks render at their declared heights
+`input` 1100 · `result` 800 · `pay` 1100 · `receipt` 700. Confirm each renders and that **no internal scrollbar** appears. If one clips, record the width — we adjust the block, not the number.
 
-**Fail signature:** blank box, or "refused to connect". → a header/CSP problem on their side (see INTERFACE §2).
-
-### Step 2 — height
-Leave height on **auto** if the component supports a custom attribute. Otherwise use the height field and start at **600px**, then increase until nothing clips.
-
-Record: **the smallest height at which no content is clipped**, on **desktop and on a phone**. These two numbers are what the build is measured against.
+**Fail signature:** blank box, or "refused to connect" → a header/CSP problem on their side (INTERFACE §2).
 
 ### Step 3 — interaction
 - Type an amount, switch 單次 → 每月. The months control must appear and the total must recalculate.

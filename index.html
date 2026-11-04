@@ -54,7 +54,21 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
 
   <p class="lede" style="margin:-6px 0 34px;font-size:13px;color:#68707b">hollows.org currently sends <b>no Content-Security-Policy and no X-Frame-Options</b>, so nothing needs to change on your side to test this. If a CSP is added later, our origin has to be allowed in <code>frame-src</code>.</p>
 
-  <h2>2 · The test bench + the context preview</h2>
+  <h2>2 · Fixed height — the four blocks</h2>
+  <p class="lede" style="margin-top:-4px">The component requires a height, so the experience ships as <b>four separately embeddable blocks</b> instead of one long frame. The page scrolls between them — no nested scrollbars, which is the thing that kills conversion on phones. Each block is stateless (the QR is amountless, so the payment block needs nothing from the calculator).</p>
+  <table>
+    <thead><tr><th style="width:26%">Block</th><th style="width:30%">URL</th><th style="width:20%">Set height</th><th>Content range, measured 320–1440px</th></tr></thead>
+    <tbody>
+      <tr><td><b>1 · Calculator</b></td><td><code id="p1">/embed/?part=input</code></td><td><b>1100px</b></td><td>776 – 1059</td></tr>
+      <tr><td><b>2 · Result</b></td><td><code id="p2">/embed/?part=result</code></td><td><b>800px</b></td><td>378 – 718</td></tr>
+      <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>1100px</b></td><td>834 – 1058</td></tr>
+      <tr><td><b>4 · Receipt</b></td><td><code id="p4">/embed/?part=receipt</code></td><td><b>700px</b></td><td>385 – 620</td></tr>
+    </tbody>
+  </table>
+  <p class="lede" style="margin:-6px 0 10px;font-size:13px;color:#68707b">Each height is the measured worst case plus a margin, so nothing clips at any width from 320px to 1440px. If the component can take a <b>different height per breakpoint</b>, tell us and we'll hand you a two-number set instead — that removes the remaining vertical slack on desktop.</p>
+  <p class="lede" style="margin:0 0 34px;font-size:13px;color:#68707b">All four still work as a single page if you prefer one block: <code>/embed/</code> (≈3700px — not recommended; that is the version with an internal scrollbar).</p>
+
+  <h2>3 · The test bench + the context preview</h2>
   <div class="cards">
     <a class="card" href="./harness/">
       <div class="n">Test bench</div>
@@ -78,14 +92,14 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
     </a>
   </div>
 
-  <h2>3 · What to record (one pass, five minutes)</h2>
+  <h2>4 · What to record (one pass, five minutes)</h2>
   <ol>
-    <li>Open the <b>test bench</b>. Leave it on <code>auto</code> height — does the iframe grow with content, no inner scrollbar?</li>
-    <li>Switch to a <b>fixed</b> height. Note the smallest height where nothing is clipped (report the number).</li>
-    <li>If the component sets <b>sandbox</b>, add it in the bench and press <b>“測試叫起 PayMe”</b> — the widget reports whether the browser blocked it.</li>
-    <li>Press the <b>credit-card</b> tile — it must leave the iframe (<code>target="_top"</code>), not render a page inside it.</li>
-    <li>Fill the receipt form and submit — check <b>Checks</b> turns <code>email_capture</code> to PASS.</li>
-    <li>Paste a GTM container ID, load it, re-run the steps — do the events appear in <b>dataLayer</b>?</li>
+    <li>Paste <b>Block 1</b> at <b>1100px</b>. Confirm it renders and that <b>no internal scrollbar</b> appears (that is the whole point of the height table — the content must fit the box).</li>
+    <li>Repeat for Blocks 2–4 at 800 / 1100 / 700px. If any block clips, tell us the width and we adjust the block, not the number.</li>
+    <li>If the component sets a <b>sandbox</b>, add it in the bench first — then confirm the credit-card tile still leaves the iframe and lands on hollows.org/donate.</li>
+    <li>Press <b>“測試叫起 PayMe”</b> in the bench and read the message: does the browser let the frame open the wallet app, or is the QR the only mobile path?</li>
+    <li>Fill the receipt form and submit — <b>Checks</b> must turn <code>email_capture</code> to PASS.</li>
+    <li>Paste a GTM container ID, load it, re-run — do the events appear in <b>dataLayer</b>?</li>
     <li>Press <b>Copy test report</b> and send it back.</li>
   </ol>
 
@@ -102,6 +116,10 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
   document.getElementById("u1").textContent = b + "embed/";
   document.getElementById("u2").textContent = b + "embed/?debug=1";
   document.getElementById("u3").textContent = b + "embed/?h=600";
+  ["p1","p2","p3","p4"].forEach(function(id,i){
+    var part = ["input","result","pay","receipt"][i];
+    var el = document.getElementById(id); if (el) el.textContent = b + "embed/?part=" + part;
+  });
 })();
 </script>
 </body>

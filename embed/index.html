@@ -65,6 +65,11 @@ select#months{width:100%;font:inherit;font-size:var(--t-sm);padding:10px 12px;bo
 .bands input:checked{border-color:var(--navy);border-width:5px}
 .bands label:has(input:checked){border-color:var(--navy);background:#f7f7fe}
 .bands .r{color:var(--muted);font-size:var(--t-cap);font-variant-numeric:tabular-nums;white-space:nowrap}
+.band-mobile{display:none;width:100%;font:inherit;font-size:var(--t-sm);padding:11px 12px;border:1px solid var(--line-2);border-radius:var(--radius);background:var(--white)}
+@media (max-width:720px){.bands{display:none}.band-mobile{display:block}}
+/* two-up from 900px: nine bands in five rows is scannable, and it halves the
+   block's height — which is what a mandatory iframe height is measured against */
+@media (min-width:721px){.bands{grid-template-columns:1fr 1fr}}
 .note{font-size:var(--t-cap);color:var(--muted);margin:10px 0 0}
 .note b{color:#4a4a55}
 
@@ -136,6 +141,25 @@ select#months{width:100%;font:inherit;font-size:var(--t-sm);padding:10px 12px;bo
 /* fixed-height host mode: keep the action reachable */
 html[data-fit="fixed"] .wrap{padding-bottom:0}
 
+/* ---------- part mode (the CMS component requires a defined height) ----------
+   Hidden with CSS, never removed from the DOM: the wiring below runs on every
+   element, and a removed node would throw before the listeners are attached. */
+body[data-part] section.card{display:none}
+body[data-part="calc"] #calculator,
+body[data-part="calc"] #result,
+body[data-part="input"] #calculator,
+body[data-part="result"] #result,
+body[data-part="pay"] #payment,
+body[data-part="receipt"] #receipt{display:block}
+/* a single-part embed has nothing to scroll to — the page provides the flow */
+body[data-part="input"] #goto-result,
+body[data-part="result"] #goto-result,
+body[data-part="input"] #upd{display:none}
+html[data-embed="part"] .pocbar,
+html[data-embed="part"] #deeplink-test,
+html[data-embed="part"] .wrap > p.fine{display:none}
+body[data-part="calc"] .wrap > p.fine{display:block;margin-top:14px}
+
 /* debug overlay */
 #dbg{position:fixed;right:8px;bottom:8px;z-index:99;font:11px/1.45 ui-monospace,Menlo,monospace;background:rgba(1,1,78,.92);color:#fff;padding:8px 10px;border-radius:6px;max-width:min(320px,70vw);pointer-events:none;display:none}
 #dbg.on{display:block}
@@ -203,6 +227,19 @@ html[data-fit="fixed"] .wrap{padding-bottom:0}
         <label><input type="radio" name="band" value="r15"><span>HK$2,132,500 – 5,000,000</span><span class="r">標準 15%</span></label>
         <label><input type="radio" name="band" value="r16"><span>HK$5,000,000 以上</span><span class="r">標準 16%</span></label>
       </div>
+      <!-- narrow screens: nine radio rows cost ~400px of a fixed-height frame.
+           A native select is the same choice, thumb-sized, and height-stable. -->
+      <select id="band-mobile" class="band-mobile" aria-label="您嘅全年應評稅入息大約係？（未扣免稅額）">
+        <option value="unknown">唔知道 — 顯示 2% – 17% 範圍</option>
+        <option value="r0">HK$145,000 以下 — 未需繳稅</option>
+        <option value="r2">HK$145,000 – 195,000 — 約 2%</option>
+        <option value="r6">HK$195,000 – 245,000 — 約 6%</option>
+        <option value="r10">HK$245,000 – 295,000 — 約 10%</option>
+        <option value="r14">HK$295,000 – 345,000 — 約 14%</option>
+        <option value="r17" selected>HK$345,000 – 2,132,500 — 約 17%</option>
+        <option value="r15">HK$2,132,500 – 5,000,000 — 標準 15%</option>
+        <option value="r16">HK$5,000,000 以上 — 標準 16%</option>
+      </select>
       <p class="note">唔知道都可以 —— 我哋會顯示 2% 至 17% 嘅估算範圍（最低同最高）；想睇確實數字，揀一個入息範圍就得。
       入息低於約 HK$145,000（單身免稅額）嘅話，可能未需要繳交薪俸稅，呢筆捐款就扣唔到稅。
       入息越高邊際稅率通常越高（最高 17%）；但入息淨額超過約 HK$2,132,500 之後，稅局會改用<b>標準稅率</b>計算
@@ -287,7 +324,7 @@ html[data-fit="fixed"] .wrap{padding-bottom:0}
       <p class="fine">二維碼為靜態碼，本身唔會帶金額，金額要喺付款 App 內自行輸入。</p>
     </div>
 
-    <div class="field" style="border-top:1px solid var(--line);padding-top:12px;margin-top:14px">
+    <div class="field" id="deeplink-test" style="border-top:1px solid var(--line);padding-top:12px;margin-top:14px">
       <p class="hint" style="margin:0 0 8px"><b>App 開啟測試（POC）：</b>撳一下睇 iframe 內能唔能夠叫起付款 App。正式版會用商戶提供嘅 deep link。</p>
       <div class="chips">
         <button type="button" data-deeplink="payme">測試叫起 PayMe</button>
@@ -418,6 +455,29 @@ html[data-fit="fixed"] .wrap{padding-bottom:0}
   };
   if (cfg.height !== "auto") document.documentElement.setAttribute("data-fit","fixed");
   if (qs.get("debug") === "1") $("#dbg").classList.add("on");
+
+  /* ---------- part mode: one fixed-height piece per embed ----------
+     The CMS component requires a defined height, so the page is split into
+     independently embeddable parts. Each part carries only its own sections,
+     which is what makes a single mandatory height survivable.
+       ?part=calc     calculator + result
+       ?part=pay      the three rails + QR
+       ?part=receipt  the receipt request form
+     No state crosses between parts: the QR is amountless, so the payment part
+     needs nothing from the calculator. That is deliberate — it keeps every
+     embed stateless and means no donor figure ever crosses a frame boundary. */
+  var part = qs.get("part");
+  var PART_SECTIONS = {
+    input:   ["calculator"],
+    result:  ["result"],
+    calc:    ["calculator","result"],
+    pay:     ["payment"],
+    receipt: ["receipt"]
+  };
+  if (part && PART_SECTIONS[part]) {
+    document.body.setAttribute("data-part", part);
+    document.documentElement.setAttribute("data-embed", "part");
+  }
 
   window.addEventListener("message", function (e) {
     var d = e.data;
@@ -561,8 +621,15 @@ html[data-fit="fixed"] .wrap{padding-bottom:0}
   $$("input[name=band]").forEach(function (r) {
     r.addEventListener("change", function () {
       firstTouch(); touched = true; st.band = r.value;
+      var bm = $("#band-mobile"); if (bm) bm.value = r.value;
       render(); resultShown();
     });
+  });
+  $("#band-mobile").addEventListener("change", function (e) {
+    firstTouch(); touched = true; st.band = e.target.value;
+    var radio = document.querySelector('input[name="band"][value="' + st.band + '"]');
+    if (radio) radio.checked = true;
+    render(); resultShown();
   });
   $("#goto-result").addEventListener("click", function () { render(); scheduleHeight(); });
 

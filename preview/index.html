@@ -35,7 +35,8 @@ section.block{padding:34px 0;border-bottom:1px solid var(--line)}
 .sec-label span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:#eef2ff;color:#324a8a;font-weight:650}
 .sec-label h2{font-size:1.15rem;margin:0}
 #host{max-width:100%}
-#frame{width:100%;border:0;display:block;background:#fff;min-height:400px}
+#host iframe{width:100%;border:0;display:block;background:#fff}
+#host iframe + iframe{margin-top:14px}
 .snippet{margin-top:14px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .snippet summary{cursor:pointer;padding:10px 14px;font-size:12.5px;color:#4a4a55;background:#fafaff}
 .snippet pre{margin:0;padding:14px;font:11.5px/1.6 ui-monospace,Menlo,monospace;overflow:auto;background:#0f1b2d;color:#cfe0f5}
@@ -65,12 +66,16 @@ footer{padding:30px 0;color:var(--muted);font-size:12.5px}
 </div></div>
 
 <section class="block"><div class="wrap">
-  <div class="sec-label"><span>2SK iframe</span><h2>互動計算機 + 二維碼付款</h2></div>
+  <div class="sec-label"><span>2SK iframe × 4</span><h2>計算機 → 結果 → 付款 → 收據（固定高度）</h2></div>
+  <p style="font-size:12.5px;color:#666;margin:-6px 0 12px">Each block is its own iframe at the height the CMS component requires: 1100 / 800 / 1100 / 700. The page scrolls; the frames do not.</p>
   <div id="host">
-    <iframe id="frame" src="../embed/" title="慈善捐款扣稅計算機" scrolling="no" style="height:1200px"></iframe>
+    <iframe id="f1" src="../embed/?part=input"   title="第一步 · 計算機" scrolling="no" style="height:1100px"></iframe>
+    <iframe id="f2" src="../embed/?part=result"  title="第二步 · 估算結果" scrolling="no" style="height:800px"></iframe>
+    <iframe id="f3" src="../embed/?part=pay"     title="第三步 · 付款方式" scrolling="no" style="height:1100px"></iframe>
+    <iframe id="f4" src="../embed/?part=receipt" title="扣稅收據" scrolling="no" style="height:700px"></iframe>
   </div>
   <details class="snippet">
-    <summary>這 7 行就是自動高度的全部 —— 貼一次，所有用同類元件的頁面都會跟住內容調整高度</summary>
+    <summary>If the component ever allows auto-height, this 7-line listener replaces the fixed numbers</summary>
     <pre>&lt;script&gt;
 window.addEventListener("message", function (e) {
   if (e.data &amp;&amp; e.data.source === "fhf-taxcalc" &amp;&amp; e.data.type === "resize") {
@@ -80,7 +85,6 @@ window.addEventListener("message", function (e) {
 });
 &lt;/script&gt;</pre>
   </details>
-  <p class="note">沒有這段 script 也能運作 —— 但 iframe 會停在固定高度、內部滾動。有這段 script 就完全無滾動條。</p>
 </div></section>
 
 <section class="block"><div class="wrap">
@@ -91,14 +95,6 @@ window.addEventListener("message", function (e) {
 
 <footer><div class="wrap">© The Fred Hollows Foundation (mock preview) · POC only · 計算機為估算，並非稅務建議。</div></footer>
 
-<script>
-/* --- the only integration code the host page needs: auto-height --- */
-window.addEventListener("message", function (e) {
-  if (e.data && e.data.source === "fhf-taxcalc" && e.data.type === "resize") {
-    var f = document.getElementById("frame");
-    if (f && f.contentWindow === e.source) f.style.height = e.data.height + "px";
-  }
-});
-</script>
+
 </body>
 </html>
