@@ -27,8 +27,8 @@ LANGS = ["en", "zh-HK"]
 PARTS = [("calc", "#root"), ("input", "#calculator"), ("result", "#result"),
          ("pay", "#payment"), ("receipt", "#receipt")]
 WIDTHS = [390, 1440]
-DECLARED = {"zh-HK": {"calc": 1650, "input": 900, "result": 800, "pay": 1040, "receipt": 860},
-            "en":    {"calc": 2000, "input": 1000, "result": 960, "pay": 1210, "receipt": 1030}}
+DECLARED = {"zh-HK": {"calc": 1440, "input": 840, "result": 670, "pay": 490, "receipt": 780},
+            "en":    {"calc": 1440, "input": 840, "result": 670, "pay": 490, "receipt": 890}}
 
 rows = []
 with sync_playwright() as pw:

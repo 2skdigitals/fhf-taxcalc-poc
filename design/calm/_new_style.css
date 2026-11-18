@@ -1,0 +1,301 @@
+/* ─────────────────────────────────────────────────────────────
+   Fred Hollows HK · donation tax calculator — "quiet editorial"
+   One column, hairline rules, a real type scale. No cards, no
+   shadows, no gradients: structure comes from rules and space.
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --orange:#E97824; --orange-h:#D06A1C; --on-action:#0A0909;
+  --navy:#01014E;
+  --ink:#232323; --ink-2:#4E4E58; --muted:#76767F;
+  --line:rgba(10,9,9,.12); --line-2:rgba(10,9,9,.22);
+  --white:#fff; --field:#F6F6FD;
+  --sans:system-ui,-apple-system,"PingFang HK","Noto Sans HK","Hiragino Sans HK","Microsoft JhengHei",Helvetica,Arial,sans-serif;
+  --err:#A3161C; --ok:#1a6b3c;
+
+  /* type roles — five steps plus the display figure */
+  --t-eyebrow:.75rem;                  /* 12 · captions, numerals in rows */
+  --t-cap:.8125rem;                    /* 13 · labels, notes, disclaimers */
+  --t-sm:.9375rem;                     /* 15 · controls, ledger rows, details */
+  --t-body:1.0625rem;                  /* 17 · running text */
+  --t-num:1.375rem;                    /* 22 · figures in the strip */
+  --t-h:clamp(1.5rem,3.4vw,2rem);     /* 24→32 · block heading */
+  --t-lede:clamp(1.0625rem,2.2vw,1.25rem); /* 17→20 · one statement */
+  --t-display:clamp(2.5rem,8.4vw,3.5rem);  /* 40→56 · the number */
+
+  --gut:clamp(18px,4.6vw,32px);
+  --measure:34rem;                     /* prose stops at ~62 characters */
+  --rule:1px solid var(--line);
+  --ease:cubic-bezier(.23,1,.32,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:light}
+html,body{margin:0;padding:0;background:transparent}
+body{
+  font-family:var(--sans);font-weight:400;font-size:var(--t-body);line-height:1.6;
+  color:var(--ink);-webkit-font-smoothing:antialiased;
+  overflow-wrap:break-word;word-break:normal;
+  font-variant-numeric:tabular-nums;
+}
+img,svg{display:block;max-width:100%}
+a{color:var(--navy)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--navy);outline-offset:3px}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+::selection{background:rgba(1,1,78,.12)}
+
+/* ── the column ────────────────────────────────────────────── */
+.wrap{max-width:40rem;margin:0 auto;padding:0 var(--gut) 8px}
+section.panel{border-top:var(--rule);padding:clamp(20px,3.2vw,30px) 0 clamp(18px,2.8vw,26px)}
+section.panel + section.panel{margin-top:0}
+
+h2{
+  font-size:var(--t-h);line-height:1.15;font-weight:600;letter-spacing:-.022em;
+  margin:0;color:var(--ink);text-wrap:balance;
+}
+.lede{font-size:var(--t-body);line-height:1.5;color:var(--ink-2);margin:10px 0 0;max-width:var(--measure)}
+.hint{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:8px 0 0;max-width:var(--measure)}
+.fine{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:14px 0 0;max-width:var(--measure)}
+.note{font-size:var(--t-cap);line-height:1.6;color:var(--muted);margin:12px 0 0;max-width:var(--measure)}
+
+/* ── 1 · your gift ─────────────────────────────────────────── */
+.fieldset{border:0;margin:0;padding:0;min-width:0}
+legend.flabel{display:block;width:100%;padding:0;margin:0 0 2px}
+.field{margin-top:22px}
+.field:first-child{margin-top:16px}
+.flabel{display:block;font-size:var(--t-cap);color:var(--ink-2);font-weight:500;margin-bottom:2px}
+.gotoline{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:24px}
+.gotoline .btn{width:auto;min-height:48px;padding:12px 24px}
+
+/* one-off / monthly as document tabs, not a pill track */
+.seg{display:flex;gap:28px;border-bottom:var(--rule);margin-top:14px}
+.seg label{
+  position:relative;display:inline-flex;align-items:center;min-height:44px;
+  font-size:var(--t-sm);color:var(--muted);cursor:pointer;
+  transition:color 140ms var(--ease);
+}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label:hover{color:var(--ink)}
+.seg label:has(input:checked){color:var(--ink);font-weight:600}
+.seg label:has(input:checked)::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--navy);
+}
+.seg label:has(input:focus-visible){outline:2px solid var(--navy);outline-offset:3px}
+
+/* the amount is the biggest number on the page after the result */
+.amt{display:flex;align-items:baseline;gap:.4em;border-bottom:var(--rule);padding-bottom:6px;transition:border-color 140ms var(--ease)}
+.amt:focus-within{border-bottom-color:var(--navy);box-shadow:0 1px 0 var(--navy)}
+.amt .pre{font-size:var(--t-sm);color:var(--muted);flex:0 0 auto}
+.amt input{
+  flex:1 1 auto;min-width:0;border:0;background:none;outline:0;padding:6px 0;
+  font-family:inherit;font-size:clamp(1.5rem,5.2vw,1.875rem);font-weight:600;
+  letter-spacing:-.025em;line-height:1.25;font-variant-numeric:tabular-nums;color:var(--ink);
+}
+
+/* quick amounts read as a row of values in a table */
+.quick{display:flex;flex-wrap:wrap;align-items:center;margin:0 0 0 -.75rem}
+.quick .qlab{font-size:var(--t-cap);color:var(--muted);padding:0 .5rem 0 .75rem;min-height:44px;display:flex;align-items:center}
+.quick button{
+  border:0;background:none;padding:0 .75rem;min-height:44px;cursor:pointer;
+  font-size:var(--t-sm);color:var(--ink-2);font-variant-numeric:tabular-nums;
+  transition:color 140ms var(--ease);
+}
+.quick button + button{box-shadow:inset 1px 0 0 var(--line)}
+.quick button:hover{color:var(--navy)}
+
+select#months,select.band-select{
+  width:100%;font:inherit;font-size:var(--t-sm);color:var(--ink);
+  min-height:44px;padding:8px 30px 9px 0;border:0;border-bottom:var(--rule);
+  border-radius:0;background:transparent;
+  -webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 9px) 55%,calc(100% - 3px) 55%;
+  background-size:6px 6px,6px 6px;background-repeat:no-repeat;
+}
+select#months:focus,select.band-select:focus{outline:0;border-bottom-color:var(--navy);box-shadow:0 1px 0 var(--navy)}
+
+/* the income ladder — a ruled table, two columns from 721px */
+.bands{display:grid;border-top:var(--rule);margin-top:12px}
+.bands label{
+  display:grid;grid-template-columns:13px minmax(0,1fr) auto;gap:8px;align-items:center;
+  min-height:44px;padding:9px 0;border-bottom:var(--rule);
+  font-size:.8125rem;color:var(--ink-2);cursor:pointer;white-space:nowrap;
+  transition:color 140ms var(--ease),background-color 140ms var(--ease);
+}
+.bands label:hover{color:var(--ink);background:rgba(1,1,78,.022)}
+.bands input{
+  appearance:none;-webkit-appearance:none;width:13px;height:13px;margin:0;
+  border:1.5px solid #9a9aa8;border-radius:50%;flex:0 0 auto;
+  transition:border-color 140ms var(--ease),border-width 140ms var(--ease);
+}
+.bands input:checked{border-color:var(--navy);border-width:4.5px}
+.bands label:has(input:checked){color:var(--ink);font-weight:600}
+.bands .r{
+  font-size:.6875rem;color:var(--muted);font-weight:400;
+  font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;
+}
+.bands label:has(input:checked) .r{color:var(--navy)}
+.band-select{display:none;margin-top:12px}
+
+/* ── disclosure ────────────────────────────────────────────── */
+details.q{margin-top:14px;border-top:var(--rule)}
+details.q summary{
+  list-style:none;display:flex;align-items:center;gap:10px;min-height:44px;
+  cursor:pointer;font-size:var(--t-sm);color:var(--navy);
+  transition:color 140ms var(--ease);
+}
+details.q summary::-webkit-details-marker{display:none}
+details.q summary::before{
+  content:"";flex:0 0 auto;width:9px;height:9px;margin-right:2px;
+  border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;
+  transform:rotate(-45deg) translate(-1px,-1px);
+  transition:transform 140ms var(--ease);
+}
+details.q[open] summary::before{transform:rotate(45deg) translate(-2px,-2px)}
+details.q summary:hover{color:var(--ink)}
+details.q > :not(summary){margin:2px 0 10px}
+details.q p{font-size:var(--t-sm);line-height:1.62;color:var(--ink-2);max-width:var(--measure)}
+details.q p + p{margin-top:8px}
+details.q ul{margin:6px 0 10px;padding-left:1.1em;font-size:var(--t-sm);line-height:1.6;color:var(--ink-2);max-width:var(--measure)}
+details.q li{margin:3px 0}
+
+/* ── 2 · what it costs you ─────────────────────────────────── */
+.hero{border-top:var(--rule)}
+.net-label{font-size:var(--t-cap);color:var(--muted);margin:14px 0 0}
+.net{
+  font-size:var(--t-display);font-weight:600;letter-spacing:-.038em;line-height:1.02;
+  margin:6px 0 0;color:var(--ink);font-variant-numeric:tabular-nums;
+}
+.net .cur{font-size:.4em;font-weight:500;letter-spacing:0;color:var(--muted);margin-right:.16em;vertical-align:.34em}
+.net.is-range{font-size:clamp(1.75rem,6vw,2.5rem);letter-spacing:-.03em}
+.net.swap{opacity:.55;transition:opacity 140ms var(--ease)}
+
+/* three figures on one ruled band, tabular so the digits line up */
+.figs{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  margin:20px 0 0;border-top:var(--rule);border-bottom:var(--rule);
+}
+.figs > div{padding:13px 14px 14px 0;min-width:0}
+.figs > div + div{border-left:var(--rule);padding-left:16px}
+.figs dt{font-size:var(--t-cap);color:var(--muted);margin:0 0 5px;line-height:1.35}
+.figs dd{margin:0;font-size:var(--t-num);font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink)}
+.figs dd.is-range{font-size:var(--t-sm);white-space:nowrap;line-height:1.4;letter-spacing:0;font-weight:600}
+
+.benefit{font-size:var(--t-lede);line-height:1.45;letter-spacing:-.006em;color:var(--ink);margin:22px 0 0;max-width:var(--measure)}
+.assump{font-size:var(--t-cap);line-height:1.6;color:var(--muted);margin:16px 0 0;max-width:var(--measure)}
+.assump + .assump{margin-top:5px}
+.scope{font-size:var(--t-cap);line-height:1.55;color:var(--ink-2);margin:14px 0 0;max-width:var(--measure)}
+
+/* ── 3 · how you give ──────────────────────────────────────── */
+.rails{display:grid;border-top:var(--rule);margin-top:18px}
+.rails a{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:1px 16px;
+  min-height:64px;padding:13px 0;border-bottom:var(--rule);
+  text-decoration:none;color:var(--ink);
+  transition:color 140ms var(--ease);
+}
+.rails .nm{font-size:var(--t-body);font-weight:600;letter-spacing:-.01em}
+.rails .sub{grid-column:1;font-size:var(--t-cap);color:var(--muted);line-height:1.45}
+.rails .go{
+  grid-row:1 / span 2;grid-column:2;align-self:center;font-size:1rem;color:var(--muted);
+  transition:transform 140ms var(--ease),color 140ms var(--ease);
+}
+.rails a:hover{color:var(--navy)}
+.rails a:hover .go{transform:translate(2px,-2px);color:var(--navy)}
+.alt{margin:16px 0 0;font-size:var(--t-sm)}
+.alt a{color:var(--navy);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-color:rgba(1,1,78,.32);min-height:44px;display:inline-flex;align-items:center}
+.alt a:hover{text-decoration-color:var(--navy)}
+
+/* ── 4 · claim your receipt ────────────────────────────────── */
+.rform{display:grid;gap:18px;margin-top:18px}
+.rrow{display:grid;gap:18px}
+.rform label{display:block;font-size:var(--t-cap);color:var(--muted);margin-bottom:1px}
+.rform input[type=text],.rform input[type=email]{
+  width:100%;font:inherit;font-size:var(--t-body);color:var(--ink);
+  min-height:44px;padding:6px 0 8px;border:0;border-bottom:var(--rule);border-radius:0;
+  background:none;outline:0;
+  transition:border-color 140ms var(--ease);
+}
+.rform input::placeholder{color:#A9A9B2}
+.rform input:focus{border-bottom-color:var(--navy);box-shadow:0 1px 0 var(--navy)}
+.rform .consent{
+  display:grid;grid-template-columns:20px minmax(0,1fr);gap:12px;align-items:start;
+  min-height:44px;padding:6px 0;cursor:pointer;
+  font-size:var(--t-cap);line-height:1.55;color:var(--ink-2);font-weight:400;
+}
+.rform .consent input{
+  appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:1px 0 0;
+  border:1.5px solid #9a9aa8;border-radius:2px;background:none;cursor:pointer;
+  transition:border-color 140ms var(--ease),background-color 140ms var(--ease);
+}
+.rform .consent input:checked{border-color:var(--navy);background:var(--navy)}
+.rform .consent input:checked::after{
+  content:"";display:block;width:6px;height:11px;margin:1px 0 0 6px;
+  border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(40deg);
+}
+.msg{font-size:var(--t-cap);margin:5px 0 0;color:var(--err)}
+.msg.ok{color:var(--ok)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;
+  min-height:50px;padding:13px 24px;border:0;border-radius:2px;
+  background:var(--orange);color:var(--on-action);
+  font-size:var(--t-body);font-weight:600;letter-spacing:.002em;
+  cursor:pointer;text-decoration:none;
+  transition:background-color 140ms var(--ease),transform 140ms var(--ease);
+}
+.btn:hover{background:var(--orange-h)}
+.btn:active{transform:scale(.988)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+
+#dbg{position:fixed;right:8px;bottom:8px;z-index:99;font:11px/1.45 ui-monospace,Menlo,monospace;background:rgba(1,1,78,.92);color:#fff;padding:8px 10px;border-radius:6px;max-width:min(320px,70vw);pointer-events:none;display:none}
+#dbg.on{display:block}
+#dbg b{color:#ffd7a8}
+
+/* ── part mode: the CMS requires a defined height ──────────── */
+html[data-fit="fixed"] .wrap{padding-bottom:0}
+body[data-part] section.panel{display:none}
+body[data-part="calc"] #calculator,
+body[data-part="calc"] #result,
+body[data-part="input"] #calculator,
+body[data-part="result"] #result,
+body[data-part="pay"] #payment,
+body[data-part="receipt"] #receipt{display:block}
+body[data-part="input"] #goto-row,
+body[data-part="result"] #goto-row,
+body[data-part="calc"] #goto-row{display:none!important}
+html[data-embed="part"] #deeplink-test,
+html[data-embed="part"] .wrap > p.fine{display:none}
+body[data-part="calc"] .wrap > p.fine{display:block}
+html[data-embed="part"] .wrap,
+body[data-part] .wrap{min-height:100vh;padding-block:2px}
+
+/* ── phones ────────────────────────────────────────────────── */
+@media (max-width:720px){
+  .bands{display:none}
+  .band-select{display:block}
+}
+@media (min-width:721px){
+  .bands{grid-template-columns:1fr 1fr;column-gap:24px}
+  /* nine rungs, two columns: the odd one out closes the table on a full row */
+  .bands label:last-child{grid-column:1 / -1}
+}
+@media (min-width:560px){
+  .rrow{grid-template-columns:1fr 1fr}
+}
+@media (max-width:560px){
+  .figs{grid-template-columns:1fr}
+  .figs > div{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:11px 0}
+  .figs > div + div{border-left:0;padding-left:0;border-top:var(--rule)}
+  .figs dt{margin:0}
+  .figs dd{font-size:1.1875rem;text-align:right}
+  .figs dd.is-range{font-size:var(--t-sm);white-space:normal;max-width:62%}
+  .seg{gap:24px}
+}
+@media (max-width:400px){
+  select.band-select{font-size:.8125rem;padding-right:26px}
+  .quick{margin-left:-.5rem}
+  .quick button{padding:0 .5rem;font-size:var(--t-sm)}
+  .quick .qlab{padding:0 .25rem 0 .5rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:1ms!important}
+}

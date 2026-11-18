@@ -1,0 +1,32 @@
+{
+ "calc/zh-HK": {
+  "peak": 1380,
+  "at": 944,
+  "min": 1136
+ },
+ "pay/zh-HK": {
+  "peak": 434,
+  "at": 944,
+  "min": 407
+ },
+ "receipt/zh-HK": {
+  "peak": 759,
+  "at": 320,
+  "min": 621
+ },
+ "calc/en": {
+  "peak": 1421,
+  "at": 944,
+  "min": 1177
+ },
+ "pay/en": {
+  "peak": 434,
+  "at": 944,
+  "min": 407
+ },
+ "receipt/en": {
+  "peak": 845,
+  "at": 320,
+  "min": 655
+ }
+}

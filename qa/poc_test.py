@@ -93,10 +93,10 @@ with sync_playwright() as pw:
           # a band, not a single rate: the crossing of the standard/progressive tie
           # at 2,132,500 means the band's ends save at 15% and 17%, so the row
           # may not be labelled 邊際 or 標準 any more.
-          "rateLabel": "估算採用的稅率"}),
+          "rateLabel": "採用的稅率"}),
         ("monthly 1,300 x 6 in the 17% band -> 7,800 / 1,092-1,326", "monthly", 1300, 6, "r17",
          {"gift": "HK$7,800", "saved": "−HK$1,092 至 −HK$1,326", "net": "HK$6,474 – 6,708",
-          "giftLabel": "全年捐款總額（6 個月）"}),
+          "giftLabel": "全年總額（6 個月）"}),
         ("monthly 1,300 x 4 in the 2% band -> 5,200 / 0-104", "monthly", 1300, 4, "r2",
          {"gift": "HK$5,200", "saved": "−HK$0 至 −HK$104", "net": "HK$5,096 – 5,200",
           "rate": "0% – 2%"}),
@@ -135,7 +135,7 @@ with sync_playwright() as pw:
     # ends — and 42,500 for a 250,000 gift. Neither may come back.
     check("the 35% ceiling is computed, and a band renders both of its ends",
           [] if (got["saved"] == "−HK$13,245 至 −HK$29,750"
-                 and got["savedLabel"] == "預計節省稅款"
+                 and got["savedLabel"] == "節省稅款"
                  and "35%" in got["cap"] and "未扣上限" not in got["savedLabel"]
                  and "42,500" not in got["saved"]) else
           [f"saved={got['saved']!r} label={got['savedLabel']!r} cap={got['cap'][:60]!r}"])
@@ -146,7 +146,7 @@ with sync_playwright() as pw:
     settle(pg, 300)
     got = f.evaluate(READ)
     check("monthly caption shows the arithmetic",
-          [] if "每月 HK$1,300 × 4 個月 = 全年合計 HK$5,200" in got["caption"] else
+          [] if "每月 HK$1,300 × 4 個月 = 全年 HK$5,200" in got["caption"] else
           [repr(got["caption"])])
 
     # ---------------------------------------------------------------- C
@@ -274,7 +274,7 @@ with sync_playwright() as pw:
     # 320 to 1440, plus 50–73px of slack. `calc` is in here because the client
     # embedded it: at 1,020px its content (1,499px at 320px) produced the second,
     # inner scrollbar they reported on mobile.
-    BUDGET = {"calc": 1650, "input": 900, "result": 800, "pay": 1040, "receipt": 860}
+    BUDGET = {"calc": 1440, "input": 840, "result": 670, "pay": 490, "receipt": 780}
     SECTIONS = {"calc": ["calculator", "result"], "input": ["calculator"],
                 "result": ["result"], "pay": ["payment"], "receipt": ["receipt"]}
     for w in (328, 568, 944, 1280):
@@ -335,15 +335,19 @@ with sync_playwright() as pw:
     bench.fill("#gift", "175,000")
     bench.wait_for_timeout(250)
     line = bench.evaluate("()=>document.getElementById('benefit').textContent")
+    strip = bench.evaluate("()=>document.getElementById('saved').textContent")
     # The line may not promise more than the cap allows, and it may not say
     # "lower than X" either — with the cap computed, X IS the achievable figure.
+    # The figure itself lives in the figures strip (the sentence states the cap,
+    # it does not repeat the number), so assert it there and keep the ban here.
     check("benefit line computes the 35% ceiling instead of promising a lower figure",
-          [] if ("35% 上限" in line and "HK$29,750" in line
-                 and "會低於" not in line and "42,500" not in line) else [line])
+          [] if ("35% 上限" in line and "HK$29,750" in strip
+                 and "會低於" not in line and "42,500" not in line
+                 and "42,500" not in strip) else [f"line={line!r} strip={strip!r}"])
 
     # ---------------------------------------------------------------- L · C2 declarations
     d = bench.evaluate("""()=>({
-        scope: (document.querySelector('p.fine.scope')||{}).textContent || '',
+        scope: (document.querySelector('.scope')||{}).textContent || '',
         spouse: (document.getElementById('spouse')||{}).textContent || '',
         disc: (document.getElementById('disclaimer')||{}).textContent || '',
         closed: !(document.getElementById('disclaimer')||{hasAttribute:()=>false}).hasAttribute('open'),
@@ -352,11 +356,11 @@ with sync_playwright() as pw:
     check("scope line states salaries-tax-only and 並非稅務建議",
           [] if ("薪俸稅" in d["scope"] and "並非稅務建議" in d["scope"]) else [d["scope"][:80]])
     check("spouse note does not promise the excess is freely transferable",
-          [] if ("BIR60" in d["spouse"] and "35%" in d["spouse"] and "並非可全數轉移" in d["spouse"])
+          [] if ("BIR60" in d["spouse"] and "35%" in d["spouse"] and "不能全數轉移" in d["spouse"])
           else [d["spouse"][:120]])
     check("disclaimer exists, is collapsed by default, and is reachable from the consent line",
-          [] if (d["closed"] and "免責聲明" in d["link"] and "稅務局的評定為準" in d["disc"]
-                 and "不會收集或儲存" in d["disc"]) else [str(d)[:200]])
+          [] if (d["closed"] and "免責聲明" in d["link"] and "稅務局評定為準" in d["disc"]
+                 and "不收集、不儲存" in d["disc"]) else [str(d)[:200]])
 
     # ---------------------------------------------------------------- M · C4 tap targets
     # Measured per block, because the controls live in different blocks and a

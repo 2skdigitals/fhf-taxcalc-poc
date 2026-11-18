@@ -7,433 +7,502 @@
 <title>慈善捐款扣稅計算機 — POC</title>
 <link rel="icon" href="data:,">
 <style>
+/* ─────────────────────────────────────────────────────────────
+   Fred Hollows HK · donation tax calculator — "quiet editorial"
+   One column, hairline rules, a real type scale. No cards, no
+   shadows, no gradients: structure comes from rules and space.
+   ───────────────────────────────────────────────────────────── */
 :root{
-  --orange:#e97824; --orange-h:#d06a1c; --on-action:#0a0909;
-  --navy:#01014E; --field:#F6F6FD; --white:#ffffff;
-  --ink:#282828; --muted:#666; --sage:#A5C8BE;
-  --line:#e8e8f2; --line-2:#d7d7e6; --radius:8px;
+  --orange:#E97824; --orange-h:#D06A1C; --on-action:#0A0909;
+  --navy:#01014E;
+  --ink:#232323; --ink-2:#4E4E58; --muted:#76767F;
+  --line:rgba(10,9,9,.12); --line-2:rgba(10,9,9,.22);
+  --white:#fff; --field:#F6F6FD;
   --sans:system-ui,-apple-system,"PingFang HK","Noto Sans HK","Hiragino Sans HK","Microsoft JhengHei",Helvetica,Arial,sans-serif;
   --err:#A3161C; --ok:#1a6b3c;
-  --t-eyebrow:.75rem; --t-cap:.8125rem; --t-sm:.9375rem; --t-body:1.0625rem;
-  --t-num:clamp(1.5rem,2.4vw,2.125rem);
-  --panel:20px;
+
+  /* type roles — five steps plus the display figure */
+  --t-eyebrow:.75rem;                  /* 12 · captions, numerals in rows */
+  --t-cap:.8125rem;                    /* 13 · labels, notes, disclaimers */
+  --t-sm:.9375rem;                     /* 15 · controls, ledger rows, details */
+  --t-body:1.0625rem;                  /* 17 · running text */
+  --t-num:1.375rem;                    /* 22 · figures in the strip */
+  --t-h:clamp(1.5rem,3.4vw,2rem);     /* 24→32 · block heading */
+  --t-lede:clamp(1.0625rem,2.2vw,1.25rem); /* 17→20 · one statement */
+  --t-display:clamp(2.5rem,8.4vw,3.5rem);  /* 40→56 · the number */
+
+  --gut:clamp(18px,4.6vw,32px);
+  --measure:34rem;                     /* prose stops at ~62 characters */
+  --rule:1px solid var(--line);
+  --ease:cubic-bezier(.23,1,.32,1);
 }
 *,*::before,*::after{box-sizing:border-box}
 html{color-scheme:light}
 html,body{margin:0;padding:0;background:transparent}
 body{
-  font-family:var(--sans);font-weight:400;font-size:var(--t-body);line-height:1.65;
-  color:var(--ink);-webkit-font-smoothing:antialiased;overflow-wrap:anywhere;
+  font-family:var(--sans);font-weight:400;font-size:var(--t-body);line-height:1.6;
+  color:var(--ink);-webkit-font-smoothing:antialiased;
+  overflow-wrap:break-word;word-break:normal;
+  font-variant-numeric:tabular-nums;
 }
 img,svg{display:block;max-width:100%}
-a{color:inherit}
+a{color:var(--navy)}
 button{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+:focus-visible{outline:2px solid var(--navy);outline-offset:3px}
 .sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+::selection{background:rgba(1,1,78,.12)}
 
-.wrap{padding:0 0 4px;max-width:960px;margin:0 auto}
-.card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:var(--panel)}
-.card + .card{margin-top:14px}
-.eyebrow{font-size:var(--t-eyebrow);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
-h2{font-size:clamp(1.15rem,1.9vw,1.4rem);line-height:1.25;margin:0 0 6px;letter-spacing:-.01em}
-h3{font-size:1rem;line-height:1.35;margin:0 0 6px}
-.lede{font-size:var(--t-sm);color:var(--muted);margin:0 0 18px}
+/* ── the column ────────────────────────────────────────────── */
+.wrap{max-width:40rem;margin:0 auto;padding:0 var(--gut) 8px}
+section.panel{border-top:var(--rule);padding:clamp(20px,3.2vw,30px) 0 clamp(18px,2.8vw,26px)}
+section.panel + section.panel{margin-top:0}
 
-/* ---------- step 1 · inputs ---------- */
-fieldset{border:0;margin:0;padding:0;min-width:0}
-legend{font-size:var(--t-sm);font-weight:600;padding:0;margin-bottom:8px}
-.seg{display:flex;gap:6px;background:var(--field);border:1px solid var(--line-2);border-radius:999px;padding:4px}
-.seg label{flex:1;position:relative;text-align:center;font-size:var(--t-sm);cursor:pointer;border-radius:999px;padding:8px 10px}
-.seg input{position:absolute;opacity:0;width:1px;height:1px}
-.seg label:has(input:checked){background:var(--white);box-shadow:0 1px 2px rgba(10,9,9,.12);font-weight:600}
-.seg label:has(input:focus-visible){outline:2px solid var(--navy);outline-offset:2px}
-.field{margin-top:18px}
-.field > label,.field > .glabel{display:block;font-size:var(--t-sm);font-weight:600;margin-bottom:8px}
-.amt{display:flex;align-items:center;gap:8px;border:1px solid var(--line-2);border-radius:var(--radius);padding:10px 12px;background:var(--white)}
-.amt:focus-within{border-color:var(--navy);box-shadow:0 0 0 3px rgba(1,1,78,.08)}
-.amt .pre{color:var(--muted);font-size:var(--t-sm)}
-.amt input{flex:1;border:0;outline:0;font-size:1.25rem;font-weight:600;min-width:0;background:transparent;font-variant-numeric:tabular-nums}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.chips button{border:1px solid var(--line-2);background:var(--white);border-radius:999px;padding:6px 12px;font-size:var(--t-cap);cursor:pointer}
-.chips button:hover{border-color:var(--navy)}
-.hint{font-size:var(--t-cap);color:var(--muted);margin:8px 0 0}
-select#months{width:100%;font:inherit;font-size:var(--t-sm);padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--radius);background:var(--white)}
-.bands{display:grid;gap:4px}
-.bands label{display:grid;grid-template-columns:18px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:9px 10px;cursor:pointer;font-size:var(--t-sm)}
-.bands label:hover{border-color:var(--line-2);background:#fdfdfe}
-.bands input{appearance:none;width:16px;height:16px;border:1.5px solid #9a9aa8;border-radius:50%;margin:0;position:relative}
-.bands input:checked{border-color:var(--navy);border-width:5px}
-.bands label:has(input:checked){border-color:var(--navy);background:#f7f7fe}
-.bands .r{color:var(--muted);font-size:var(--t-cap);font-variant-numeric:tabular-nums;white-space:nowrap}
-.band-mobile{display:none;width:100%;font:inherit;font-size:var(--t-sm);padding:11px 12px;border:1px solid var(--line-2);border-radius:var(--radius);background:var(--white)}
-@media (max-width:720px){.bands{display:none}.band-mobile{display:block}}
-/* two-up from 900px: nine bands in five rows is scannable, and it halves the
-   block's height — which is what a mandatory iframe height is measured against */
-@media (min-width:721px){.bands{grid-template-columns:1fr 1fr}}
-.note{font-size:var(--t-cap);color:var(--muted);margin:10px 0 0}
-.note b{color:#4a4a55}
-
-/* ---------- step 2 · result ---------- */
-.hero{border-top:3px solid var(--orange);padding-top:16px}
-.net-label{font-size:var(--t-cap);color:var(--muted);margin:0}
-.net{font-size:clamp(2rem,5.6vw,3rem);font-weight:700;letter-spacing:-.02em;line-height:1.1;margin:2px 0 4px;font-variant-numeric:tabular-nums}
-.net .cur{font-size:.55em;font-weight:600;color:var(--muted);margin-right:2px;vertical-align:.08em}
-.net.is-range{font-size:clamp(1.5rem,4.4vw,2.15rem)}
-.net.swap{opacity:.55}
-.caption{font-size:var(--t-sm);color:var(--muted);margin:0}
-.figs{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);margin:16px 0 0;overflow:hidden}
-.figs > div{background:var(--white);padding:12px 12px 14px}
-.figs dt{font-size:var(--t-cap);color:var(--muted);margin:0 0 4px;line-height:1.35}
-.figs dd{margin:0;font-size:var(--t-num);font-weight:650;letter-spacing:-.01em;font-variant-numeric:tabular-nums;white-space:nowrap}
-/* phones: three across squeezes the money into broken tokens — go label/value rows */
-@media (max-width:560px){
-  .figs{grid-template-columns:1fr}
-  .figs > div{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:10px 12px}
-  .figs dt{margin:0}
-  .figs dd{font-size:1.125rem}
-  .qr-fig img{max-width:126px}
+h2{
+  font-size:var(--t-h);line-height:1.15;font-weight:600;letter-spacing:-.022em;
+  margin:0;color:var(--ink);text-wrap:balance;
 }
-/* a band-mode figure is a RANGE ("−HK$182 至 −HK$221"), which is materially
-   longer than one number: one size down and allow a break, or the 3-across
-   strip overflows between 720 and 900px (measured, see docs/TAXFIX-20261115.md) */
-.figs dd.is-range{font-size:1rem;white-space:normal;line-height:1.3;letter-spacing:0}
-/* the C6 line — the client's "selling point": what the donor actually gets back */
-.benefit{font-size:var(--t-sm);color:#3a3a44;margin:16px 0 0;padding:2px 0 2px 12px;
-  border-left:3px solid var(--orange);line-height:1.55}
-.assump{display:grid;gap:8px;margin-top:14px;font-size:var(--t-cap);color:var(--muted)}
-.assump > div{display:grid;grid-template-columns:auto 1fr;gap:8px}
-.assump span.k{font-weight:600;color:#4a4a55}
-.assump p{margin:0}
+.lede{font-size:var(--t-body);line-height:1.5;color:var(--ink-2);margin:10px 0 0;max-width:var(--measure)}
+.hint{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:8px 0 0;max-width:var(--measure)}
+.fine{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:14px 0 0;max-width:var(--measure)}
+.note{font-size:var(--t-cap);line-height:1.6;color:var(--muted);margin:12px 0 0;max-width:var(--measure)}
 
-/* ---------- step 3 · payment ---------- */
-.badge{display:inline-flex;align-items:center;gap:7px;font-size:var(--t-eyebrow);letter-spacing:.06em;text-transform:uppercase;color:var(--ok);border:1px solid #cfe3d7;background:#f2f8f4;border-radius:999px;padding:3px 10px;margin-bottom:12px}
-.badge .dot{width:6px;height:6px;border-radius:50%;background:var(--ok)}
-.rails{display:grid;gap:8px;margin:0 0 14px}
-.rails a,.rails .rail{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;text-decoration:none;border:1px solid var(--line-2);border-radius:var(--radius);padding:12px 14px;background:var(--white);cursor:pointer;text-align:left;width:100%}
-.rails a:hover,.rails .rail:hover{border-color:var(--navy);background:#fbfbfe}
-.rails .nm{font-weight:600;font-size:var(--t-sm)}
-.rails .sub{font-size:var(--t-cap);color:var(--muted);grid-column:1;line-height:1.45}
-.rails .go{grid-row:1/3;grid-column:2;color:var(--muted)}
-.qr-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 10px}
-.qr-fig{margin:0;border:1px solid var(--line);border-radius:var(--radius);padding:12px;background:var(--white);text-align:center}
-.qr-fig img{margin:0 auto 8px;width:100%;max-width:150px;height:auto;image-rendering:pixelated}
-.qr-fig figcaption{font-size:var(--t-cap);color:var(--muted)}
-.qr-fig .poc{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#a15c1f;margin-top:4px}
-.qr-copy h3{font-size:var(--t-sm);margin-bottom:6px}
-.qr-copy p{font-size:var(--t-sm);color:var(--muted);margin:0 0 8px}
-.qr-copy strong{color:var(--ink);font-variant-numeric:tabular-nums}
-.qr-mob{display:none}
-@media (pointer:coarse){.qr-desk{display:none}.qr-mob{display:block}}
-.alt{font-size:var(--t-sm);margin:0;padding-top:12px;border-top:1px solid var(--line)}
-.alt a{color:var(--navy);text-underline-offset:3px}
+/* ── 1 · your gift ─────────────────────────────────────────── */
+.fieldset{border:0;margin:0;padding:0;min-width:0}
+legend.flabel{display:block;width:100%;padding:0;margin:0 0 2px}
+.field{margin-top:22px}
+.field:first-child{margin-top:16px}
+.flabel{display:block;font-size:var(--t-cap);color:var(--ink-2);font-weight:500;margin-bottom:2px}
+.gotoline{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:24px}
+.gotoline .btn{width:auto;min-height:48px;padding:12px 24px}
 
-/* receipt */
-.rform{display:grid;gap:10px}
-.rrow{display:grid;gap:10px}
-@media (min-width:560px){.rrow{grid-template-columns:1fr 1fr}}
-.rform label{display:block;font-size:var(--t-cap);font-weight:600;margin-bottom:5px}
-.rform input[type=text],.rform input[type=email]{width:100%;font:inherit;font-size:var(--t-sm);padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--radius);background:var(--white)}
-.rform input:focus{border-color:var(--navy);outline:0;box-shadow:0 0 0 3px rgba(1,1,78,.08)}
-.rform .consent{display:flex;gap:9px;align-items:flex-start;font-size:var(--t-cap);color:var(--muted);font-weight:400}
-.rform .consent input{margin-top:3px}
-.msg{font-size:var(--t-cap);margin:4px 0 0;color:var(--err)}
-.msg.ok{color:var(--ok)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--on-action);background:var(--orange);color:var(--on-action);font-weight:650;font-size:var(--t-sm);border-radius:999px;padding:12px 22px;cursor:pointer;width:100%;min-height:48px}
-.btn:hover{background:var(--orange-h)}
-.btn[disabled]{opacity:.5;cursor:not-allowed}
-.fine{font-size:11.5px;color:var(--muted);margin:10px 0 0;line-height:1.5}
-.pocbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px;color:#8a5a24;background:#fdf6ee;border:1px solid #f0dcc4;border-radius:6px;padding:6px 10px;margin-bottom:14px}
-.pocbar b{letter-spacing:.06em}
-details.q{margin:16px 0 0;border-top:1px solid var(--line);padding-top:4px;font-size:var(--t-cap)}
-details.q summary{cursor:pointer;font-size:var(--t-sm);font-weight:600;min-height:44px;display:flex;align-items:center;gap:8px}
-details.q summary::marker{color:var(--muted)}
-details.q p{margin:2px 0 0;color:var(--muted);line-height:1.6}
-p.fine.scope{font-size:var(--t-cap);color:#6a6a74}
-/* display:flex on <summary> suppresses the native disclosure triangle in
-   Blink/WebKit, which left a collapsed FAQ with no visible affordance. Draw it. */
-details.q summary{list-style:none}
+/* one-off / monthly as document tabs, not a pill track */
+.seg{display:flex;gap:28px;border-bottom:var(--rule);margin-top:14px}
+.seg label{
+  position:relative;display:inline-flex;align-items:center;min-height:44px;
+  font-size:var(--t-sm);color:var(--muted);cursor:pointer;
+  transition:color 140ms var(--ease);
+}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label:hover{color:var(--ink)}
+.seg label:has(input:checked){color:var(--ink);font-weight:600}
+.seg label:has(input:checked)::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--navy);
+}
+.seg label:has(input:focus-visible){outline:2px solid var(--navy);outline-offset:3px}
+
+/* the amount is the biggest number on the page after the result */
+.amt{display:flex;align-items:baseline;gap:.4em;border-bottom:var(--rule);padding-bottom:6px;transition:border-color 140ms var(--ease)}
+.amt:focus-within{border-bottom-color:var(--navy);box-shadow:0 1px 0 var(--navy)}
+.amt .pre{font-size:var(--t-sm);color:var(--muted);flex:0 0 auto}
+.amt input{
+  flex:1 1 auto;min-width:0;border:0;background:none;outline:0;padding:6px 0;
+  font-family:inherit;font-size:clamp(1.5rem,5.2vw,1.875rem);font-weight:600;
+  letter-spacing:-.025em;line-height:1.25;font-variant-numeric:tabular-nums;color:var(--ink);
+}
+
+/* quick amounts read as a row of values in a table */
+.quick{display:flex;flex-wrap:wrap;align-items:center;margin:0 0 0 -.75rem}
+.quick .qlab{font-size:var(--t-cap);color:var(--muted);padding:0 .5rem 0 .75rem;min-height:44px;display:flex;align-items:center}
+.quick button{
+  border:0;background:none;padding:0 .75rem;min-height:44px;cursor:pointer;
+  font-size:var(--t-sm);color:var(--ink-2);font-variant-numeric:tabular-nums;
+  transition:color 140ms var(--ease);
+}
+.quick button + button{box-shadow:inset 1px 0 0 var(--line)}
+.quick button:hover{color:var(--navy)}
+
+select#months,select.band-select{
+  width:100%;font:inherit;font-size:var(--t-sm);color:var(--ink);
+  min-height:44px;padding:8px 30px 9px 0;border:0;border-bottom:var(--rule);
+  border-radius:0;background:transparent;
+  -webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 9px) 55%,calc(100% - 3px) 55%;
+  background-size:6px 6px,6px 6px;background-repeat:no-repeat;
+}
+select#months:focus,select.band-select:focus{outline:0;border-bottom-color:var(--navy);box-shadow:0 1px 0 var(--navy)}
+
+/* the income ladder — a ruled table, two columns from 721px */
+.bands{display:grid;border-top:var(--rule);margin-top:12px}
+.bands label{
+  display:grid;grid-template-columns:13px minmax(0,1fr) auto;gap:8px;align-items:center;
+  min-height:44px;padding:9px 0;border-bottom:var(--rule);
+  font-size:.8125rem;color:var(--ink-2);cursor:pointer;white-space:nowrap;
+  transition:color 140ms var(--ease),background-color 140ms var(--ease);
+}
+.bands label:hover{color:var(--ink);background:rgba(1,1,78,.022)}
+.bands input{
+  appearance:none;-webkit-appearance:none;width:13px;height:13px;margin:0;
+  border:1.5px solid #9a9aa8;border-radius:50%;flex:0 0 auto;
+  transition:border-color 140ms var(--ease),border-width 140ms var(--ease);
+}
+.bands input:checked{border-color:var(--navy);border-width:4.5px}
+.bands label:has(input:checked){color:var(--ink);font-weight:600}
+.bands .r{
+  font-size:.6875rem;color:var(--muted);font-weight:400;
+  font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;
+}
+.bands label:has(input:checked) .r{color:var(--navy)}
+.band-select{display:none;margin-top:12px}
+
+/* ── disclosure ────────────────────────────────────────────── */
+details.q{margin-top:14px;border-top:var(--rule)}
+details.q summary{
+  list-style:none;display:flex;align-items:center;gap:10px;min-height:44px;
+  cursor:pointer;font-size:var(--t-sm);color:var(--navy);
+  transition:color 140ms var(--ease);
+}
 details.q summary::-webkit-details-marker{display:none}
-details.q summary::before{content:"\25B8";color:var(--muted);flex:0 0 auto}
-details.q[open] summary::before{content:"\25BE"}
+details.q summary::before{
+  content:"";flex:0 0 auto;width:9px;height:9px;margin-right:2px;
+  border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;
+  transform:rotate(-45deg) translate(-1px,-1px);
+  transition:transform 140ms var(--ease);
+}
+details.q[open] summary::before{transform:rotate(45deg) translate(-2px,-2px)}
+details.q summary:hover{color:var(--ink)}
+details.q > :not(summary){margin:2px 0 10px}
+details.q p{font-size:var(--t-sm);line-height:1.62;color:var(--ink-2);max-width:var(--measure)}
+details.q p + p{margin-top:8px}
+details.q ul{margin:6px 0 10px;padding-left:1.1em;font-size:var(--t-sm);line-height:1.6;color:var(--ink-2);max-width:var(--measure)}
+details.q li{margin:3px 0}
 
-/* optional exact income — collapsed by default so the picker stays the primary
-   path and the block's declared height does not grow for donors who skip it */
-.exactrow{margin-top:12px;border-top:1px solid var(--line);padding-top:2px}
-.exactrow summary{font-size:var(--t-sm)}
-.exactrow .amt{margin-top:2px}
-.exactrow .hint{margin-top:6px}
+/* ── 2 · what it costs you ─────────────────────────────────── */
+.hero{border-top:var(--rule)}
+.net-label{font-size:var(--t-cap);color:var(--muted);margin:14px 0 0}
+.net{
+  font-size:var(--t-display);font-weight:600;letter-spacing:-.038em;line-height:1.02;
+  margin:6px 0 0;color:var(--ink);font-variant-numeric:tabular-nums;
+}
+.net .cur{font-size:.4em;font-weight:500;letter-spacing:0;color:var(--muted);margin-right:.16em;vertical-align:.34em}
+.net.is-range{font-size:clamp(1.75rem,6vw,2.5rem);letter-spacing:-.03em}
+.net.swap{opacity:.55;transition:opacity 140ms var(--ease)}
 
-/* fixed-height host mode: keep the action reachable */
+/* three figures on one ruled band, tabular so the digits line up */
+.figs{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  margin:20px 0 0;border-top:var(--rule);border-bottom:var(--rule);
+}
+.figs > div{padding:13px 14px 14px 0;min-width:0}
+.figs > div + div{border-left:var(--rule);padding-left:16px}
+.figs dt{font-size:var(--t-cap);color:var(--muted);margin:0 0 5px;line-height:1.35}
+.figs dd{margin:0;font-size:var(--t-num);font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink)}
+.figs dd.is-range{font-size:var(--t-sm);white-space:nowrap;line-height:1.4;letter-spacing:0;font-weight:600}
+
+.benefit{font-size:var(--t-lede);line-height:1.45;letter-spacing:-.006em;color:var(--ink);margin:22px 0 0;max-width:var(--measure)}
+.assump{font-size:var(--t-cap);line-height:1.6;color:var(--muted);margin:16px 0 0;max-width:var(--measure)}
+.assump + .assump{margin-top:5px}
+.scope{font-size:var(--t-cap);line-height:1.55;color:var(--ink-2);margin:14px 0 0;max-width:var(--measure)}
+
+/* ── 3 · how you give ──────────────────────────────────────── */
+.rails{display:grid;border-top:var(--rule);margin-top:18px}
+.rails a{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:1px 16px;
+  min-height:64px;padding:13px 0;border-bottom:var(--rule);
+  text-decoration:none;color:var(--ink);
+  transition:color 140ms var(--ease);
+}
+.rails .nm{font-size:var(--t-body);font-weight:600;letter-spacing:-.01em}
+.rails .sub{grid-column:1;font-size:var(--t-cap);color:var(--muted);line-height:1.45}
+.rails .go{
+  grid-row:1 / span 2;grid-column:2;align-self:center;font-size:1rem;color:var(--muted);
+  transition:transform 140ms var(--ease),color 140ms var(--ease);
+}
+.rails a:hover{color:var(--navy)}
+.rails a:hover .go{transform:translate(2px,-2px);color:var(--navy)}
+.alt{margin:16px 0 0;font-size:var(--t-sm)}
+.alt a{color:var(--navy);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-color:rgba(1,1,78,.32);min-height:44px;display:inline-flex;align-items:center}
+.alt a:hover{text-decoration-color:var(--navy)}
+
+/* ── 4 · claim your receipt ────────────────────────────────── */
+.rform{display:grid;gap:18px;margin-top:18px}
+.rrow{display:grid;gap:18px}
+.rform label{display:block;font-size:var(--t-cap);color:var(--muted);margin-bottom:1px}
+.rform input[type=text],.rform input[type=email]{
+  width:100%;font:inherit;font-size:var(--t-body);color:var(--ink);
+  min-height:44px;padding:6px 0 8px;border:0;border-bottom:var(--rule);border-radius:0;
+  background:none;outline:0;
+  transition:border-color 140ms var(--ease);
+}
+.rform input::placeholder{color:#A9A9B2}
+.rform input:focus{border-bottom-color:var(--navy);box-shadow:0 1px 0 var(--navy)}
+.rform .consent{
+  display:grid;grid-template-columns:20px minmax(0,1fr);gap:12px;align-items:start;
+  min-height:44px;padding:6px 0;cursor:pointer;
+  font-size:var(--t-cap);line-height:1.55;color:var(--ink-2);font-weight:400;
+}
+.rform .consent input{
+  appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:1px 0 0;
+  border:1.5px solid #9a9aa8;border-radius:2px;background:none;cursor:pointer;
+  transition:border-color 140ms var(--ease),background-color 140ms var(--ease);
+}
+.rform .consent input:checked{border-color:var(--navy);background:var(--navy)}
+.rform .consent input:checked::after{
+  content:"";display:block;width:6px;height:11px;margin:1px 0 0 6px;
+  border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(40deg);
+}
+.msg{font-size:var(--t-cap);margin:5px 0 0;color:var(--err)}
+.msg.ok{color:var(--ok)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;
+  min-height:50px;padding:13px 24px;border:0;border-radius:2px;
+  background:var(--orange);color:var(--on-action);
+  font-size:var(--t-body);font-weight:600;letter-spacing:.002em;
+  cursor:pointer;text-decoration:none;
+  transition:background-color 140ms var(--ease),transform 140ms var(--ease);
+}
+.btn:hover{background:var(--orange-h)}
+.btn:active{transform:scale(.988)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+
+#dbg{position:fixed;right:8px;bottom:8px;z-index:99;font:11px/1.45 ui-monospace,Menlo,monospace;background:rgba(1,1,78,.92);color:#fff;padding:8px 10px;border-radius:6px;max-width:min(320px,70vw);pointer-events:none;display:none}
+#dbg.on{display:block}
+#dbg b{color:#ffd7a8}
+
+/* ── part mode: the CMS requires a defined height ──────────── */
 html[data-fit="fixed"] .wrap{padding-bottom:0}
-
-/* ---------- part mode (the CMS component requires a defined height) ----------
-   Hidden with CSS, never removed from the DOM: the wiring below runs on every
-   element, and a removed node would throw before the listeners are attached. */
-body[data-part] section.card{display:none}
+body[data-part] section.panel{display:none}
 body[data-part="calc"] #calculator,
 body[data-part="calc"] #result,
 body[data-part="input"] #calculator,
 body[data-part="result"] #result,
 body[data-part="pay"] #payment,
 body[data-part="receipt"] #receipt{display:block}
-/* a single-part embed has nothing to scroll to — the page provides the flow */
 body[data-part="input"] #goto-row,
 body[data-part="result"] #goto-row,
 body[data-part="calc"] #goto-row{display:none!important}
-html[data-embed="part"] .pocbar,
 html[data-embed="part"] #deeplink-test,
 html[data-embed="part"] .wrap > p.fine{display:none}
-body[data-part="calc"] .wrap > p.fine{display:block;margin-top:14px}
-
-/* A fixed-height block has slack by definition (one number, every width), so the
-   content sits at the top. Centring it leaves a void above and below, which reads
-   as a broken block; a bottom margin reads as a section with breathing room. */
+body[data-part="calc"] .wrap > p.fine{display:block}
 html[data-embed="part"] .wrap,
 body[data-part] .wrap{min-height:100vh;padding-block:2px}
-body[data-part] .card{width:100%}
 
-/* debug overlay */
-#dbg{position:fixed;right:8px;bottom:8px;z-index:99;font:11px/1.45 ui-monospace,Menlo,monospace;background:rgba(1,1,78,.92);color:#fff;padding:8px 10px;border-radius:6px;max-width:min(320px,70vw);pointer-events:none;display:none}
-#dbg.on{display:block}
-#dbg b{color:#ffd7a8}
-
-/* ---------- phones (C4) -----------------------------------------------------
-   Two defects were reported on mobile, which is 80–90% of their traffic:
-   1. two nested scrollbars. The blocks are embedded at a fixed pixel height,
-      so any content taller than that number becomes an inner scrollbar inside
-      the page's own scroll. The fix is both halves: reduce the phone content,
-      and declare a height that the measurement supports (docs/INTERFACE.md).
-   2. fat fingers. Chips were 35px and the segmented control 41px; WCAG 2.5.5
-      asks for 44. Everything below is a 44px minimum or a spacing saving.
-   Every override lives here so no desktop measurement can move. */
-@media (max-width:640px){
-  :root{--panel:16px}
-  .card + .card{margin-top:10px}
-  .field{margin-top:14px}
-  .seg label{padding:12px 10px;min-height:44px;display:flex;align-items:center;justify-content:center}
-  .chips{gap:8px}
-  .chips button{min-height:44px;padding:10px 14px;font-size:var(--t-sm)}
-  .bands label{min-height:44px}
-  #band-mobile{min-height:44px}
-  select#months{min-height:44px}
-  .rform .consent{min-height:44px;align-items:center;gap:12px}
-  .rform .consent input{width:22px;height:22px;margin:0;flex:0 0 auto}
-  .rform .consent label{min-height:44px;display:flex;align-items:center}
-  .figs > div{padding:9px 12px}
-  .qr-fig img{max-width:104px}
-  .benefit{font-size:var(--t-sm)}
-  details.q summary{min-height:44px}
+/* ── phones ────────────────────────────────────────────────── */
+@media (max-width:720px){
+  .bands{display:none}
+  .band-select{display:block}
 }
-/* the narrowest phones still overflow by ~12px: buy the room back from
-   padding and the QR image, never from a sentence */
+@media (min-width:721px){
+  .bands{grid-template-columns:1fr 1fr;column-gap:24px}
+  /* nine rungs, two columns: the odd one out closes the table on a full row */
+  .bands label:last-child{grid-column:1 / -1}
+}
+@media (min-width:560px){
+  .rrow{grid-template-columns:1fr 1fr}
+}
+@media (max-width:560px){
+  .figs{grid-template-columns:1fr}
+  .figs > div{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:11px 0}
+  .figs > div + div{border-left:0;padding-left:0;border-top:var(--rule)}
+  .figs dt{margin:0}
+  .figs dd{font-size:1.1875rem;text-align:right}
+  .figs dd.is-range{font-size:var(--t-sm);white-space:normal;max-width:62%}
+  .seg{gap:24px}
+}
 @media (max-width:400px){
-  .card{padding:14px}
-  .qr-grid{gap:10px}
-  .qr-fig{padding:9px}
-  .qr-fig img{max-width:96px}
+  select.band-select{font-size:.8125rem;padding-right:26px}
+  .quick{margin-left:-.5rem}
+  .quick button{padding:0 .5rem;font-size:var(--t-sm)}
+  .quick .qlab{padding:0 .25rem 0 .5rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:1ms!important}
 }
 </style>
 </head>
 <body>
 <div class="wrap" id="root">
 
-  
+  <!-- ── 1 · your gift ─────────────────────────────────────────── -->
+  <section class="panel" id="calculator" aria-labelledby="s1h">
+    <h2 id="s1h" data-i18n="s1.h">Your gift</h2>
 
-  <!-- ============ STEP 1 ============ -->
-  <section class="card" id="calculator" aria-labelledby="s1h">
-    <p class="eyebrow" data-i18n="s1.eyebrow">步驟一</p>
-    <h2 id="s1h" data-i18n="s1.h">輸入兩項資料</h2>
-    <p class="lede" data-i18n="s1.lede">只需一個捐款金額，以及大約的入息範圍。</p>
-
-    <fieldset>
-      <legend data-i18n="s1.legend">捐款方式</legend>
+    <fieldset class="fieldset">
+      <legend class="sr" data-i18n="s1.legend">One-off or monthly</legend>
       <div class="seg">
-        <label><input type="radio" name="mode" value="once" checked><span data-i18n="s1.once">單次捐款</span></label>
-        <label><input type="radio" name="mode" value="monthly"><span data-i18n="s1.monthly">每月捐款</span></label>
+        <label><input type="radio" name="mode" value="once" checked><span data-i18n="s1.once">One-off</span></label>
+        <label><input type="radio" name="mode" value="monthly"><span data-i18n="s1.monthly">Monthly</span></label>
       </div>
     </fieldset>
 
     <div class="field">
-      <label for="gift" data-i18n="s1.gift">捐款金額（HK$）</label>
-      <div class="amt"><span class="pre">HK$</span><input id="gift" type="text" inputmode="numeric" autocomplete="off" value="1,300" aria-describedby="gift-hint"></div>
-      <div class="chips" role="group" aria-label="快速金額" data-i18n-aria="s1.quickamt">
-        <button type="button" data-amt="300">HK$300</button>
-        <button type="button" data-amt="500">HK$500</button>
-        <button type="button" data-amt="1300">HK$1,300</button>
-        <button type="button" data-amt="3000">HK$3,000</button>
+      <label class="flabel" for="gift" data-i18n="s1.gift">Donation amount</label>
+      <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="gift" type="text" inputmode="numeric" autocomplete="off" value="1,300"></div>
+      <div class="quick" role="group" aria-label="Quick amounts" data-i18n-aria="s1.quickamt">
+        <span class="qlab" data-i18n="s1.quicklab">or</span>
+        <button type="button" data-amt="300">300</button>
+        <button type="button" data-amt="500">500</button>
+        <button type="button" data-amt="1300">1,300</button>
+        <button type="button" data-amt="3000">3,000</button>
       </div>
-      <p class="hint" id="gift-hint" data-i18n="s1.gifthint">可直接輸入金額，或選用上方預設金額。</p>
     </div>
 
     <div class="field" id="months-field" hidden>
-      <label for="months" data-i18n="s1.months.label">本課稅年度內的捐款月數</label>
+      <label class="flabel" for="months" data-i18n="s1.months.label">Months given this year of assessment</label>
       <select id="months" aria-describedby="months-hint">
-        <option value="1">1 個月</option><option value="2">2 個月</option><option value="3">3 個月</option>
-        <option value="4">4 個月</option><option value="5">5 個月</option><option value="6">6 個月</option>
-        <option value="7">7 個月</option><option value="8">8 個月</option><option value="9">9 個月</option>
-        <option value="10">10 個月</option><option value="11">11 個月</option><option value="12" selected>12 個月</option>
+        <option value="1">1 month</option><option value="2">2 months</option><option value="3">3 months</option>
+        <option value="4">4 months</option><option value="5">5 months</option><option value="6">6 months</option>
+        <option value="7">7 months</option><option value="8">8 months</option><option value="9">9 months</option>
+        <option value="10">10 months</option><option value="11">11 months</option><option value="12" selected>12 months</option>
       </select>
-      <div class="chips" role="group" aria-label="快速月數" data-i18n-aria="s1.quickmonths">
-        <button type="button" data-mo="3">3 個月</button>
-        <button type="button" data-mo="6">6 個月</button>
-        <button type="button" data-mo="9">9 個月</button>
-        <button type="button" data-mo="12">12 個月</button>
+      <div class="quick" role="group" aria-label="Quick month counts" data-i18n-aria="s1.quickmonths">
+        <button type="button" data-mo="3">3 months</button>
+        <button type="button" data-mo="6">6 months</button>
+        <button type="button" data-mo="9">9 months</button>
+        <button type="button" data-mo="12">12 months</button>
       </div>
-      <p class="hint" id="months-hint" data-i18n="s1.months.hint">扣稅按全年捐款總額計算；如只捐款數個月，請填寫實際月數。</p>
+      <p class="hint" id="months-hint" data-i18n="s1.months.hint">The year of assessment ends 31 March. The deduction uses your total for that year.</p>
     </div>
 
-    <fieldset class="field">
-      <legend data-i18n="s1.band.legend">您全年應評稅入息大約是？（未扣除免稅額；免稅額以 HK$145,000 估算）</legend>
+    <fieldset class="fieldset field" aria-describedby="band-hint">
+      <legend class="flabel" data-i18n="s1.band.label">Your assessable income this year, roughly</legend>
+      <p class="hint" id="band-hint" data-i18n="s1.band.hint">Before allowances; the basic allowance is assumed at HK$145,000.</p>
       <div class="bands">
-        <label><input type="radio" name="band" value="unknown"><span data-i18n="s1.band.unknown">不確定 — 顯示估算範圍</span><span class="r">2% – 17%</span></label>
-        <label><input type="radio" name="band" value="r0"><span data-i18n="s1.band.r0.label">HK$145,000 以下</span><span class="r" data-i18n="s1.band.r0">無須繳稅</span></label>
-        <label><input type="radio" name="band" value="r2"><span>HK$145,000 – 195,000</span><span class="r" data-i18n="s1.band.r2">約 2%</span></label>
-        <label><input type="radio" name="band" value="r6"><span>HK$195,000 – 245,000</span><span class="r" data-i18n="s1.band.r6">約 6%</span></label>
-        <label><input type="radio" name="band" value="r10"><span>HK$245,000 – 295,000</span><span class="r" data-i18n="s1.band.r10">約 10%</span></label>
-        <label><input type="radio" name="band" value="r14"><span>HK$295,000 – 345,000</span><span class="r" data-i18n="s1.band.r14">約 14%</span></label>
-        <label><input type="radio" name="band" value="r17" checked><span>HK$345,000 – 2,132,500</span><span class="r" data-i18n="s1.band.r17">約 17%</span></label>
-        <label><input type="radio" name="band" value="r15"><span>HK$2,132,500 – 5,000,000</span><span class="r" data-i18n="s1.band.r15">標準 15%</span></label>
-        <label><input type="radio" name="band" value="r16"><span data-i18n="s1.band.r16.label">HK$5,000,000 以上</span><span class="r" data-i18n="s1.band.r16">標準 16%</span></label>
+        <label><input type="radio" name="band" value="unknown"><span data-i18n="s1.band.unknown">Not sure</span><span class="r">2% – 17%</span></label>
+        <label><input type="radio" name="band" value="r0"><span data-i18n="s1.band.r0.label">Below HK$145,000</span><span class="r" data-i18n="s1.band.r0">No tax</span></label>
+        <label><input type="radio" name="band" value="r2"><span>HK$145,000 – 195,000</span><span class="r" data-i18n="s1.band.r2">About 2%</span></label>
+        <label><input type="radio" name="band" value="r6"><span>HK$195,000 – 245,000</span><span class="r" data-i18n="s1.band.r6">About 6%</span></label>
+        <label><input type="radio" name="band" value="r10"><span>HK$245,000 – 295,000</span><span class="r" data-i18n="s1.band.r10">About 10%</span></label>
+        <label><input type="radio" name="band" value="r14"><span>HK$295,000 – 345,000</span><span class="r" data-i18n="s1.band.r14">About 14%</span></label>
+        <label><input type="radio" name="band" value="r17" checked><span>HK$345,000 – 2,132,500</span><span class="r" data-i18n="s1.band.r17">About 17%</span></label>
+        <label><input type="radio" name="band" value="r15"><span>HK$2,132,500 – 5,000,000</span><span class="r" data-i18n="s1.band.r15">Standard 15%</span></label>
+        <label><input type="radio" name="band" value="r16"><span data-i18n="s1.band.r16.label">HK$5,000,000 and above</span><span class="r" data-i18n="s1.band.r16">Standard 16%</span></label>
       </div>
-      <!-- narrow screens: nine radio rows cost ~400px of a fixed-height frame.
-           A native select is the same choice, thumb-sized, and height-stable. -->
-      <select id="band-mobile" class="band-mobile" aria-label="您全年應評稅入息大約是？（未扣除免稅額）" data-i18n-aria="s1.band.aria">
-        <option value="unknown" data-i18n="s1.mob.unknown">不確定 — 顯示 2% – 17% 範圍</option>
-        <option value="r0" data-i18n="s1.mob.r0">HK$145,000 以下 — 無須繳稅</option>
-        <option value="r2" data-i18n="s1.mob.r2">HK$145,000 – 195,000 — 約 2%</option>
-        <option value="r6" data-i18n="s1.mob.r6">HK$195,000 – 245,000 — 約 6%</option>
-        <option value="r10" data-i18n="s1.mob.r10">HK$245,000 – 295,000 — 約 10%</option>
-        <option value="r14" data-i18n="s1.mob.r14">HK$295,000 – 345,000 — 約 14%</option>
-        <option value="r17" selected data-i18n="s1.mob.r17">HK$345,000 – 2,132,500 — 約 17%</option>
-        <option value="r15" data-i18n="s1.mob.r15">HK$2,132,500 – 5,000,000 — 標準 15%</option>
-        <option value="r16" data-i18n="s1.mob.r16">HK$5,000,000 以上 — 標準 16%</option>
+      <!-- narrow screens: nine ruled rows cost too much of a fixed-height frame;
+           a native select is the same choice, thumb-sized and height-stable -->
+      <select id="band-mobile" class="band-select" aria-label="Your assessable income this year, roughly" data-i18n-aria="s1.band.aria">
+        <option value="unknown" data-i18n="s1.mob.unknown">Not sure · 2%–17%</option>
+        <option value="r0" data-i18n="s1.mob.r0">Below HK$145,000 · no tax</option>
+        <option value="r2" data-i18n="s1.mob.r2">HK$145,000 – 195,000 · 2%</option>
+        <option value="r6" data-i18n="s1.mob.r6">HK$195,000 – 245,000 · 6%</option>
+        <option value="r10" data-i18n="s1.mob.r10">HK$245,000 – 295,000 · 10%</option>
+        <option value="r14" data-i18n="s1.mob.r14">HK$295,000 – 345,000 · 14%</option>
+        <option value="r17" selected data-i18n="s1.mob.r17">HK$345,000 – 2,132,500 · 17%</option>
+        <option value="r15" data-i18n="s1.mob.r15">HK$2,132,500 – 5,000,000 · std 15%</option>
+        <option value="r16" data-i18n="s1.mob.r16">HK$5,000,000 and above · std 16%</option>
       </select>
-      <p class="note" data-i18n-html="s1.band.note">應評稅入息低於約 HK$145,000（基本免稅額）者，或無須繳付薪俸稅，該筆捐款便不能扣稅。
-      應評稅入息越高，邊際稅率通常越高（最高 17%）；但應評稅入息淨額超過約 HK$2,132,500 後，稅務局會改用<b>標準稅率</b>計算
-      （首 HK$500 萬 15%，其後 16%），因此最頂兩級的比率反而回落 —— 這是香港薪俸稅的設計，並非計算錯誤。</p>
+      <p class="note" data-i18n="s1.band.note">Above HK$2,132,500 the standard rate takes over — 15% on the first HK$5 million, 16% above it — so the last two rungs fall rather than rise. That is how the tax is built, not a bug.</p>
     </fieldset>
 
     <!-- Optional exact income. Collapsed by default: the range picker stays the
-         primary path, and a donor who skips this sees a range computed from the
-         band's floor and ceiling rather than one invented figure. The value is
-         used for the maths only — it never enters an analytics payload. -->
-    <details class="q exactrow" id="exact-row">
-      <summary data-i18n="s1.exact.summary">想更準確？輸入您的應評稅入息</summary>
-      <div class="field" style="margin-top:6px">
-        <label for="exact" data-i18n="s1.exact.label">全年應評稅入息（HK$，未扣除免稅額）</label>
-        <div class="amt"><span class="pre">HK$</span><input id="exact" type="text" inputmode="numeric" autocomplete="off" value="" placeholder="例如 500,000" aria-describedby="exact-hint" data-i18n-ph="s1.exact.ph"></div>
-        <p class="hint" id="exact-hint" data-i18n="s1.exact.hint">填寫後改用單一數字，並計入累進稅級及 35% 上限。此數字只用於本頁計算，不會傳送或儲存。</p>
+         primary path, and the value is used for the maths only — it never enters
+         an analytics payload, never leaves the frame. -->
+    <details class="q" id="exact-row">
+      <summary data-i18n="s1.exact.summary">Use your exact income</summary>
+      <div>
+        <label class="flabel" for="exact" data-i18n="s1.exact.label">Assessable income for the year</label>
+        <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="exact" type="text" inputmode="numeric" autocomplete="off" value="" placeholder="e.g. 500,000" aria-describedby="exact-hint" data-i18n-ph="s1.exact.ph"></div>
+        <p class="hint" id="exact-hint" data-i18n="s1.exact.hint">One figure instead of a range, worked through the bands and the 35% cap. Never sent, never stored.</p>
       </div>
     </details>
 
-    <div class="field" id="goto-row" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-      <a class="btn" href="#result" id="goto-result" style="width:auto;text-decoration:none" data-i18n="s1.goto">查看結果 →</a>
-      <span id="upd" hidden style="font-size:var(--t-cap);color:var(--ok)" data-i18n="s1.updated">結果已更新</span>
+    <details class="q" id="what-counts">
+      <summary data-i18n="s1.what.summary">What counts as a deductible gift</summary>
+      <p data-i18n="s1.what.body">Only money given to a charity approved under section 88 of the Inland Revenue Ordinance can be deducted. Money paid for something in return is not a donation — raffle tickets, auction purchases, dinner seats, sponsorship that buys advertising. At or below the basic allowance you pay no salaries tax, so a gift saves you nothing.</p>
+    </details>
+
+    <div class="gotoline" id="goto-row">
+      <a class="btn" href="#result" id="goto-result" data-i18n="s1.goto">See what it costs you</a>
+      <span id="upd" class="msg ok" hidden data-i18n="s1.updated">Result updated</span>
     </div>
   </section>
 
-  <!-- ============ STEP 2 ============ -->
-  <section class="card hero" id="result" aria-labelledby="s2h">
-    <p class="eyebrow" data-i18n="s2.eyebrow">步驟二</p>
-    <h2 id="s2h" data-i18n="s2.h">您的估算結果</h2>
+  <!-- ── 2 · what it costs you ─────────────────────────────────── -->
+  <section class="panel hero" id="result" aria-labelledby="s2h">
+    <h2 id="s2h" data-i18n="s2.h">What it costs you</h2>
 
-    <p class="net-label" id="net-label" data-i18n="s2.netlabel">實際付出</p>
+    <p class="net-label" id="net-label" data-i18n="s2.netlabel">You pay</p>
     <p class="net" id="net"><span class="cur">HK$</span>1,079</p>
-    <p class="caption" id="net-caption" data-i18n="s2.caption">這是實際由您支付的金額。</p>
+    <p class="hint" id="net-caption" data-i18n="s2.caption">Between the top and bottom of the range you chose.</p>
     <p class="sr" id="announce" aria-live="polite"></p>
 
     <dl class="figs">
-      <div><dt id="gift-label" data-i18n="s2.gift">捐款金額</dt><dd id="gift-out">HK$1,300</dd></div>
-      <div><dt id="saved-label" data-i18n="s2.saved">預計節省稅款</dt><dd id="saved">−HK$221</dd></div>
-      <div><dt id="rate-label" data-i18n="s2.rate">估算採用的邊際稅率</dt><dd id="rate">17%</dd></div>
+      <div><dt id="gift-label" data-i18n="s2.gift">Donation</dt><dd id="gift-out">HK$1,300</dd></div>
+      <div><dt id="saved-label" data-i18n="s2.saved">Tax saved</dt><dd id="saved">−HK$221</dd></div>
+      <div><dt id="rate-label" data-i18n="s2.rate">Rate</dt><dd id="rate">17%</dd></div>
     </dl>
 
-    <p class="benefit" id="benefit" data-i18n="s2.benefit">您捐 HK$1,300，全數可作認可慈善捐款扣除；估算稅務回饋 HK$221，即每捐 HK$100，實際付出約 HK$83。</p>
+    <p class="benefit" id="benefit" data-i18n="s2.benefit">You give HK$1,300, all of it deductible. Every HK$100 costs you about HK$83.</p>
 
-    <div class="assump">
-      <div><span class="k" data-i18n="s2.assump.k1">假設：</span><p><span id="assumption" data-i18n="s2.assume.def">應評稅入息 HK$345,000 – 2,132,500 · 邊際稅率 17%。</span> <span data-i18n="s2.assume.tail">更改上述任何一項，估算會即時更新。此為估算，並未計算其他扣除或免稅額。</span></p></div>
-      <div><span class="k" data-i18n="s2.assump.k2">上限：</span><p id="cap" data-i18n="s2.cap.def">扣稅上限為應評稅入息的 35%（全年合計）；一般捐款金額不會觸及上限。</p></div>
-    </div>
-
-    <p class="fine scope" data-i18n="s2.scope">本計算機只估算個人在薪俸稅下的捐款扣稅，並非稅務建議。</p>
+    <p class="assump" id="assumption" data-i18n="s2.assume.def">Assumed assessable income HK$345,000 – 2,132,500.</p>
+    <p class="assump" id="cap" data-i18n="s2.cap.def">The cap is 35% of assessable income for the year; an ordinary gift does not reach it.</p>
+    <p class="scope" data-i18n="s2.scope">One person, salaries tax only. An estimate, not tax advice.</p>
 
     <details class="q" id="spouse">
-      <summary data-i18n="s2.spouse.q">夫婦的扣稅額可以合併使用嗎？</summary>
-      <p data-i18n="s2.spouse.a">若您未能用盡扣稅額（包括超過 35% 上限而未扣除的部分），配偶可在其 BIR60 報稅表內申報。但配偶本人的申報同樣以 35% 為上限，上限按其本人的入息或利潤計算；因此未用的扣稅額並非可全數轉移。</p>
+      <summary data-i18n="s2.spouse.q">Can a couple combine the deduction?</summary>
+      <p data-i18n="s2.spouse.a">Partly. What you cannot use — including the part above the 35% cap — your spouse may claim on their own BIR60. Their claim is capped at 35% of their own income or profits, so an unused deduction does not pass across in full.</p>
     </details>
   </section>
 
-  <!-- ============ STEP 3 · PAYMENT ============ -->
-  <section class="card" id="payment" aria-labelledby="s3h">
-    <p class="eyebrow" data-i18n="s3.eyebrow">步驟三 · 付款方式</p>
-    <h2 id="s3h" data-i18n="s3.h">三種捐款方式</h2>
-    <p class="lede" data-i18n="s3.lede">PayMe、AlipayHK 二維碼，以及前往護瞳行動網站的信用卡。</p>
-
+  <!-- ── 3 · how you give ──────────────────────────────────────── -->
+  <section class="panel" id="payment" aria-labelledby="s3h">
+    <h2 id="s3h" data-i18n="s3.h">How you give</h2>
+    <p class="lede" data-i18n="s3.lede">All three finish on the Foundation's donation page.</p>
 
     <div class="rails">
       <a href="https://www.hollows.org/zh-Hant-HK/ways-to-support/ways-to-give/" target="_top" rel="noopener" data-rail="payme">
         <span class="nm">PayMe</span>
-        <span class="sub" data-i18n="s3.payme.sub">於護瞳行動捐款頁以 PayMe 完成捐款</span>
+        <span class="sub" data-i18n="s3.payme.sub">Phone wallet</span>
         <span class="go" aria-hidden="true">↗</span>
       </a>
       <a href="https://www.hollows.org/zh-Hant-HK/ways-to-support/ways-to-give/" target="_top" rel="noopener" data-rail="alipay">
         <span class="nm">AlipayHK</span>
-        <span class="sub" data-i18n="s3.alipay.sub">於護瞳行動捐款頁以 AlipayHK 完成捐款</span>
+        <span class="sub" data-i18n="s3.alipay.sub">Phone wallet</span>
         <span class="go" aria-hidden="true">↗</span>
       </a>
       <a href="https://www.hollows.org/zh-Hant-HK/donate/" target="_top" rel="noopener" data-rail="card">
-        <span class="nm" data-i18n="s3.card.nm">信用卡</span>
-        <span class="sub" data-i18n="s3.card.sub">前往護瞳行動捐款頁，以信用卡完成捐款</span>
+        <span class="nm" data-i18n="s3.card.nm">Credit card</span>
+        <span class="sub" data-i18n="s3.card.sub">On the web page</span>
         <span class="go" aria-hidden="true">↗</span>
       </a>
     </div>
 
-    <!-- Merchant QR panel returns here when the charity supplies the PayMe and AlipayHK
-         merchant codes. Until then the two wallet rails open the charity's own giving page,
-         so every route on this block works. -->
-
-    <p class="alt"><a href="https://www.hollows.org/zh-Hant-HK/donate/monthly-donation/" target="_top" rel="noopener" data-i18n="s3.monthly">想每月捐款？</a></p>
+    <p class="alt"><a href="https://www.hollows.org/zh-Hant-HK/donate/monthly-donation/" target="_top" rel="noopener" data-i18n="s3.monthly">Give monthly instead</a></p>
   </section>
 
-  <!-- ============ RECEIPT CAPTURE ============ -->
-  <section class="card" id="receipt" aria-labelledby="rch">
-    <h2 id="rch" style="font-size:1.05rem" data-i18n="rc.h">需要扣稅收據？留下姓名、電郵及付款參考編號。</h2>
-    <p class="lede" style="margin-bottom:14px" data-i18n="rc.lede">我們需要收據抬頭、電郵，以及付款交易編號，用以核對您的捐款並發出正式收據。課稅年度內捐款總額滿 HK$100，方可獲發正式收據。</p>
+  <!-- ── 4 · claim your receipt ────────────────────────────────── -->
+  <section class="panel" id="receipt" aria-labelledby="rch">
+    <h2 id="rch" data-i18n="rc.h">Claim your receipt</h2>
+    <p class="lede" data-i18n="rc.lede">Three details: the name for the receipt, an email address, and the reference from your payment.</p>
+    <p class="hint" data-i18n="rc.threshold">A receipt is issued once your gifts for the year of assessment reach HK$100.</p>
+
     <form class="rform" id="rform" novalidate>
       <div class="rrow">
         <div>
-          <label for="rname" data-i18n="rc.name">姓名（收據抬頭）</label>
-          <input id="rname" type="text" autocomplete="name" placeholder="陳大文" aria-describedby="rname-msg" data-i18n-ph="rc.name.ph">
+          <label for="rname" data-i18n="rc.name">Name on the receipt</label>
+          <input id="rname" type="text" autocomplete="name" placeholder="Chan Tai Man" aria-describedby="rname-msg" data-i18n-ph="rc.name.ph">
           <p class="msg" id="rname-msg" hidden></p>
         </div>
         <div>
-          <label for="rmail" data-i18n="rc.email">電郵</label>
+          <label for="rmail" data-i18n="rc.email">Email</label>
           <input id="rmail" type="email" autocomplete="email" placeholder="name@example.com" aria-describedby="rmail-msg">
           <p class="msg" id="rmail-msg" hidden></p>
         </div>
       </div>
       <div>
-        <label for="rref" data-i18n="rc.ref">付款參考編號</label>
-        <input id="rref" type="text" autocomplete="off" placeholder="例如 2026111800123"
+        <label for="rref" data-i18n="rc.ref">Payment reference</label>
+        <input id="rref" type="text" autocomplete="off" placeholder="e.g. 2026111800123"
                aria-describedby="rref-hint rref-msg" data-i18n-ph="rc.ref.ph">
-        <p class="hint" id="rref-hint" style="margin:6px 0 0" data-i18n="rc.ref.hint">請填寫付款 App 交易紀錄或信用卡收據上的交易編號；我們憑此核對您的捐款，再發出正式收據。</p>
+        <p class="hint" id="rref-hint" data-i18n="rc.ref.hint">The transaction ID in your payment app, or on your card receipt.</p>
         <p class="msg" id="rref-msg" hidden></p>
       </div>
-      <div class="consent">
+      <label class="consent">
         <input id="consent" type="checkbox">
-        <label for="consent" data-i18n="rc.consent">本人同意護瞳行動使用上述資料核對本人的捐款，並發出扣稅收據。</label>
-      </div>
-      <p class="fine" style="margin:0 0 0 31px" data-i18n-html="rc.disclink">使用本計算機及提交資料前，請先閱讀<a href="#disclaimer" id="disc-link">免責聲明</a>。</p>
-      <button class="btn" type="submit" id="rsubmit" data-i18n="rc.submit">提交收據申請</button>
+        <span data-i18n="rc.consent">I agree that the Foundation may use these details to match my gift and issue my tax receipt.</span>
+      </label>
+      <p class="fine" data-i18n-html="rc.disclink">Read the <a href="#disclaimer" id="disc-link">disclaimer</a> before you send anything.</p>
+      <button class="btn" type="submit" id="rsubmit" data-i18n="rc.submit">Request my receipt</button>
       <p class="msg" id="capture-status" aria-live="polite" hidden></p>
+      <p class="hint" data-i18n="rc.keep">Keep the receipt for six years — the IRD may ask to see it.</p>
     </form>
+
     <details class="q" id="disclaimer">
-      <summary data-i18n="rc.disc.summary">免責聲明</summary>
-      <p data-i18n="rc.disc.body">本計算機只提供估算，並非稅務建議，亦不能取代專業意見。估算依據稅務局於所示課稅年度的規定，只計入認可慈善捐款的扣稅，並未計算其他扣除、免稅額或稅務寬減；亦不涵蓋利潤稅、個人入息課稅或夫婦合併評稅。實際可扣除金額及應繳稅款以稅務局的評定為準。本計算機不會收集或儲存任何資料；您在本表格自願提供的姓名、電郵及付款參考編號，只用於核對捐款及發出扣稅收據。</p>
+      <summary data-i18n="rc.disc.summary">Disclaimer</summary>
+      <p data-i18n="rc.disc.body">An estimate only. Not tax advice, and no substitute for professional advice. It follows Inland Revenue Department rules for the year of assessment ending 31 March, covers the deduction for recognised charitable donations only, and allows nothing for other deductions, allowances or tax reductions. It does not cover profits tax, personal assessment or joint assessment. What you may deduct, and what you pay, rest with the Inland Revenue Department. The calculator collects and stores nothing; the name, email and reference you give here are used only to match your donation and issue your receipt.</p>
     </details>
   </section>
 
-  <p class="fine" style="max-width:70ch" data-i18n="foot.legal">* 實際可扣除金額以稅務局的評定為準。扣稅上限為應評稅入息或利潤的 35%；在可扣除的金額之內，所節省的稅款約為該金額乘以您的適用稅率（最高 17%）。</p>
+  <p class="fine" data-i18n="foot.legal">* What you may deduct rests with the Inland Revenue Department. The cap is 35% of assessable income or profits; the tax saved is roughly the deductible amount × your rate, up to 17%.</p>
 
   <div id="dbg" aria-hidden="true"></div>
 </div>
@@ -478,307 +547,282 @@ body[data-part] .card{width:100%}
      second person, short sentences.
      ============================================================ */
   var I18N = {
-  "zh-HK": {
-    "title": "慈善捐款扣稅計算機",
-
-    "s1.eyebrow": "步驟一",
-    "s1.h": "輸入兩項資料",
-    "s1.lede": "只需一個捐款金額，以及大約的入息範圍。",
-    "s1.legend": "捐款方式",
-    "s1.once": "單次捐款",
-    "s1.monthly": "每月捐款",
-    "s1.gift": "捐款金額（HK$）",
-    "s1.quickamt": "快速金額",
-    "s1.gifthint": "可直接輸入金額，或選用上方預設金額。",
-    "s1.months.label": "本課稅年度內的捐款月數",
-    "s1.months.hint": "扣稅按全年捐款總額計算；如只捐款數個月，請填寫實際月數。",
-    "s1.quickmonths": "快速月數",
-    "s1.band.legend": "您全年應評稅入息大約是？（未扣除免稅額；免稅額以 HK$145,000 估算）",
-    "s1.band.aria": "您全年應評稅入息大約是？（未扣除免稅額）",
-    "s1.band.unknown": "不確定 — 顯示估算範圍",
-    "s1.band.r0": "無須繳稅",
-    "s1.band.r2": "約 2%",
-    "s1.band.r6": "約 6%",
-    "s1.band.r10": "約 10%",
-    "s1.band.r14": "約 14%",
-    "s1.band.r17": "約 17%",
-    "s1.band.r15": "標準 15%",
-    "s1.band.r16": "標準 16%",
-    "s1.band.note": "應評稅入息低於約 HK$145,000（基本免稅額）者，或無須繳付薪俸稅，該筆捐款便不能扣稅。\n      應評稅入息越高，邊際稅率通常越高（最高 17%）；但應評稅入息淨額超過約 HK$2,132,500 後，稅務局會改用<b>標準稅率</b>計算\n      （首 HK$500 萬 15%，其後 16%），因此最頂兩級的比率反而回落 —— 這是香港薪俸稅的設計，並非計算錯誤。",
-    "s1.band.r0.label": "HK$145,000 以下",
-    "s1.band.r16.label": "HK$5,000,000 以上",
-    "s1.mob.unknown": "不確定 — 顯示 2% – 17% 範圍",
-    "s1.mob.r0": "HK$145,000 以下 — 無須繳稅",
-    "s1.mob.r2": "HK$145,000 – 195,000 — 約 2%",
-    "s1.mob.r6": "HK$195,000 – 245,000 — 約 6%",
-    "s1.mob.r10": "HK$245,000 – 295,000 — 約 10%",
-    "s1.mob.r14": "HK$295,000 – 345,000 — 約 14%",
-    "s1.mob.r17": "HK$345,000 – 2,132,500 — 約 17%",
-    "s1.mob.r15": "HK$2,132,500 – 5,000,000 — 標準 15%",
-    "s1.mob.r16": "HK$5,000,000 以上 — 標準 16%",
-    "s1.exact.summary": "想更準確？輸入您的應評稅入息",
-    "s1.exact.label": "全年應評稅入息（HK$，未扣除免稅額）",
-    "s1.exact.ph": "例如 500,000",
-    "s1.exact.hint": "填寫後改用單一數字，並計入累進稅級及 35% 上限。此數字只用於本頁計算，不會傳送或儲存。",
-    "s1.goto": "查看結果 →",
-    "s1.updated": "結果已更新",
-
-    "s2.eyebrow": "步驟二",
-    "s2.h": "您的估算結果",
-    "s2.netlabel": "實際付出",
-    "s2.caption": "這是實際由您支付的金額。",
-    "s2.gift": "捐款金額",
-    "s2.saved": "預計節省稅款",
-    "s2.rate": "估算採用的邊際稅率",
-    "s2.benefit": "您捐 HK$1,300，全數可作認可慈善捐款扣除；估算稅務回饋 HK$221，即每捐 HK$100，實際付出約 HK$83。",
-    "s2.assump.k1": "假設：",
-    "s2.assume.def": "應評稅入息 HK$345,000 – 2,132,500 · 邊際稅率 17%。",
-    "s2.assume.tail": "更改上述任何一項，估算會即時更新。此為估算，並未計算其他扣除或免稅額。",
-    "s2.assump.k2": "上限：",
-    "s2.cap.def": "扣稅上限為應評稅入息的 35%（全年合計）；一般捐款金額不會觸及上限。",
-    "s2.scope": "本計算機只估算個人在薪俸稅下的捐款扣稅，並非稅務建議。",
-    "s2.spouse.q": "夫婦的扣稅額可以合併使用嗎？",
-    "s2.spouse.a": "若您未能用盡扣稅額（包括超過 35% 上限而未扣除的部分），配偶可在其 BIR60 報稅表內申報。但配偶本人的申報同樣以 35% 為上限，上限按其本人的入息或利潤計算；因此未用的扣稅額並非可全數轉移。",
-
-    "s3.eyebrow": "步驟三 · 付款方式",
-    "s3.h": "三種捐款方式",
-    "s3.lede": "PayMe、AlipayHK 及信用卡，全部於護瞳行動的捐款頁完成。",
-    "s3.payme.sub": "於護瞳行動捐款頁以 PayMe 完成捐款",
-    "s3.alipay.sub": "於護瞳行動捐款頁以 AlipayHK 完成捐款",
-    "s3.card.nm": "信用卡",
-    "s3.card.sub": "前往護瞳行動捐款頁，以信用卡完成捐款",
-    "s3.monthly": "想每月捐款？",
-
-    "rc.h": "需要扣稅收據？留下姓名、電郵及付款參考編號。",
-    "rc.lede": "我們需要收據抬頭、電郵，以及付款交易編號，用以核對您的捐款並發出正式收據。課稅年度內捐款總額滿 HK$100，方可獲發正式收據。",
-    "rc.name": "姓名（收據抬頭）",
-    "rc.email": "電郵",
-    "rc.name.ph": "陳大文",
-    "rc.ref": "付款參考編號",
-    "rc.ref.ph": "例如 2026111800123",
-    "rc.ref.hint": "請填寫付款 App 交易紀錄或信用卡收據上的交易編號；我們憑此核對您的捐款，再發出正式收據。",
-    "d.rv.ref": "請輸入付款交易編號（見付款 App 的交易紀錄）。",
-    "rc.consent": "本人同意護瞳行動使用上述資料核對本人的捐款，並發出扣稅收據。",
-    "rc.disclink": "使用本計算機及提交資料前，請先閱讀<a href=\"#disclaimer\" id=\"disc-link\">免責聲明</a>。",
-    "rc.submit": "提交收據申請",
-    "rc.disc.summary": "免責聲明",
-    "rc.disc.body": "本計算機只提供估算，並非稅務建議，亦不能取代專業意見。估算依據稅務局於所示課稅年度的規定，只計入認可慈善捐款的扣稅，並未計算其他扣除、免稅額或稅務寬減；亦不涵蓋利潤稅、個人入息課稅或夫婦合併評稅。實際可扣除金額及應繳稅款以稅務局的評定為準。本計算機不會收集或儲存任何資料；您在本表格自願提供的姓名、電郵及付款參考編號，只用於核對捐款及發出扣稅收據。",
-    "foot.legal": "* 實際可扣除金額以稅務局的評定為準。扣稅上限為應評稅入息或利潤的 35%；在可扣除的金額之內，所節省的稅款約為該金額乘以您的適用稅率（最高 17%）。",
-
-    "band.unknown": "不確定",
-    "band.r0": "HK$145,000 以下",
-    "band.r2": "HK$145,000 – 195,000",
-    "band.r6": "HK$195,000 – 245,000",
-    "band.r10": "HK$245,000 – 295,000",
-    "band.r14": "HK$295,000 – 345,000",
-    "band.r17": "HK$345,000 – 2,132,500",
-    "band.r15": "HK$2,132,500 – 5,000,000",
-    "band.r16": "HK$5,000,000 以上",
-
-    "d.netlabel.once": "實際付出",
-    "d.netlabel.monthly": "本年度實際付出",
-    "d.netlabel.bound": "（最少）",
-    "d.cap.monthly": "每月 {a} × {n} 個月 = 全年合計 {total}。",
-    "d.cap.empty": "輸入捐款金額後，這裡會顯示您實際付出多少。",
-    "d.cap.exact": "按您輸入的應評稅入息 {inc} 精確計算，已計入累進稅級及 35% 上限。",
-    "d.cap.unknown": "未指定入息範圍：下限為無須繳稅（節省 HK$0），上限為最高邊際稅率 17%。",
-    "d.cap.range": "範圍來自所選入息範圍的下限與上限。",
-    "d.cap.same": "在所選入息範圍內，這筆捐款節省的稅款相同。",
-    "d.gift.once": "捐款金額",
-    "d.gift.monthly": "全年捐款總額（{n} 個月）",
-    "d.saved.once": "預計節省稅款",
-    "d.saved.most": "預計節省稅款（最多）",
-    "d.range.sep": " 至 ",
-    "d.rate.generic": "稅率",
-    "d.rate.marginal": "邊際稅率",
-    "d.rate.standard": "標準稅率",
-    "d.ratelabel.generic": "估算採用的稅率",
-    "d.ratelabel.marginal": "估算採用的邊際稅率",
-    "d.ratelabel.standard": "估算採用的標準稅率",
-    "d.assume.empty": "尚未輸入捐款金額。",
-    "d.assume.exact": "應評稅入息 {inc}（您輸入）· 已計入累進稅級及 35% 上限。",
-    "d.assume.unknown": "應評稅入息範圍未指定 · 由無須繳稅（0%）至最高 17%。",
-    "d.assume.band": "應評稅入息 {band} · 按範圍下限與上限分別計算。",
-    "d.capline.empty": "扣稅上限為應評稅入息的 35%（全年合計）。",
-    "d.capline.exact.capped": "扣稅上限為應評稅入息的 35%（全年合計）：可扣除 {taxed}，超出部分不能扣除。",
-    "d.capline.exact.ok": "扣稅上限為應評稅入息的 35%（全年合計）；未觸及上限，全數可扣除。",
-    "d.capline.unknown": "扣稅上限為應評稅入息的 35%（全年合計）；上限已計入。",
-    "d.capline.zero": "扣稅上限為應評稅入息的 35%（全年合計）；捐款仍可扣除，但沒有應繳稅款可減少。",
-    "d.capline.band.capped": "扣稅上限為應評稅入息的 35%（全年合計）；所選範圍下限可扣除 {d}。",
-    "d.capline.band.ok": "扣稅上限為應評稅入息的 35%（全年合計）；所選範圍下限全數可扣除。",
-    "d.benefit.empty": "輸入捐款金額後，這裡會顯示您實際付出多少、節省多少稅款。",
-    "d.benefit.range": "您捐 {g}，可作認可慈善捐款扣除{cap}；預計稅務回饋 {lo} 至 {hi}，即每捐 HK$100，實際付出約 {a} 至 {b}。",
-    "d.benefit.capnote": "（受 35% 上限限制）",
-    "d.benefit.zero": "您捐 {g}，可作認可慈善捐款扣除。以您的入息水平估算，無須繳付薪俸稅，因此這筆捐款不會減少稅款。",
-    "d.benefit.capped": "您捐 {g}。可扣除金額受應評稅入息 35% 上限所限，為 {taxed}，超出部分不能扣除；預計節省稅款 {s}。",
-    "d.benefit.ok": "您捐 {g}，全數可作認可慈善捐款扣除；預計稅務回饋 {s}，即每捐 HK$100，實際付出約 {per}。",
-    "d.announce.monthly": "每月 {a}，共 {n} 個月，全年合計 {total}。",
-    "d.announce.once": "捐款 {v}。",
-    "d.announce.range": " 預計節省稅款由 {lo} 至 {hi}。",
-    "d.announce.single": " 預計節省稅款 {v}，{w} {p}。",
-    "d.months.one": "1 個月",
-    "d.months.n": "{n} 個月",
-    "d.dl.open": "已嘗試開啟 {app}…",
-    "d.dl.notframed": "本頁未嵌入 iframe，因此無法測試 App 跳轉 —— 請在 Test Bench 或 CMS 內的 iframe 版本測試。",
-    "d.dl.blocked": "⚠️ 被 iframe 阻止（需要 allow-top-navigation-by-user-activation）。",
-    "d.dl.noapp": "頁面仍然停留於此 —— 表示瀏覽器或 iframe 未處理此 App scheme（iOS Safari 及沙盒 iframe 常見）。正式版需要二維碼或頂層跳轉。",
-    "d.rv.name": "請輸入收據抬頭姓名。",
-    "d.rv.mail": "請輸入有效電郵。",
-    "d.rv.consent": "請先勾選同意。",
-    "d.rv.ok": "多謝您。我們會先核對您的付款，核對後發出扣稅收據。",
-    "d.rv.done": "已收到"
-  },
-
-  "en": {
-    "title": "Donation tax calculator",
-
-    "s1.eyebrow": "Step 1",
-    "s1.h": "Enter two things",
-    "s1.lede": "Just the amount you are giving, and roughly what you earn.",
-    "s1.legend": "How you give",
-    "s1.once": "One-off",
-    "s1.monthly": "Monthly",
-    "s1.gift": "Donation amount (HK$)",
-    "s1.quickamt": "Quick amounts",
-    "s1.gifthint": "Type an amount, or pick one above.",
-    "s1.months.label": "Months you give in this year of assessment",
-    "s1.months.hint": "The deduction uses your total for the year, so if you give for only some months, enter the months you actually give.",
-    "s1.quickmonths": "Quick month counts",
-    "s1.band.legend": "Roughly what is your assessable income for the year? (Before allowances; the allowance is estimated at HK$145,000)",
-    "s1.band.aria": "Roughly what is your assessable income for the year? (Before allowances)",
-    "s1.band.unknown": "Not sure — show me a range",
-    "s1.band.r0": "No tax payable",
-    "s1.band.r2": "About 2%",
-    "s1.band.r6": "About 6%",
-    "s1.band.r10": "About 10%",
-    "s1.band.r14": "About 14%",
-    "s1.band.r17": "About 17%",
-    "s1.band.r15": "Standard 15%",
-    "s1.band.r16": "Standard 16%",
-    "s1.band.note": "If your assessable income is below about HK$145,000 (the basic allowance), or you pay no salaries tax, this donation saves you nothing.\n      The higher your assessable income, the higher your marginal rate usually is, up to 17%. Above about HK$2,132,500 of net assessable income the Inland Revenue Department charges the <b>standard rate</b> instead\n      — 15% on the first HK$5 million, 16% above it — so the top two rungs go down, not up. That is how Hong Kong salaries tax is designed, not a calculation error.",
-    "s1.band.r0.label": "Below HK$145,000",
-    "s1.band.r16.label": "HK$5,000,000 and above",
-    "s1.mob.unknown": "Not sure — show a 2% – 17% range",
-    "s1.mob.r0": "Below HK$145,000 — no tax payable",
-    "s1.mob.r2": "HK$145,000 – 195,000 — about 2%",
-    "s1.mob.r6": "HK$195,000 – 245,000 — about 6%",
-    "s1.mob.r10": "HK$245,000 – 295,000 — about 10%",
-    "s1.mob.r14": "HK$295,000 – 345,000 — about 14%",
-    "s1.mob.r17": "HK$345,000 – 2,132,500 — about 17%",
-    "s1.mob.r15": "HK$2,132,500 – 5,000,000 — standard 15%",
-    "s1.mob.r16": "HK$5,000,000 and above — standard 16%",
-    "s1.exact.summary": "Want a closer figure? Enter your assessable income",
-    "s1.exact.label": "Assessable income for the year (HK$, before allowances)",
-    "s1.exact.ph": "e.g. 500,000",
-    "s1.exact.hint": "A figure here gives you one number, worked through the progressive bands and the 35% cap. It is used for this page only — never sent, never stored.",
-    "s1.goto": "See the result →",
-    "s1.updated": "Result updated",
-
-    "s2.eyebrow": "Step 2",
-    "s2.h": "Your estimate",
-    "s2.netlabel": "You actually pay",
-    "s2.caption": "This is the amount you actually pay.",
-    "s2.gift": "Donation",
-    "s2.saved": "Estimated tax saved",
-    "s2.rate": "Marginal rate used",
-    "s2.benefit": "You give HK$1,300, all of it deductible as a recognised charitable donation. Estimated tax back HK$221, so every HK$100 you give costs you about HK$83.",
-    "s2.assump.k1": "Assumptions:",
-    "s2.assume.def": "Assessable income HK$345,000 – 2,132,500 · marginal rate 17%.",
-    "s2.assume.tail": "Change either one and the estimate updates. Other deductions and allowances are not included.",
-    "s2.assump.k2": "Cap:",
-    "s2.cap.def": "The cap is 35% of your assessable income, taken for the year. An ordinary donation does not reach it.",
-    "s2.scope": "This estimates the donation deduction for one person under salaries tax only. It is not tax advice.",
-    "s2.spouse.q": "Can a couple combine their deduction?",
-    "s2.spouse.a": "If you cannot use all of your deduction — including the part above the 35% cap — your spouse may claim it on their own BIR60. Their claim is still capped at 35% of their own income or profits, so an unused deduction cannot be passed across in full.",
-
-    "s3.eyebrow": "Step 3 · Payment",
-    "s3.h": "Three ways to give",
-    "s3.lede": "PayMe, AlipayHK or a credit card — all completed on the Foundation's donation page.",
-    "s3.payme.sub": "Give by PayMe on the Foundation's donation page",
-    "s3.alipay.sub": "Give by AlipayHK on the Foundation's donation page",
-    "s3.card.nm": "Credit card",
-    "s3.card.sub": "Go to the Foundation's donation page and give by card",
-    "s3.monthly": "Would you rather give monthly?",
-
-    "rc.h": "Need a tax receipt? Leave your name, email and payment reference.",
-    "rc.lede": "We need the name for the receipt, an email address, and the transaction reference from your payment, so we can match your gift before issuing the receipt. A receipt is issued once your total for the year of assessment reaches HK$100.",
-    "rc.name": "Name (as it should appear on the receipt)",
-    "rc.email": "Email",
-    "rc.name.ph": "Chan Tai Man",
-    "rc.ref": "Payment reference",
-    "rc.ref.ph": "e.g. 2026111800123",
-    "rc.ref.hint": "The transaction ID shown in your payment app, or on your card receipt. We use it to match your donation before issuing the receipt.",
-    "d.rv.ref": "Please enter the payment reference from your app or receipt.",
-    "rc.consent": "I agree that the Fred Hollows Foundation may use the details above to match my donation and issue a tax receipt.",
-    "rc.disclink": "Before you use this calculator or send anything, please read the <a href=\"#disclaimer\" id=\"disc-link\">disclaimer</a>.",
-    "rc.submit": "Request my receipt",
-    "rc.disc.summary": "Disclaimer",
-    "rc.disc.body": "This calculator gives an estimate only. It is not tax advice, and it does not replace professional advice. The estimate follows Inland Revenue Department rules for the year of assessment shown. It covers the deduction for recognised charitable donations only, and includes no other deduction, allowance or tax reduction. It does not cover profits tax, personal assessment, or joint assessment for a married couple. The amount you may deduct, and the tax you actually pay, are determined by the Inland Revenue Department. The calculator itself collects and stores nothing; the name, email and payment reference you choose to give in this form are used only to match your donation and issue your tax receipt.",
-    "foot.legal": "* The amount you may deduct is determined by the Inland Revenue Department. The cap is 35% of assessable income or profits. Within the deductible amount, the tax saved is roughly that amount times your applicable rate, up to 17%.",
-
-    "band.unknown": "not sure",
-    "band.r0": "below HK$145,000",
-    "band.r2": "HK$145,000 – 195,000",
-    "band.r6": "HK$195,000 – 245,000",
-    "band.r10": "HK$245,000 – 295,000",
-    "band.r14": "HK$295,000 – 345,000",
-    "band.r17": "HK$345,000 – 2,132,500",
-    "band.r15": "HK$2,132,500 – 5,000,000",
-    "band.r16": "HK$5,000,000 and above",
-
-    "d.netlabel.once": "You actually pay",
-    "d.netlabel.monthly": "You actually pay this year",
-    "d.netlabel.bound": " (at least)",
-    "d.cap.monthly": "{a} a month × {n} months = {total} for the year.",
-    "d.cap.empty": "Enter a donation amount and this shows what you actually pay.",
-    "d.cap.exact": "Worked exactly from the assessable income you entered, {inc}, through the progressive bands and the 35% cap.",
-    "d.cap.unknown": "No income range chosen: from no tax payable (HK$0 saved) up to the top marginal rate, 17%.",
-    "d.cap.range": "The range comes from the bottom and the top of the income range you chose.",
-    "d.cap.same": "Across the income range you chose, this donation saves the same amount.",
-    "d.gift.once": "Donation",
-    "d.gift.monthly": "Total for the year ({n} months)",
-    "d.saved.once": "Estimated tax saved",
-    "d.saved.most": "Estimated tax saved (at most)",
-    "d.range.sep": " to ",
-    "d.rate.generic": "rate",
-    "d.rate.marginal": "marginal rate",
-    "d.rate.standard": "standard rate",
-    "d.ratelabel.generic": "Rate used in this estimate",
-    "d.ratelabel.marginal": "Marginal rate used in this estimate",
-    "d.ratelabel.standard": "Standard rate used in this estimate",
-    "d.assume.empty": "No donation amount entered yet.",
-    "d.assume.exact": "Assessable income {inc} (the figure you entered) · progressive bands and the 35% cap applied.",
-    "d.assume.unknown": "No income range chosen · from no tax payable (0%) to a top of 17%.",
-    "d.assume.band": "Assessable income {band} · worked at both ends of the range.",
-    "d.capline.empty": "The cap is 35% of your assessable income, taken for the whole year.",
-    "d.capline.exact.capped": "The cap is 35% of your assessable income for the year: {taxed} is deductible, and the rest cannot be deducted.",
-    "d.capline.exact.ok": "The cap is 35% of your assessable income for the year. You are under it, so all of the gift is deductible.",
-    "d.capline.unknown": "The cap is 35% of your assessable income for the year; the cap is included.",
-    "d.capline.zero": "The cap is 35% of your assessable income for the year. The gift is still deductible, but there is no tax to reduce.",
-    "d.capline.band.capped": "The cap is 35% of your assessable income for the year; at the bottom of the range you chose, {d} is deductible.",
-    "d.capline.band.ok": "The cap is 35% of your assessable income for the year; at the bottom of the range you chose, all of it is deductible.",
-    "d.benefit.empty": "Once you enter an amount, this line shows what you pay and what you save.",
-    "d.benefit.range": "You give {g}, deductible as a recognised charitable donation{cap}. Estimated tax back {lo} to {hi}, so every HK$100 you give costs you about {a} to {b}.",
-    "d.benefit.capnote": " (limited by the 35% cap)",
-    "d.benefit.zero": "You give {g}, deductible as a recognised charitable donation. At this income you pay no salaries tax, so the donation does not reduce your tax.",
-    "d.benefit.capped": "You give {g}. The 35% cap on assessable income limits the deduction to {taxed}, and the rest cannot be deducted. Estimated tax saved {s}.",
-    "d.benefit.ok": "You give {g}, all of it deductible as a recognised charitable donation. Estimated tax back {s}, so every HK$100 you give costs you about {per}.",
-    "d.announce.monthly": "{a} a month, {n} months, {total} for the year.",
-    "d.announce.once": "Donation {v}.",
-    "d.announce.range": " Estimated tax saved {lo} to {hi}.",
-    "d.announce.single": " Estimated tax saved {v}, {w} {p}.",
-    "d.months.one": "1 month",
-    "d.months.n": "{n} months",
-    "d.dl.open": "Trying to open {app}…",
-    "d.dl.notframed": "This page is not inside an iframe, so the app jump cannot be tested here. Use the Test Bench or the iframe version in the CMS.",
-    "d.dl.blocked": "⚠️ Blocked by the iframe (needs allow-top-navigation-by-user-activation).",
-    "d.dl.noapp": "The page is still here, so the browser or the iframe did not handle this app scheme. That is common on iOS Safari and in sandboxed iframes. A live build needs the QR code or a top-level jump.",
-    "d.rv.name": "Please enter the name for the receipt.",
-    "d.rv.mail": "Please enter a valid email address.",
-    "d.rv.consent": "Please tick the consent box first.",
-    "d.rv.ok": "Thank you. We will match your payment first, then issue the tax receipt.",
-    "d.rv.done": "Received"
-  }
+    "zh-HK": {
+      "title": "慈善捐款扣稅計算機",
+      "s1.h": "您的捐款",
+      "s1.legend": "單次或每月",
+      "s1.once": "單次",
+      "s1.monthly": "每月",
+      "s1.gift": "捐款金額",
+      "s1.quickamt": "常用金額",
+      "s1.quickmonths": "常用月數",
+      "s1.quicklab": "或",
+      "s1.months.label": "本課稅年度的捐款月數",
+      "s1.months.hint": "課稅年度至 3 月 31 日止；扣稅按全年捐款總額計算。",
+      "s1.band.label": "您全年應評稅入息（大約）",
+      "s1.band.hint": "未扣除免稅額（以 HK$145,000 估算）。",
+      "s1.band.aria": "您全年應評稅入息（大約）",
+      "s1.band.unknown": "不確定",
+      "s1.band.r0": "無須繳稅",
+      "s1.band.r2": "約 2%",
+      "s1.band.r6": "約 6%",
+      "s1.band.r10": "約 10%",
+      "s1.band.r14": "約 14%",
+      "s1.band.r17": "約 17%",
+      "s1.band.r15": "標準 15%",
+      "s1.band.r16": "標準 16%",
+      "s1.band.r0.label": "HK$145,000 以下",
+      "s1.band.r16.label": "HK$5,000,000 以上",
+      "s1.band.note": "應評稅入息淨額超過 HK$2,132,500 後改用標準稅率（15%，其後 16%），故最頂兩級回落，並非計算錯誤。",
+      "s1.mob.unknown": "不確定 · 2%–17%",
+      "s1.mob.r0": "HK$145,000 以下 · 無須繳稅",
+      "s1.mob.r2": "HK$145,000 – 195,000 · 2%",
+      "s1.mob.r6": "HK$195,000 – 245,000 · 6%",
+      "s1.mob.r10": "HK$245,000 – 295,000 · 10%",
+      "s1.mob.r14": "HK$295,000 – 345,000 · 14%",
+      "s1.mob.r17": "HK$345,000 – 2,132,500 · 17%",
+      "s1.mob.r15": "HK$2,132,500 – 5,000,000 · 標準 15%",
+      "s1.mob.r16": "HK$5,000,000 以上 · 標準 16%",
+      "s1.exact.summary": "改用自己的入息數字",
+      "s1.exact.label": "全年應評稅入息",
+      "s1.exact.ph": "例如 500,000",
+      "s1.exact.hint": "由範圍改為單一數字，並計入累進稅級及 35% 上限。只用於本頁計算，不會傳送或儲存。",
+      "s1.what.summary": "哪些捐款才可扣稅",
+      "s1.what.body": "只有捐予《稅務條例》第 88 條認可慈善團體的款項才可扣稅。換取貨品、服務或利益的付款不屬捐款，例如獎券、拍賣購入的物品、慈善晚宴或酒席、以及帶廣告回報的贊助。應評稅入息不高於基本免稅額者無須繳付薪俸稅，捐款亦不會減少稅款。",
+      "s1.goto": "看實際付出",
+      "s1.updated": "結果已更新",
+      "s2.h": "實際付出",
+      "s2.netlabel": "您實際付出",
+      "s2.caption": "按所選入息範圍的下限與上限計算。",
+      "s2.gift": "捐款金額",
+      "s2.saved": "節省稅款",
+      "s2.rate": "稅率",
+      "s2.benefit": "您捐 HK$1,300，全數可作認可慈善捐款扣除。每捐 HK$100，實際付出約 HK$83。",
+      "s2.assume.def": "假設入息 HK$345,000 – 2,132,500。",
+      "s2.cap.def": "扣稅上限為應評稅入息的 35%（全年合計）；一般捐款不會觸及上限。",
+      "s2.scope": "只估算個人在薪俸稅下的捐款扣稅，並非稅務建議。",
+      "s2.spouse.q": "夫婦的扣稅額可否合併使用？",
+      "s2.spouse.a": "可以，但只限未用的部分。您未能用盡的扣稅額（包括超出 35% 上限而未扣除的部分），配偶可在其 BIR60 報稅表內申報；配偶本人的申報同樣以 35% 為上限，上限按其本人的入息或利潤計算，因此未用的扣稅額不能全數轉移。",
+      "s3.h": "捐款方式",
+      "s3.lede": "三種方式均於護瞳行動的捐款頁完成。",
+      "s3.payme.sub": "手機錢包",
+      "s3.alipay.sub": "手機錢包",
+      "s3.card.nm": "信用卡",
+      "s3.card.sub": "網頁付款",
+      "s3.monthly": "改為每月捐款",
+      "rc.h": "索取扣稅收據",
+      "rc.lede": "收據抬頭、電郵、付款參考編號。",
+      "rc.threshold": "全年捐款總額滿 HK$100 即發出收據。",
+      "rc.name": "姓名（收據抬頭）",
+      "rc.name.ph": "陳大文",
+      "rc.email": "電郵",
+      "rc.ref": "付款參考編號",
+      "rc.ref.ph": "例如 2026111800123",
+      "rc.ref.hint": "付款 App 交易紀錄或信用卡收據上的交易編號。",
+      "rc.consent": "本人同意護瞳行動使用上述資料核對捐款，並發出扣稅收據。",
+      "rc.disclink": "提交前請先閱讀<a href=\"#disclaimer\" id=\"disc-link\">免責聲明</a>。",
+      "rc.submit": "提交收據申請",
+      "rc.keep": "請保留收據六年；稅務局可能要求查閱。",
+      "rc.disc.summary": "免責聲明",
+      "rc.disc.body": "僅為估算，並非稅務建議，亦不能取代專業意見。估算依稅務局截至 3 月 31 日止課稅年度的規定，只計入認可慈善捐款的扣稅，並無計及其他扣除、免稅額或稅務寬減；亦不涵蓋利潤稅、個人入息課稅或夫婦合併評稅。實際可扣除金額及應繳稅款以稅務局評定為準。本計算機不收集、不儲存任何資料；您在此提供的姓名、電郵及付款參考編號，只用於核對捐款及發出收據。",
+      "foot.legal": "* 以稅務局評定為準。上限為應評稅入息或利潤的 35%；節省稅款約為可扣除金額 × 適用稅率（最高 17%）。",
+      "band.unknown": "不確定",
+      "band.r0": "HK$145,000 以下",
+      "band.r2": "HK$145,000 – 195,000",
+      "band.r6": "HK$195,000 – 245,000",
+      "band.r10": "HK$245,000 – 295,000",
+      "band.r14": "HK$295,000 – 345,000",
+      "band.r17": "HK$345,000 – 2,132,500",
+      "band.r15": "HK$2,132,500 – 5,000,000",
+      "band.r16": "HK$5,000,000 以上",
+      "d.netlabel.once": "您實際付出",
+      "d.netlabel.monthly": "本年度實際付出",
+      "d.netlabel.bound": "（最少）",
+      "d.cap.monthly": "每月 {a} × {n} 個月 = 全年 {total}。",
+      "d.cap.empty": "輸入捐款金額後即會顯示。",
+      "d.cap.exact": "按您輸入的 {inc} 精確計算。",
+      "d.cap.unknown": "未指定入息範圍：下限為節省 HK$0，上限為最高邊際稅率 17%。",
+      "d.cap.range": "按範圍上下限計算。",
+      "d.cap.same": "範圍兩端相同。",
+      "d.gift.once": "捐款金額",
+      "d.gift.monthly": "全年總額（{n} 個月）",
+      "d.saved.once": "節省稅款",
+      "d.saved.most": "節省稅款（最多）",
+      "d.range.sep": " 至 ",
+      "d.rate.generic": "稅率",
+      "d.rate.marginal": "邊際稅率",
+      "d.rate.standard": "標準稅率",
+      "d.ratelabel.generic": "採用的稅率",
+      "d.ratelabel.marginal": "邊際稅率",
+      "d.ratelabel.standard": "標準稅率",
+      "d.assume.empty": "尚未輸入捐款金額。",
+      "d.assume.exact": "假設入息 {inc}（您輸入）。",
+      "d.assume.unknown": "未指定入息範圍。",
+      "d.assume.band": "假設入息 {band}。",
+      "d.capline.empty": "扣稅上限為應評稅入息的 35%（全年合計）。",
+      "d.capline.exact.capped": "35% 上限：可扣除 {taxed}，其餘不能扣除。",
+      "d.capline.exact.ok": "35% 上限；未觸及，全數可扣除。",
+      "d.capline.unknown": "已計 35% 上限。",
+      "d.capline.zero": "扣稅上限為應評稅入息的 35%（全年合計）；捐款仍可扣除，但沒有應繳稅款可減少。",
+      "d.capline.band.capped": "35% 上限；範圍下限可扣除 {d}。",
+      "d.capline.band.ok": "35% 上限；範圍下限全數可扣除。",
+      "d.benefit.empty": "輸入捐款金額後，即顯示實際付出。",
+      "d.benefit.range": "您捐 {g}，可作認可慈善捐款扣除{cap}。每捐 HK$100，實際付出約 {a} 至 {b}。",
+      "d.benefit.capnote": "（受 35% 上限所限）",
+      "d.benefit.zero": "您捐 {g}。以此入息水平無須繳付薪俸稅，捐款不會減少稅款。",
+      "d.benefit.capped": "受應評稅入息 35% 上限所限，可扣除 {taxed}；節省稅款 {s}。",
+      "d.benefit.ok": "您捐 {g}，全數可作認可慈善捐款扣除。每捐 HK$100，實際付出約 {per}。",
+      "d.announce.monthly": "每月 {a}，共 {n} 個月，全年合計 {total}。",
+      "d.announce.once": "捐款 {v}。",
+      "d.announce.range": " 預計節省稅款 {lo} 至 {hi}。",
+      "d.announce.single": " 預計節省稅款 {v}，{w} {p}。",
+      "d.months.one": "1 個月",
+      "d.months.n": "{n} 個月",
+      "d.rv.name": "請輸入收據抬頭姓名。",
+      "d.rv.mail": "請輸入有效電郵。",
+      "d.rv.ref": "請輸入付款參考編號。",
+      "d.rv.consent": "請先勾選同意。",
+      "d.rv.ok": "多謝您。我們會先核對付款，核對後發出扣稅收據。",
+      "d.rv.done": "已收到"
+    },
+    "en": {
+      "title": "Donation tax calculator",
+      "s1.h": "Your gift",
+      "s1.legend": "One-off or monthly",
+      "s1.once": "One-off",
+      "s1.monthly": "Monthly",
+      "s1.gift": "Donation amount",
+      "s1.quickamt": "Quick amounts",
+      "s1.quickmonths": "Quick month counts",
+      "s1.quicklab": "or",
+      "s1.months.label": "Months given this year of assessment",
+      "s1.months.hint": "The year of assessment ends 31 March. The deduction uses your total for that year.",
+      "s1.band.label": "Your assessable income this year, roughly",
+      "s1.band.hint": "Before allowances (HK$145,000 assumed).",
+      "s1.band.aria": "Your assessable income this year, roughly",
+      "s1.band.unknown": "Not sure",
+      "s1.band.r0": "No tax",
+      "s1.band.r2": "About 2%",
+      "s1.band.r6": "About 6%",
+      "s1.band.r10": "About 10%",
+      "s1.band.r14": "About 14%",
+      "s1.band.r17": "About 17%",
+      "s1.band.r15": "Standard 15%",
+      "s1.band.r16": "Standard 16%",
+      "s1.band.r0.label": "Below HK$145,000",
+      "s1.band.r16.label": "HK$5,000,000 and above",
+      "s1.band.note": "Above HK$2,132,500 the standard rate applies — 15%, then 16% — so the last two rungs fall, by design.",
+      "s1.mob.unknown": "Not sure · 2%–17%",
+      "s1.mob.r0": "Below HK$145,000 · no tax",
+      "s1.mob.r2": "HK$145,000 – 195,000 · 2%",
+      "s1.mob.r6": "HK$195,000 – 245,000 · 6%",
+      "s1.mob.r10": "HK$245,000 – 295,000 · 10%",
+      "s1.mob.r14": "HK$295,000 – 345,000 · 14%",
+      "s1.mob.r17": "HK$345,000 – 2,132,500 · 17%",
+      "s1.mob.r15": "HK$2,132,500 – 5,000,000 · std 15%",
+      "s1.mob.r16": "HK$5,000,000 and above · std 16%",
+      "s1.exact.summary": "Use your exact income",
+      "s1.exact.label": "Assessable income for the year",
+      "s1.exact.ph": "e.g. 500,000",
+      "s1.exact.hint": "One figure instead of a range, worked through the bands and the 35% cap. Never sent, never stored.",
+      "s1.what.summary": "What counts as a deductible gift",
+      "s1.what.body": "Only money given to a charity approved under section 88 of the Inland Revenue Ordinance can be deducted. Money paid for something in return is not a donation — raffle tickets, auction purchases, dinner seats, sponsorship that buys advertising. At or below the basic allowance you pay no salaries tax, so a gift saves you nothing.",
+      "s1.goto": "See what it costs you",
+      "s1.updated": "Result updated",
+      "s2.h": "What it costs you",
+      "s2.netlabel": "You pay",
+      "s2.caption": "Between the top and bottom of the range you chose.",
+      "s2.gift": "Donation",
+      "s2.saved": "Tax saved",
+      "s2.rate": "Rate",
+      "s2.benefit": "You give HK$1,300, all of it deductible. Every HK$100 costs you about HK$83.",
+      "s2.assume.def": "Income assumed HK$345,000 – 2,132,500.",
+      "s2.cap.def": "The cap is 35% of assessable income for the year; an ordinary gift does not reach it.",
+      "s2.scope": "One person, salaries tax only. An estimate, not tax advice.",
+      "s2.spouse.q": "Can a couple combine the deduction?",
+      "s2.spouse.a": "Partly. What you cannot use — including the part above the 35% cap — your spouse may claim on their own BIR60. Their claim is capped at 35% of their own income or profits, so an unused deduction does not pass across in full.",
+      "s3.h": "How you give",
+      "s3.lede": "All three finish on the Foundation's donation page.",
+      "s3.payme.sub": "Phone wallet",
+      "s3.alipay.sub": "Phone wallet",
+      "s3.card.nm": "Credit card",
+      "s3.card.sub": "On the web page",
+      "s3.monthly": "Give monthly instead",
+      "rc.h": "Claim your receipt",
+      "rc.lede": "Name, email, and your payment reference.",
+      "rc.threshold": "A receipt follows once your gifts for the year reach HK$100.",
+      "rc.name": "Name on the receipt",
+      "rc.name.ph": "Chan Tai Man",
+      "rc.email": "Email",
+      "rc.ref": "Payment reference",
+      "rc.ref.ph": "e.g. 2026111800123",
+      "rc.ref.hint": "The transaction ID in your payment app, or on your card receipt.",
+      "rc.consent": "I agree that the Foundation may use these details to match my gift and issue my tax receipt.",
+      "rc.disclink": "Read the <a href=\"#disclaimer\" id=\"disc-link\">disclaimer</a> before you send anything.",
+      "rc.submit": "Request my receipt",
+      "rc.keep": "Keep the receipt for six years — the IRD may ask to see it.",
+      "rc.disc.summary": "Disclaimer",
+      "rc.disc.body": "An estimate only. Not tax advice, and no substitute for professional advice. It follows Inland Revenue Department rules for the year of assessment ending 31 March, covers the deduction for recognised charitable donations only, and allows nothing for other deductions, allowances or tax reductions. It does not cover profits tax, personal assessment or joint assessment. What you may deduct, and what you pay, rest with the Inland Revenue Department. The calculator collects and stores nothing; the name, email and reference you give here are used only to match your donation and issue your receipt.",
+      "foot.legal": "* The IRD decides what you may deduct. Cap 35% of assessable income or profits; tax saved ≈ deductible × your rate, up to 17%.",
+      "band.unknown": "not sure",
+      "band.r0": "below HK$145,000",
+      "band.r2": "HK$145,000 – 195,000",
+      "band.r6": "HK$195,000 – 245,000",
+      "band.r10": "HK$245,000 – 295,000",
+      "band.r14": "HK$295,000 – 345,000",
+      "band.r17": "HK$345,000 – 2,132,500",
+      "band.r15": "HK$2,132,500 – 5,000,000",
+      "band.r16": "HK$5,000,000 and above",
+      "d.netlabel.once": "You pay",
+      "d.netlabel.monthly": "You pay this year",
+      "d.netlabel.bound": " (at least)",
+      "d.cap.monthly": "{a} a month × {n} months = {total} for the year.",
+      "d.cap.empty": "Enter an amount and this fills in.",
+      "d.cap.exact": "Worked exactly from {inc}.",
+      "d.cap.unknown": "No range chosen: HK$0 at one end, the top 17% at the other.",
+      "d.cap.range": "Both ends of your range.",
+      "d.cap.same": "The same at both ends.",
+      "d.gift.once": "Donation",
+      "d.gift.monthly": "Total for the year ({n} months)",
+      "d.saved.once": "Tax saved",
+      "d.saved.most": "Tax saved at most",
+      "d.range.sep": " to ",
+      "d.rate.generic": "rate",
+      "d.rate.marginal": "marginal rate",
+      "d.rate.standard": "standard rate",
+      "d.ratelabel.generic": "Rate used",
+      "d.ratelabel.marginal": "Marginal rate",
+      "d.ratelabel.standard": "Standard rate",
+      "d.assume.empty": "No amount entered yet.",
+      "d.assume.exact": "Income assumed {inc}, as you entered it.",
+      "d.assume.unknown": "No income range given.",
+      "d.assume.band": "Income assumed {band}.",
+      "d.capline.empty": "The cap is 35% of assessable income for the year.",
+      "d.capline.exact.capped": "35% cap: {taxed} deductible, the rest not.",
+      "d.capline.exact.ok": "35% cap — not reached, so all of it is deductible.",
+      "d.capline.unknown": "35% cap applied.",
+      "d.capline.zero": "The cap is 35% of assessable income for the year; the gift is still deductible, but there is no tax to reduce.",
+      "d.capline.band.capped": "35% cap — {d} deductible at your range's low end.",
+      "d.capline.band.ok": "35% cap — all of it deductible at your range's low end.",
+      "d.benefit.empty": "Enter an amount to see what it costs you.",
+      "d.benefit.range": "{g} given, deductible{cap}. Every HK$100 costs you about {a} to {b}.",
+      "d.benefit.capnote": " (held to the 35% cap)",
+      "d.benefit.zero": "You give {g}. At this income you pay no salaries tax, so the gift saves you nothing.",
+      "d.benefit.capped": "The 35% cap holds the deduction to {taxed}. Tax saved {s}.",
+      "d.benefit.ok": "{g} given, all of it deductible as a recognised charitable donation. Every HK$100 costs you about {per}.",
+      "d.announce.monthly": "{a} a month, {n} months, {total} for the year.",
+      "d.announce.once": "Donation {v}.",
+      "d.announce.range": " Estimated tax saved {lo} to {hi}.",
+      "d.announce.single": " Estimated tax saved {v}, {w} {p}.",
+      "d.months.one": "1 month",
+      "d.months.n": "{n} months",
+      "d.rv.name": "Please enter the name for the receipt.",
+      "d.rv.mail": "Please enter a valid email address.",
+      "d.rv.ref": "Please enter the payment reference from your app or receipt.",
+      "d.rv.consent": "Please tick the consent box first.",
+      "d.rv.ok": "Thank you. We will match your payment first, then issue the tax receipt.",
+      "d.rv.done": "Received"
+    }
   };
 
   var L = "zh-HK";

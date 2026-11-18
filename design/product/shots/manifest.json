@@ -1,0 +1,74 @@
+[
+ {
+  "block": "calc",
+  "width": 390,
+  "lang": "en",
+  "declared": 1780,
+  "content": 1439,
+  "scrollH": 1780,
+  "slack": 341,
+  "overflowX": 0,
+  "file": "calc-390-en.png",
+  "bytes": 125296
+ },
+ {
+  "block": "calc",
+  "width": 1280,
+  "lang": "en",
+  "declared": 1780,
+  "content": 1363,
+  "scrollH": 1780,
+  "slack": 417,
+  "overflowX": 0,
+  "file": "calc-1280-en.png",
+  "bytes": 143842
+ },
+ {
+  "block": "pay",
+  "width": 390,
+  "lang": "en",
+  "declared": 440,
+  "content": 376,
+  "scrollH": 440,
+  "slack": 64,
+  "overflowX": 0,
+  "file": "pay-390-en.png",
+  "bytes": 24046
+ },
+ {
+  "block": "pay",
+  "width": 1280,
+  "lang": "en",
+  "declared": 440,
+  "content": 358,
+  "scrollH": 440,
+  "slack": 82,
+  "overflowX": 0,
+  "file": "pay-1280-en.png",
+  "bytes": 27941
+ },
+ {
+  "block": "receipt",
+  "width": 390,
+  "lang": "en",
+  "declared": 710,
+  "content": 606,
+  "scrollH": 710,
+  "slack": 104,
+  "overflowX": 0,
+  "file": "receipt-390-en.png",
+  "bytes": 44975
+ },
+ {
+  "block": "receipt",
+  "width": 1280,
+  "lang": "en",
+  "declared": 710,
+  "content": 509,
+  "scrollH": 710,
+  "slack": 201,
+  "overflowX": 0,
+  "file": "receipt-1280-en.png",
+  "bytes": 49202
+ }
+]

@@ -26,11 +26,11 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 
 | # | Block | URL | Height · zh-HK | Height · en | Content peak zh-HK | Content peak en |
 |---|---|---|---|---|---|---|
-| 1 | Calculator + result | `/embed/?part=calc` | **1650px** | **2000px** | 1590 (at 320px) | 1937 (at 320px) |
-| 1a | Calculator only | `/embed/?part=input` | **900px** | **1000px** | 832 (at 1200px) | 937 (at 320px) |
-| 1b | Result only | `/embed/?part=result` | **800px** | **960px** | 732 (at 320px) | 904 (at 320px) |
-| 2 | Payment | `/embed/?part=pay` | **1040px** | **1210px** | 970 (at 320px) | 1144 (at 320px) |
-| 3 | Receipt | `/embed/?part=receipt` | **860px** | **1030px** | 794 (at 320px) | 959 (at 320px) |
+| 1 | Calculator + result | `/embed/?part=calc` | **1440px** | **1440px** | 1380 (at 944px) | 1380 (at 944px) |
+| 1a | Calculator only | `/embed/?part=input` | **840px** | **840px** | 780 (at 944px) | 780 (at 944px) |
+| 1b | Result only | `/embed/?part=result` | **670px** | **670px** | 612 (at 320px) | 608 (at 320px) |
+| 2 | Payment | `/embed/?part=pay` | **490px** | **490px** | 434 (at 944px) | 434 (at 944px) |
+| 3 | Receipt | `/embed/?part=receipt` | **780px** | **890px** | 714 (at 320px) | 820 (at 320px) |
 
 > **Added 15 Nov 2026 (EN build, `docs/EN-BUILD-20261115.md`).** The two languages are one file — `/embed/?part=pay&lang=en` — with one engine and two string tables. **The English block is taller at every width we measured**, and the phone is where it costs most: English copy runs ~35% more lines at 320px, because the column is ~288px and a sentence that fits one line in Chinese wraps to two. Peak Δ en−zh: calc **+347px**, input **+105** (its Chinese peak is at 1200px, not 320px), result **+172**, pay **+174**, receipt **+101**; at 1280px the same blocks are still +21…+83px. **Do not assume English is shorter anywhere — measure it.** If the English page reuses the Chinese heights, every block gets the inner scrollbar they reported on mobile.
 >

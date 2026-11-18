@@ -1,0 +1,195 @@
+<div class="wrap" id="root">
+
+  <!-- ── 1 · your gift ─────────────────────────────────────────── -->
+  <section class="panel" id="calculator" aria-labelledby="s1h">
+    <h2 id="s1h" data-i18n="s1.h">Your gift</h2>
+
+    <fieldset class="fieldset">
+      <legend class="sr" data-i18n="s1.legend">One-off or monthly</legend>
+      <div class="seg">
+        <label><input type="radio" name="mode" value="once" checked><span data-i18n="s1.once">One-off</span></label>
+        <label><input type="radio" name="mode" value="monthly"><span data-i18n="s1.monthly">Monthly</span></label>
+      </div>
+    </fieldset>
+
+    <div class="field">
+      <label class="flabel" for="gift" data-i18n="s1.gift">Donation amount</label>
+      <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="gift" type="text" inputmode="numeric" autocomplete="off" value="1,300"></div>
+      <div class="quick" role="group" aria-label="Quick amounts" data-i18n-aria="s1.quickamt">
+        <span class="qlab" data-i18n="s1.quicklab">or</span>
+        <button type="button" data-amt="300">300</button>
+        <button type="button" data-amt="500">500</button>
+        <button type="button" data-amt="1300">1,300</button>
+        <button type="button" data-amt="3000">3,000</button>
+      </div>
+    </div>
+
+    <div class="field" id="months-field" hidden>
+      <label class="flabel" for="months" data-i18n="s1.months.label">Months given this year of assessment</label>
+      <select id="months" aria-describedby="months-hint">
+        <option value="1">1 month</option><option value="2">2 months</option><option value="3">3 months</option>
+        <option value="4">4 months</option><option value="5">5 months</option><option value="6">6 months</option>
+        <option value="7">7 months</option><option value="8">8 months</option><option value="9">9 months</option>
+        <option value="10">10 months</option><option value="11">11 months</option><option value="12" selected>12 months</option>
+      </select>
+      <div class="quick" role="group" aria-label="Quick month counts" data-i18n-aria="s1.quickmonths">
+        <button type="button" data-mo="3">3 months</button>
+        <button type="button" data-mo="6">6 months</button>
+        <button type="button" data-mo="9">9 months</button>
+        <button type="button" data-mo="12">12 months</button>
+      </div>
+      <p class="hint" id="months-hint" data-i18n="s1.months.hint">The year of assessment ends 31 March. The deduction uses your total for that year.</p>
+    </div>
+
+    <fieldset class="fieldset field" aria-describedby="band-hint">
+      <legend class="flabel" data-i18n="s1.band.label">Your assessable income this year, roughly</legend>
+      <p class="hint" id="band-hint" data-i18n="s1.band.hint">Before allowances; the basic allowance is assumed at HK$145,000.</p>
+      <div class="bands">
+        <label><input type="radio" name="band" value="unknown"><span data-i18n="s1.band.unknown">Not sure</span><span class="r">2% – 17%</span></label>
+        <label><input type="radio" name="band" value="r0"><span data-i18n="s1.band.r0.label">Below HK$145,000</span><span class="r" data-i18n="s1.band.r0">No tax</span></label>
+        <label><input type="radio" name="band" value="r2"><span>HK$145,000 – 195,000</span><span class="r" data-i18n="s1.band.r2">About 2%</span></label>
+        <label><input type="radio" name="band" value="r6"><span>HK$195,000 – 245,000</span><span class="r" data-i18n="s1.band.r6">About 6%</span></label>
+        <label><input type="radio" name="band" value="r10"><span>HK$245,000 – 295,000</span><span class="r" data-i18n="s1.band.r10">About 10%</span></label>
+        <label><input type="radio" name="band" value="r14"><span>HK$295,000 – 345,000</span><span class="r" data-i18n="s1.band.r14">About 14%</span></label>
+        <label><input type="radio" name="band" value="r17" checked><span>HK$345,000 – 2,132,500</span><span class="r" data-i18n="s1.band.r17">About 17%</span></label>
+        <label><input type="radio" name="band" value="r15"><span>HK$2,132,500 – 5,000,000</span><span class="r" data-i18n="s1.band.r15">Standard 15%</span></label>
+        <label><input type="radio" name="band" value="r16"><span data-i18n="s1.band.r16.label">HK$5,000,000 and above</span><span class="r" data-i18n="s1.band.r16">Standard 16%</span></label>
+      </div>
+      <!-- narrow screens: nine ruled rows cost too much of a fixed-height frame;
+           a native select is the same choice, thumb-sized and height-stable -->
+      <select id="band-mobile" class="band-select" aria-label="Your assessable income this year, roughly" data-i18n-aria="s1.band.aria">
+        <option value="unknown" data-i18n="s1.mob.unknown">Not sure · 2%–17%</option>
+        <option value="r0" data-i18n="s1.mob.r0">Below HK$145,000 · no tax</option>
+        <option value="r2" data-i18n="s1.mob.r2">HK$145,000 – 195,000 · 2%</option>
+        <option value="r6" data-i18n="s1.mob.r6">HK$195,000 – 245,000 · 6%</option>
+        <option value="r10" data-i18n="s1.mob.r10">HK$245,000 – 295,000 · 10%</option>
+        <option value="r14" data-i18n="s1.mob.r14">HK$295,000 – 345,000 · 14%</option>
+        <option value="r17" selected data-i18n="s1.mob.r17">HK$345,000 – 2,132,500 · 17%</option>
+        <option value="r15" data-i18n="s1.mob.r15">HK$2,132,500 – 5,000,000 · std 15%</option>
+        <option value="r16" data-i18n="s1.mob.r16">HK$5,000,000 and above · std 16%</option>
+      </select>
+      <p class="note" data-i18n="s1.band.note">Above HK$2,132,500 the standard rate takes over — 15% on the first HK$5 million, 16% above it — so the last two rungs fall rather than rise. That is how the tax is built, not a bug.</p>
+    </fieldset>
+
+    <!-- Optional exact income. Collapsed by default: the range picker stays the
+         primary path, and the value is used for the maths only — it never enters
+         an analytics payload, never leaves the frame. -->
+    <details class="q" id="exact-row">
+      <summary data-i18n="s1.exact.summary">Use your exact income</summary>
+      <div>
+        <label class="flabel" for="exact" data-i18n="s1.exact.label">Assessable income for the year</label>
+        <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="exact" type="text" inputmode="numeric" autocomplete="off" value="" placeholder="e.g. 500,000" aria-describedby="exact-hint" data-i18n-ph="s1.exact.ph"></div>
+        <p class="hint" id="exact-hint" data-i18n="s1.exact.hint">One figure instead of a range, worked through the bands and the 35% cap. Never sent, never stored.</p>
+      </div>
+    </details>
+
+    <details class="q" id="what-counts">
+      <summary data-i18n="s1.what.summary">What counts as a deductible gift</summary>
+      <p data-i18n="s1.what.body">Only money given to a charity approved under section 88 of the Inland Revenue Ordinance can be deducted. Money paid for something in return is not a donation — raffle tickets, auction purchases, dinner seats, sponsorship that buys advertising. At or below the basic allowance you pay no salaries tax, so a gift saves you nothing.</p>
+    </details>
+
+    <div class="gotoline" id="goto-row">
+      <a class="btn" href="#result" id="goto-result" data-i18n="s1.goto">See what it costs you</a>
+      <span id="upd" class="msg ok" hidden data-i18n="s1.updated">Result updated</span>
+    </div>
+  </section>
+
+  <!-- ── 2 · what it costs you ─────────────────────────────────── -->
+  <section class="panel hero" id="result" aria-labelledby="s2h">
+    <h2 id="s2h" data-i18n="s2.h">What it costs you</h2>
+
+    <p class="net-label" id="net-label" data-i18n="s2.netlabel">You pay</p>
+    <p class="net" id="net"><span class="cur">HK$</span>1,079</p>
+    <p class="hint" id="net-caption" data-i18n="s2.caption">Between the top and bottom of the range you chose.</p>
+    <p class="sr" id="announce" aria-live="polite"></p>
+
+    <dl class="figs">
+      <div><dt id="gift-label" data-i18n="s2.gift">Donation</dt><dd id="gift-out">HK$1,300</dd></div>
+      <div><dt id="saved-label" data-i18n="s2.saved">Tax saved</dt><dd id="saved">−HK$221</dd></div>
+      <div><dt id="rate-label" data-i18n="s2.rate">Rate</dt><dd id="rate">17%</dd></div>
+    </dl>
+
+    <p class="benefit" id="benefit" data-i18n="s2.benefit">You give HK$1,300, all of it deductible. Every HK$100 costs you about HK$83.</p>
+
+    <p class="assump" id="assumption" data-i18n="s2.assume.def">Assumed assessable income HK$345,000 – 2,132,500.</p>
+    <p class="assump" id="cap" data-i18n="s2.cap.def">The cap is 35% of assessable income for the year; an ordinary gift does not reach it.</p>
+    <p class="scope" data-i18n="s2.scope">One person, salaries tax only. An estimate, not tax advice.</p>
+
+    <details class="q" id="spouse">
+      <summary data-i18n="s2.spouse.q">Can a couple combine the deduction?</summary>
+      <p data-i18n="s2.spouse.a">Partly. What you cannot use — including the part above the 35% cap — your spouse may claim on their own BIR60. Their claim is capped at 35% of their own income or profits, so an unused deduction does not pass across in full.</p>
+    </details>
+  </section>
+
+  <!-- ── 3 · how you give ──────────────────────────────────────── -->
+  <section class="panel" id="payment" aria-labelledby="s3h">
+    <h2 id="s3h" data-i18n="s3.h">How you give</h2>
+    <p class="lede" data-i18n="s3.lede">All three finish on the Foundation's donation page.</p>
+
+    <div class="rails">
+      <a href="https://www.hollows.org/zh-Hant-HK/ways-to-support/ways-to-give/" target="_top" rel="noopener" data-rail="payme">
+        <span class="nm">PayMe</span>
+        <span class="sub" data-i18n="s3.payme.sub">Phone wallet</span>
+        <span class="go" aria-hidden="true">↗</span>
+      </a>
+      <a href="https://www.hollows.org/zh-Hant-HK/ways-to-support/ways-to-give/" target="_top" rel="noopener" data-rail="alipay">
+        <span class="nm">AlipayHK</span>
+        <span class="sub" data-i18n="s3.alipay.sub">Phone wallet</span>
+        <span class="go" aria-hidden="true">↗</span>
+      </a>
+      <a href="https://www.hollows.org/zh-Hant-HK/donate/" target="_top" rel="noopener" data-rail="card">
+        <span class="nm" data-i18n="s3.card.nm">Credit card</span>
+        <span class="sub" data-i18n="s3.card.sub">On the web page</span>
+        <span class="go" aria-hidden="true">↗</span>
+      </a>
+    </div>
+
+    <p class="alt"><a href="https://www.hollows.org/zh-Hant-HK/donate/monthly-donation/" target="_top" rel="noopener" data-i18n="s3.monthly">Give monthly instead</a></p>
+  </section>
+
+  <!-- ── 4 · claim your receipt ────────────────────────────────── -->
+  <section class="panel" id="receipt" aria-labelledby="rch">
+    <h2 id="rch" data-i18n="rc.h">Claim your receipt</h2>
+    <p class="lede" data-i18n="rc.lede">Three details: the name for the receipt, an email address, and the reference from your payment.</p>
+    <p class="hint" data-i18n="rc.threshold">A receipt is issued once your gifts for the year of assessment reach HK$100.</p>
+
+    <form class="rform" id="rform" novalidate>
+      <div class="rrow">
+        <div>
+          <label for="rname" data-i18n="rc.name">Name on the receipt</label>
+          <input id="rname" type="text" autocomplete="name" placeholder="Chan Tai Man" aria-describedby="rname-msg" data-i18n-ph="rc.name.ph">
+          <p class="msg" id="rname-msg" hidden></p>
+        </div>
+        <div>
+          <label for="rmail" data-i18n="rc.email">Email</label>
+          <input id="rmail" type="email" autocomplete="email" placeholder="name@example.com" aria-describedby="rmail-msg">
+          <p class="msg" id="rmail-msg" hidden></p>
+        </div>
+      </div>
+      <div>
+        <label for="rref" data-i18n="rc.ref">Payment reference</label>
+        <input id="rref" type="text" autocomplete="off" placeholder="e.g. 2026111800123"
+               aria-describedby="rref-hint rref-msg" data-i18n-ph="rc.ref.ph">
+        <p class="hint" id="rref-hint" data-i18n="rc.ref.hint">The transaction ID in your payment app, or on your card receipt.</p>
+        <p class="msg" id="rref-msg" hidden></p>
+      </div>
+      <label class="consent">
+        <input id="consent" type="checkbox">
+        <span data-i18n="rc.consent">I agree that the Foundation may use these details to match my gift and issue my tax receipt.</span>
+      </label>
+      <p class="fine" data-i18n-html="rc.disclink">Read the <a href="#disclaimer" id="disc-link">disclaimer</a> before you send anything.</p>
+      <button class="btn" type="submit" id="rsubmit" data-i18n="rc.submit">Request my receipt</button>
+      <p class="msg" id="capture-status" aria-live="polite" hidden></p>
+      <p class="hint" data-i18n="rc.keep">Keep the receipt for six years — the IRD may ask to see it.</p>
+    </form>
+
+    <details class="q" id="disclaimer">
+      <summary data-i18n="rc.disc.summary">Disclaimer</summary>
+      <p data-i18n="rc.disc.body">An estimate only. Not tax advice, and no substitute for professional advice. It follows Inland Revenue Department rules for the year of assessment ending 31 March, covers the deduction for recognised charitable donations only, and allows nothing for other deductions, allowances or tax reductions. It does not cover profits tax, personal assessment or joint assessment. What you may deduct, and what you pay, rest with the Inland Revenue Department. The calculator collects and stores nothing; the name, email and reference you give here are used only to match your donation and issue your receipt.</p>
+    </details>
+  </section>
+
+  <p class="fine" data-i18n="foot.legal">* What you may deduct rests with the Inland Revenue Department. The cap is 35% of assessable income or profits; the tax saved is roughly the deductible amount × your rate, up to 17%.</p>
+
+  <div id="dbg" aria-hidden="true"></div>
+</div>

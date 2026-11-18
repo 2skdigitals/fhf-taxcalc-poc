@@ -334,8 +334,14 @@ with sync_playwright() as pw:
                                   "marker:window.__marker||null,"
                                   "href:location.href})")
     errs = []
-    if after["t"] != "Enter two things":
-        errs.append(f"heading after switch = {after['t']!r}")
+    # Copy-independent on purpose: pinning the literal heading made this a copy test
+    # that failed the moment the copy was rewritten, while the behaviour it exists to
+    # protect (switch in place, no reload) was fine. Assert the property instead —
+    # the heading must CHANGE, and must carry no CJK in English.
+    if after["t"] == before["t"]:
+        errs.append(f"heading did not change: {before['t']!r} → {after['t']!r}")
+    if re.search(r"[\u4e00-\u9fff]", after["t"]):
+        errs.append(f"heading still Chinese after switching to en: {after['t']!r}")
     if after["lang"] != "en":
         errs.append(f"document lang = {after['lang']!r}")
     if after["marker"] != "alive":
@@ -346,8 +352,8 @@ with sync_playwright() as pw:
         {type:'fhf-config', config:{lang:'zh-HK'}}, '*');}""")
     pg.wait_for_timeout(400)
     back = pg.frames[1].evaluate("()=>document.getElementById('s1h').textContent")
-    if back != "輸入兩項資料":
-        errs.append(f"switch back to zh-HK gave {back!r}")
+    if not re.search(r"[\u4e00-\u9fff]", back or ""):
+        errs.append(f"switch back to zh-HK gave no Chinese heading: {back!r}")
     check("fhf-config{lang} switches the language in place — no reload, no src change", errs)
     pg.close()
 
