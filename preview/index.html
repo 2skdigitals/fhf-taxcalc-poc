@@ -67,12 +67,12 @@ footer{padding:30px 0;color:var(--muted);font-size:12.5px}
 
 <section class="block"><div class="wrap">
   <div class="sec-label"><span>2SK iframe × 4</span><h2>計算機 → 結果 → 付款 → 收據（固定高度）</h2></div>
-  <p style="font-size:12.5px;color:#666;margin:-6px 0 12px">Each block is its own iframe at the height the CMS component requires: 900 / 800 / 1040 / 650. The page scrolls; the frames do not.</p>
+  <p style="font-size:12.5px;color:#666;margin:-6px 0 12px">Each block is its own iframe at the height the CMS component requires: 900 / 800 / 1040 / 860. The page scrolls; the frames do not.</p>
   <div id="host">
     <iframe id="f1" data-part="input"   src="../embed/?part=input"   title="第一步 · 計算機" scrolling="no" style="height:900px"></iframe>
     <iframe id="f2" data-part="result"  src="../embed/?part=result"  title="第二步 · 估算結果" scrolling="no" style="height:800px"></iframe>
     <iframe id="f3" data-part="pay"     src="../embed/?part=pay"     title="第三步 · 付款方式" scrolling="no" style="height:1040px"></iframe>
-    <iframe id="f4" data-part="receipt" src="../embed/?part=receipt" title="扣稅收據" scrolling="no" style="height:650px"></iframe>
+    <iframe id="f4" data-part="receipt" src="../embed/?part=receipt" title="扣稅收據" scrolling="no" style="height:860px"></iframe>
   </div>
   <details class="snippet">
     <summary>If the component ever allows auto-height, this 7-line listener replaces the fixed numbers</summary>
@@ -116,7 +116,7 @@ window.addEventListener("message", function (e) {
   document.documentElement.lang = 'en';
   document.title = 'POC — page context preview, English (Optimizely mock)';
 
-  var H = { input: 1000, result: 960, pay: 1210, receipt: 760 };
+  var H = { input: 1000, result: 960, pay: 1210, receipt: 1030 };
   var TITLE = { input: 'Step 1 · Calculator', result: 'Step 2 · Estimate',
                 pay: 'Step 3 · How to give', receipt: 'Tax receipt' };
 
@@ -156,7 +156,7 @@ window.addEventListener("message", function (e) {
 
   var heights = document.querySelector('#host').previousElementSibling;
   if (heights) heights.textContent =
-    'Each block is its own iframe at the height the CMS component requires for English: 1000 / 960 / 1210 / 760. The page scrolls; the frames do not.';
+    'Each block is its own iframe at the height the CMS component requires for English: 1000 / 960 / 1210 / 1030. The page scrolls; the frames do not.';
 
   [].forEach.call(document.querySelectorAll('.placeholder'), function (el) {
     el.innerHTML = el.innerHTML

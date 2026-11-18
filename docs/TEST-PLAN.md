@@ -24,8 +24,8 @@ The component requires a height, so the experience is four blocks, each sized to
 Work in **their Optimizely staging**, not on the bench alone. The bench tells you what the widget does; staging tells you what *their component* does to it.
 
 ### Step 1 — the blocks render at their declared heights
-**Chinese build:** `input` 900 · `result` 800 · `pay` 1040 · `receipt` 650.
-**English build:** `input` 1000 · `result` 960 · `pay` 1210 · `receipt` 760.
+**Chinese build:** `input` 900 · `result` 800 · `pay` 1040 · `receipt` 860.
+**English build:** `input` 1000 · `result` 960 · `pay` 1210 · `receipt` 1030.
 
 Confirm each renders and that **no internal scrollbar** appears. If one clips, record the width — we adjust the block, not the number. The two columns are not interchangeable (INTERFACE §2): English is ~35% more lines at 320px.
 

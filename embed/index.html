@@ -442,6 +442,13 @@ body[data-part] .card{width:100%}
           <p class="msg" id="rmail-msg" hidden></p>
         </div>
       </div>
+      <div>
+        <label for="rref" data-i18n="rc.ref">付款參考編號</label>
+        <input id="rref" type="text" autocomplete="off" placeholder="例如 2026111800123"
+               aria-describedby="rref-hint rref-msg" data-i18n-ph="rc.ref.ph">
+        <p class="hint" id="rref-hint" style="margin:6px 0 0" data-i18n="rc.ref.hint">請填寫付款 App 交易紀錄或信用卡收據上的交易編號；我們憑此核對您的捐款，再發出正式收據。</p>
+        <p class="msg" id="rref-msg" hidden></p>
+      </div>
       <div class="consent">
         <input id="consent" type="checkbox">
         <label for="consent" data-i18n="rc.consent">本人同意護瞳行動使用本人的姓名及電郵，以發出扣稅收據。</label>
@@ -453,7 +460,7 @@ body[data-part] .card{width:100%}
     </form>
     <details class="q" id="disclaimer">
       <summary data-i18n="rc.disc.summary">免責聲明</summary>
-      <p data-i18n="rc.disc.body">本計算機只提供估算，並非稅務建議，亦不能取代專業意見。估算依據稅務局於所示課稅年度的規定，只計入認可慈善捐款的扣稅，並未計算其他扣除、免稅額或稅務寬減；亦不涵蓋利潤稅、個人入息課稅或夫婦合併評稅。實際可扣除金額及應繳稅款以稅務局的評定為準。本計算機不會收集或儲存任何資料；您在本表格自願提供的姓名及電郵，只用作發出扣稅收據。</p>
+      <p data-i18n="rc.disc.body">本計算機只提供估算，並非稅務建議，亦不能取代專業意見。估算依據稅務局於所示課稅年度的規定，只計入認可慈善捐款的扣稅，並未計算其他扣除、免稅額或稅務寬減；亦不涵蓋利潤稅、個人入息課稅或夫婦合併評稅。實際可扣除金額及應繳稅款以稅務局的評定為準。本計算機不會收集或儲存任何資料；您在本表格自願提供的姓名、電郵及付款參考編號，只用於核對捐款及發出扣稅收據。</p>
     </details>
   </section>
 
@@ -591,17 +598,21 @@ body[data-part] .card{width:100%}
     "s3.dl.alipay": "測試叫起 AlipayHK",
     "s3.monthly": "想每月捐款？",
 
-    "rc.h": "需要扣稅收據？只需留下姓名及電郵。",
-    "rc.lede": "我們只需收據抬頭及電郵，用以發出正式收據。課稅年度內捐款總額滿 HK$100，方可獲發正式收據。",
+    "rc.h": "需要扣稅收據？留下姓名、電郵及付款參考編號。",
+    "rc.lede": "我們需要收據抬頭、電郵，以及付款交易編號，用以核對您的捐款並發出正式收據。課稅年度內捐款總額滿 HK$100，方可獲發正式收據。",
     "rc.name": "姓名（收據抬頭）",
     "rc.email": "電郵",
     "rc.name.ph": "陳大文",
-    "rc.consent": "本人同意護瞳行動使用本人的姓名及電郵，以發出扣稅收據。",
+    "rc.ref": "付款參考編號",
+    "rc.ref.ph": "例如 2026111800123",
+    "rc.ref.hint": "請填寫付款 App 交易紀錄或信用卡收據上的交易編號；我們憑此核對您的捐款，再發出正式收據。",
+    "d.rv.ref": "請輸入付款交易編號（見付款 App 的交易紀錄）。",
+    "rc.consent": "本人同意護瞳行動使用上述資料核對本人的捐款，並發出扣稅收據。",
     "rc.disclink": "使用本計算機及提交資料前，請先閱讀<a href=\"#disclaimer\" id=\"disc-link\">免責聲明</a>。",
-    "rc.submit": "留下資料",
-    "rc.poc": "POC 示範：資料只保留於本測試頁的記憶體，不會傳送至任何伺服器，亦不會儲存。正式版將由 2SK 建立的收據系統接收，並依客戶指示傳送至其 CRM。",
+    "rc.submit": "提交收據申請",
+    "rc.poc": "POC 示範：資料只保留於本測試頁的記憶體，不會傳送至任何伺服器，亦不會儲存。正式版將由 2SK 建立的收據系統接收（包括付款參考編號，供核對捐款之用），並依客戶指示傳送至其 CRM。",
     "rc.disc.summary": "免責聲明",
-    "rc.disc.body": "本計算機只提供估算，並非稅務建議，亦不能取代專業意見。估算依據稅務局於所示課稅年度的規定，只計入認可慈善捐款的扣稅，並未計算其他扣除、免稅額或稅務寬減；亦不涵蓋利潤稅、個人入息課稅或夫婦合併評稅。實際可扣除金額及應繳稅款以稅務局的評定為準。本計算機不會收集或儲存任何資料；您在本表格自願提供的姓名及電郵，只用作發出扣稅收據。",
+    "rc.disc.body": "本計算機只提供估算，並非稅務建議，亦不能取代專業意見。估算依據稅務局於所示課稅年度的規定，只計入認可慈善捐款的扣稅，並未計算其他扣除、免稅額或稅務寬減；亦不涵蓋利潤稅、個人入息課稅或夫婦合併評稅。實際可扣除金額及應繳稅款以稅務局的評定為準。本計算機不會收集或儲存任何資料；您在本表格自願提供的姓名、電郵及付款參考編號，只用於核對捐款及發出扣稅收據。",
     "foot.legal": "* 實際可扣除金額以稅務局的評定為準。扣稅上限為應評稅入息或利潤的 35%；在可扣除的金額之內，所節省的稅款約為該金額乘以您的適用稅率（最高 17%）。",
 
     "band.unknown": "不確定",
@@ -664,7 +675,7 @@ body[data-part] .card{width:100%}
     "d.rv.name": "請輸入收據抬頭姓名。",
     "d.rv.mail": "請輸入有效電郵。",
     "d.rv.consent": "請先勾選同意。",
-    "d.rv.ok": "多謝您。我們會於您捐款後跟進發出收據（POC：尚未接駁後端）。",
+    "d.rv.ok": "多謝您。我們會先核對您的付款，核對後發出扣稅收據（POC：尚未接駁後端）。",
     "d.rv.done": "已收到"
   },
 
@@ -757,17 +768,21 @@ body[data-part] .card{width:100%}
     "s3.dl.alipay": "Test opening AlipayHK",
     "s3.monthly": "Would you rather give monthly?",
 
-    "rc.h": "Need a tax receipt? Leave your name and email.",
-    "rc.lede": "We need only the name for the receipt and an email address. A receipt is issued once your total for the year of assessment reaches HK$100.",
+    "rc.h": "Need a tax receipt? Leave your name, email and payment reference.",
+    "rc.lede": "We need the name for the receipt, an email address, and the transaction reference from your payment, so we can match your gift before issuing the receipt. A receipt is issued once your total for the year of assessment reaches HK$100.",
     "rc.name": "Name (as it should appear on the receipt)",
     "rc.email": "Email",
     "rc.name.ph": "Chan Tai Man",
-    "rc.consent": "I agree that the Fred Hollows Foundation may use my name and email to issue a tax receipt.",
+    "rc.ref": "Payment reference",
+    "rc.ref.ph": "e.g. 2026111800123",
+    "rc.ref.hint": "The transaction ID shown in your payment app, or on your card receipt. We use it to match your donation before issuing the receipt.",
+    "d.rv.ref": "Please enter the payment reference from your app or receipt.",
+    "rc.consent": "I agree that the Fred Hollows Foundation may use the details above to match my donation and issue a tax receipt.",
     "rc.disclink": "Before you use this calculator or send anything, please read the <a href=\"#disclaimer\" id=\"disc-link\">disclaimer</a>.",
-    "rc.submit": "Leave your details",
-    "rc.poc": "POC demo: what you type stays in this test page's memory. It is not sent anywhere and not stored. In the live build a receipt system built by 2SK receives it and passes it to the charity's CRM as they direct.",
+    "rc.submit": "Request my receipt",
+    "rc.poc": "POC demo: what you type stays in this test page's memory. It is not sent anywhere and not stored. In the live build a receipt system built by 2SK receives it — including the payment reference, which is used to match your gift — and passes it to the charity's CRM as they direct.",
     "rc.disc.summary": "Disclaimer",
-    "rc.disc.body": "This calculator gives an estimate only. It is not tax advice, and it does not replace professional advice. The estimate follows Inland Revenue Department rules for the year of assessment shown. It covers the deduction for recognised charitable donations only, and includes no other deduction, allowance or tax reduction. It does not cover profits tax, personal assessment, or joint assessment for a married couple. The amount you may deduct, and the tax you actually pay, are determined by the Inland Revenue Department. The calculator itself collects and stores nothing; the name and email you choose to give in this form are used only to issue your tax receipt.",
+    "rc.disc.body": "This calculator gives an estimate only. It is not tax advice, and it does not replace professional advice. The estimate follows Inland Revenue Department rules for the year of assessment shown. It covers the deduction for recognised charitable donations only, and includes no other deduction, allowance or tax reduction. It does not cover profits tax, personal assessment, or joint assessment for a married couple. The amount you may deduct, and the tax you actually pay, are determined by the Inland Revenue Department. The calculator itself collects and stores nothing; the name, email and payment reference you choose to give in this form are used only to match your donation and issue your tax receipt.",
     "foot.legal": "* The amount you may deduct is determined by the Inland Revenue Department. The cap is 35% of assessable income or profits. Within the deductible amount, the tax saved is roughly that amount times your applicable rate, up to 17%.",
 
     "band.unknown": "not sure",
@@ -830,7 +845,7 @@ body[data-part] .card{width:100%}
     "d.rv.name": "Please enter the name for the receipt.",
     "d.rv.mail": "Please enter a valid email address.",
     "d.rv.consent": "Please tick the consent box first.",
-    "d.rv.ok": "Thank you. We will follow up with your receipt once the donation is in (POC: not connected to a backend yet).",
+    "d.rv.ok": "Thank you. We will match your payment first, then issue the tax receipt (POC: not connected to a backend yet).",
     "d.rv.done": "Received"
   }
   };
@@ -1391,21 +1406,29 @@ body[data-part] .card{width:100%}
   $("#rform").addEventListener("submit", function (e) {
     e.preventDefault();
     var name = $("#rname").value.trim(), mail = $("#rmail").value.trim(), ok = true;
-    $("#rname-msg").hidden = $("#rmail-msg").hidden = true;
+    /* the reference is the only thing that ties this claim to money that actually
+       arrived — a QR gift is invisible to this page, so without it the charity is
+       issuing a receipt on a self-report. Kept deliberately permissive: donors
+       will paste whatever their app shows them. */
+    var ref = $("#rref").value.trim().replace(/\s+/g, " ");
+    $("#rname-msg").hidden = $("#rmail-msg").hidden = $("#rref-msg").hidden = true;
     if (name.length < 2) { $("#rname-msg").textContent = t("d.rv.name"); $("#rname-msg").hidden = false; ok = false; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) { $("#rmail-msg").textContent = t("d.rv.mail"); $("#rmail-msg").hidden = false; ok = false; }
+    if (ref.length < 4 || ref.length > 40) { $("#rref-msg").textContent = t("d.rv.ref"); $("#rref-msg").hidden = false; ok = false; }
     if (!$("#consent").checked) { $("#capture-status").textContent = t("d.rv.consent"); $("#capture-status").className = "msg"; $("#capture-status").hidden = false; return; }
     if (!ok) return;
     var s = $("#capture-status");
     s.textContent = t("d.rv.ok");
     s.className = "msg ok"; s.hidden = false;
     track("email_capture", {donation_type: st.mode, state: state()});
-    track("receipt_request", {method: "web_form", has_reference: "no"});
+    /* the reference itself never leaves the browser in the POC; only whether one
+       was given is reported, because a transaction ID is an identifier, not a metric */
+    track("receipt_request", {method: "web_form", has_reference: ref ? "yes" : "no"});
     $("#rsubmit").disabled = true;
     $("#rsubmit").textContent = t("d.rv.done");
     scheduleHeight();
   });
-  ["#rname","#rmail"].forEach(function(sel){ $(sel).addEventListener("input", scheduleHeight); });
+  ["#rname","#rmail","#rref"].forEach(function(sel){ $(sel).addEventListener("input", scheduleHeight); });
   $$("details.q").forEach(function(d){
     d.addEventListener("toggle", function(){ scheduleHeight(); });
   });

@@ -195,8 +195,9 @@ with sync_playwright() as pw:
     # ---------------------------------------------------------------- E · receipt
     f.click('button[type="submit"]')
     settle(pg, 200)
-    s = f.evaluate("() => ({n: document.getElementById('rname-msg').hidden, m: document.getElementById('rmail-msg').hidden})")
-    check("empty receipt submit is blocked with field errors", [] if (s["n"] is False and s["m"] is False) else [str(s)])
+    s = f.evaluate("() => ({n: document.getElementById('rname-msg').hidden, m: document.getElementById('rmail-msg').hidden, r: document.getElementById('rref-msg').hidden})")
+    check("empty receipt submit is blocked with field errors (name, email, reference)",
+          [] if (s["n"] is False and s["m"] is False and s["r"] is False) else [str(s)])
 
     f.fill("#rname", "陳大文")
     f.fill("#rmail", "not-an-email")
@@ -208,10 +209,27 @@ with sync_playwright() as pw:
     f.fill("#rmail", "donor@example.com")
     f.check("#consent")
     f.click('button[type="submit"]')
+    settle(pg, 300)
+    got_names = names(pg)
+    check("a receipt request without the payment reference is refused",
+          [] if ("receipt_request" not in got_names) else ["receipt_request fired with no reference"])
+
+    # a QR gift happens in the donor's own app, so the reference is the ONLY thing that
+    # ties a claim to money that arrived. It must travel to the receipt system — and it
+    # must never appear in a measurement payload.
+    REF = "PM-20261118-77XK2"
+    f.fill("#rref", REF)
+    f.click('button[type="submit"]')
     settle(pg, 400)
     got_names = names(pg)
     check("valid capture fires email_capture + receipt_request",
           [] if ("email_capture" in got_names and "receipt_request" in got_names) else [str(got_names)])
+
+    rr = [m for m in msgs(pg) if m.get("type") == "event" and m.get("name") == "receipt_request"]
+    check("receipt_request reports that a reference was given",
+          [] if rr and rr[-1].get("params", {}).get("has_reference") == "yes" else [str(rr[-1] if rr else None)])
+    leaked = [m for m in msgs(pg) if REF in json.dumps(m, ensure_ascii=False)]
+    check("the payment reference never appears in any payload", [] if not leaked else [str(leaked)[:200]])
 
     # ---------------------------------------------------------------- F · app-open (last: it may navigate)
     f.click('[data-deeplink="payme"]')
@@ -244,7 +262,7 @@ with sync_playwright() as pw:
     # 320 to 1440, plus 50–73px of slack. `calc` is in here because the client
     # embedded it: at 1,020px its content (1,499px at 320px) produced the second,
     # inner scrollbar they reported on mobile.
-    BUDGET = {"calc": 1650, "input": 900, "result": 800, "pay": 1040, "receipt": 650}
+    BUDGET = {"calc": 1650, "input": 900, "result": 800, "pay": 1040, "receipt": 860}
     SECTIONS = {"calc": ["calculator", "result"], "input": ["calculator"],
                 "result": ["result"], "pay": ["payment"], "receipt": ["receipt"]}
     for w in (328, 568, 944, 1280):

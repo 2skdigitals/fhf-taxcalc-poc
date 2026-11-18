@@ -46,7 +46,12 @@ for i, a in enumerate(ARGS):
 
 # The pre-change file, served as .html so Chrome treats it as a document.
 BAK = ROOT / "embed" / "index.html.bak-pre-en-20261115"
-FIXTURE = ROOT / "qa" / "_baseline_zh_pre_en.html"
+# The guard's job is "the Chinese build did not move by accident". It therefore compares
+# against the last ACCEPTED Chinese copy state, not against a frozen 15 Nov file: the
+# payment-reference pass (18 Nov) changed seven zh strings on purpose, so the baseline was
+# rebased to the file that pass started from. Refresh it only when a zh copy change is signed
+# off, and record the change list — the assertions below are what catch an accidental drift.
+FIXTURE = ROOT / "qa" / "_baseline_zh_pre_ref.html"
 if BAK.exists() and (not FIXTURE.exists() or FIXTURE.stat().st_mtime < BAK.stat().st_mtime):
     FIXTURE.write_bytes(BAK.read_bytes())
 
@@ -203,7 +208,7 @@ with sync_playwright() as pw:
     for part, states in STATES.items():
         for label, js in states:
             key = f"{part}:{label}"
-            base_snaps[key] = run_state(page, f"{BASE}/qa/_baseline_zh_pre_en.html?part={part}", js)
+            base_snaps[key] = run_state(page, f"{BASE}/qa/_baseline_zh_pre_ref.html?part={part}", js)
             zh_snaps[key] = run_state(page, f"{BASE}/embed/?part={part}", js)
             en_snaps[key] = run_state(page, f"{BASE}/embed/?part={part}&lang=en", js)
 

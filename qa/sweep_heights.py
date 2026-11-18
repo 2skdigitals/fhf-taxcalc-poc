@@ -38,8 +38,8 @@ WIDTHS = [320, 328, 360, 390, 414, 430, 480, 540, 568, 600, 640, 700, 721, 768,
 # English peaks are HIGHER than Chinese at every width: 35% more lines at 320px,
 # where the column is ~288px wide and a sentence costs two lines instead of one.
 DECLARED = {
-    "zh-HK": {"calc": 1650, "input": 900, "result": 800, "pay": 1040, "receipt": 650},
-    "en":    {"calc": 2000, "input": 1000, "result": 960, "pay": 1210, "receipt": 760},
+    "zh-HK": {"calc": 1650, "input": 900, "result": 800, "pay": 1040, "receipt": 860},
+    "en":    {"calc": 2000, "input": 1000, "result": 960, "pay": 1210, "receipt": 1030},
 }
 
 peaks = {}
