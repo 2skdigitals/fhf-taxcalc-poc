@@ -69,10 +69,10 @@ footer{padding:30px 0;color:var(--muted);font-size:12.5px}
   <div class="sec-label"><span>2SK iframe × 4</span><h2>計算機 → 結果 → 付款 → 收據（固定高度）</h2></div>
   <p style="font-size:12.5px;color:#666;margin:-6px 0 12px">Each block is its own iframe at the height the CMS component requires: 900 / 800 / 1040 / 650. The page scrolls; the frames do not.</p>
   <div id="host">
-    <iframe id="f1" src="../embed/?part=input"   title="第一步 · 計算機" scrolling="no" style="height:900px"></iframe>
-    <iframe id="f2" src="../embed/?part=result"  title="第二步 · 估算結果" scrolling="no" style="height:800px"></iframe>
-    <iframe id="f3" src="../embed/?part=pay"     title="第三步 · 付款方式" scrolling="no" style="height:1040px"></iframe>
-    <iframe id="f4" src="../embed/?part=receipt" title="扣稅收據" scrolling="no" style="height:650px"></iframe>
+    <iframe id="f1" data-part="input"   src="../embed/?part=input"   title="第一步 · 計算機" scrolling="no" style="height:900px"></iframe>
+    <iframe id="f2" data-part="result"  src="../embed/?part=result"  title="第二步 · 估算結果" scrolling="no" style="height:800px"></iframe>
+    <iframe id="f3" data-part="pay"     src="../embed/?part=pay"     title="第三步 · 付款方式" scrolling="no" style="height:1040px"></iframe>
+    <iframe id="f4" data-part="receipt" src="../embed/?part=receipt" title="扣稅收據" scrolling="no" style="height:650px"></iframe>
   </div>
   <details class="snippet">
     <summary>If the component ever allows auto-height, this 7-line listener replaces the fixed numbers</summary>
@@ -95,6 +95,80 @@ window.addEventListener("message", function (e) {
 
 <footer><div class="wrap">© The Fred Hollows Foundation (mock preview) · POC only · 計算機為估算，並非稅務建議。</div></footer>
 
+<script>
+/* Language variant + framing guard.
+   ?lang=en gives the English handover: English blocks, English heights, English chrome.
+   The heights differ per language on purpose — see docs/INTERFACE.md §2. English is
+   taller on a phone, so reusing the Chinese numbers produces an inner scrollbar. */
+(function () {
+  if (window.top !== window) {
+    document.documentElement.innerHTML =
+      '<div style="font:16px/1.6 system-ui;padding:28px;max-width:52ch">' +
+      '<p><b>This page is a preview, not page content.</b></p>' +
+      '<p>It must not be embedded. The calculator blocks are:<br>' +
+      '<code>?part=calc</code> · <code>?part=input</code> · <code>?part=result</code> · ' +
+      '<code>?part=pay</code> · <code>?part=receipt</code></p></div>';
+    return;
+  }
+  var EN = new URLSearchParams(location.search).get('lang') === 'en';
+  if (!EN) return;
+
+  document.documentElement.lang = 'en';
+  document.title = 'POC — page context preview, English (Optimizely mock)';
+
+  var H = { input: 1000, result: 960, pay: 1210, receipt: 760 };
+  var TITLE = { input: 'Step 1 · Calculator', result: 'Step 2 · Estimate',
+                pay: 'Step 3 · How to give', receipt: 'Tax receipt' };
+
+  [].forEach.call(document.querySelectorAll('#host iframe'), function (f) {
+    var p = f.getAttribute('data-part');
+    f.src = '../embed/?part=' + p + '&lang=en';
+    f.title = TITLE[p];
+    f.style.height = H[p] + 'px';
+  });
+
+  var text = {
+    '.pocmock': 'POC PREVIEW · <b>the hero, banner and FAQ are the CLIENT\'s to build in Optimizely</b> — placeholders here only. The calculator and QR payment are our iframe.',
+    '.banner': '[MOCK] Promo banner built by the client in Optimizely · year of assessment ends 31 March 2027',
+    '.brand': '<span class="mark">護</span> The Fred Hollows Foundation Hong Kong <span style="font-weight:400;font-size:12px;color:#8b8b98">(mock)</span>',
+    '.sec-label h2': 'Calculator → result → payment → receipt (fixed height)',
+    'footer .wrap': '© The Fred Hollows Foundation (mock preview) · POC only · the calculator is an estimate, not tax advice.'
+  };
+  Object.keys(text).forEach(function (sel) {
+    var el = document.querySelector(sel);
+    if (el) el.innerHTML = text[sel];
+  });
+
+  /* the eyebrow and the lede are both <p> inside .hero, so address them by index —
+     a selector of '.hero p' takes the eyebrow and leaves the lede in Chinese */
+  var heroP = document.querySelectorAll('.hero p');
+  if (heroP[0]) heroP[0].textContent = 'Tax-deduction guide';
+  if (heroP[1]) heroP[1].textContent =
+    'Nine out of ten people who are blind do not have to be. Give once and cut your tax bill — see what you actually pay.';
+  var heroH1 = document.querySelector('.hero h1');
+  if (heroH1) heroH1.textContent = 'Charitable donation tax calculator';
+
+  [].forEach.call(document.querySelectorAll('nav a'), function (a, i) {
+    a.textContent = ['Eye health', 'Our work', 'Support us'][i] || a.textContent;
+  });
+  var donate = document.querySelector('.donatebtn');
+  if (donate) donate.textContent = 'Donate now';
+
+  var heights = document.querySelector('#host').previousElementSibling;
+  if (heights) heights.textContent =
+    'Each block is its own iframe at the height the CMS component requires for English: 1000 / 960 / 1210 / 760. The page scrolls; the frames do not.';
+
+  [].forEach.call(document.querySelectorAll('.placeholder'), function (el) {
+    el.innerHTML = el.innerHTML
+      .replace('PLACEHOLDER — CLIENT-BUILT', 'PLACEHOLDER — CLIENT-BUILT')
+      .replace('H1、導語、雙重祝福、31 March 倒數：全部由客戶在 Optimizely 內建立及日後自行修改。我們不交付這一段。',
+               'The H1, intro, the double blessing and the 31 March countdown are built and maintained by the client in Optimizely. We do not deliver this section.')
+      .replace('FAQ／五大須知繼續由客戶在 Optimizely 維護（現有頁面已有此內容及 FAQPage schema）。我們只提供文案建議表，不交付這一節。',
+               'The FAQ / five things to know stay with the client in Optimizely (the live page already carries this copy and FAQPage schema). We supply copy suggestions only.')
+      .replace('影響力／護瞳故事／最終 CTA', 'Impact / patient stories / final call to action');
+  });
+})();
+</script>
 
 </body>
 </html>
