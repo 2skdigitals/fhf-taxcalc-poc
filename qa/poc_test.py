@@ -242,8 +242,19 @@ with sync_playwright() as pw:
     check("three payment rails present", [] if len(rails) == 3 else [str(rails)])
     bad_tag = [r for r in rails if r["tag"] != "A"]
     check("every rail is a link, not a dead button", [] if not bad_tag else [str(bad_tag)])
-    bad_href = [r for r in rails if not r["href"].startswith("https://www.hollows.org/")]
-    check("every rail points at hollows.org", [] if not bad_href else [str(bad_href)])
+    # Two kinds of destination are legitimate now: the charity's own pages, and the
+    # live wallet endpoints decoded from the codes they publish (19 Nov). Anything else
+    # is a rail that goes somewhere nobody agreed to.
+    ALLOWED = ("https://www.hollows.org/", "https://qr.payme.hsbc.com.hk/",
+               "https://render.alipay.hk/")
+    bad_href = [r for r in rails if not r["href"].startswith(ALLOWED)]
+    check("every rail points at hollows.org or a decoded wallet endpoint",
+          [] if not bad_href else [str(bad_href)])
+    pays = {r["rail"]: r["href"] for r in rails}
+    check("the two wallets carry the endpoints decoded from the published QR codes",
+          [] if (pays.get("payme", "").startswith("https://qr.payme.hsbc.com.hk/")
+                 and pays.get("alipay", "").startswith("https://render.alipay.hk/"))
+          else [str(pays)])
     bad_top = [r for r in rails if r["target"] != "_top"]
     check("every rail escapes the frame (target=_top)", [] if not bad_top else [str(bad_top)])
     body = f.evaluate("() => document.body.innerText")
