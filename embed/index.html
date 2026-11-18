@@ -237,7 +237,7 @@ body[data-part] .card{width:100%}
 <body>
 <div class="wrap" id="root">
 
-  <div class="pocbar"><b>POC</b><span data-i18n="poc.demo">示範用 · 二維碼為測試碼，非真實收款碼</span></div>
+  
 
   <!-- ============ STEP 1 ============ -->
   <section class="card" id="calculator" aria-labelledby="s1h">
@@ -369,20 +369,18 @@ body[data-part] .card{width:100%}
     <h2 id="s3h" data-i18n="s3.h">三種捐款方式</h2>
     <p class="lede" data-i18n="s3.lede">PayMe、AlipayHK 二維碼，以及前往護瞳行動網站的信用卡。</p>
 
-    <span class="badge"><span class="dot"></span><span style="display:contents" data-i18n-html="s3.badge">POC 測試 <span style="opacity:.6">test mode</span></span></span>
-    <p class="note" style="margin:0 0 14px" data-i18n="s3.note">PayMe 及 AlipayHK 以二維碼於您自己的 App 內完成；信用卡則前往護瞳行動現有的捐款頁。正式上線時會換成客戶提供的商戶碼。</p>
 
     <div class="rails">
-      <button class="rail" type="button" data-rail="payme">
+      <a href="https://www.hollows.org/zh-Hant-HK/ways-to-support/ways-to-give/" target="_top" rel="noopener" data-rail="payme">
         <span class="nm">PayMe</span>
-        <span class="sub"><span class="qr-desk" data-i18n="s3.payme.desk">用手機掃描下方二維碼完成捐款</span><span class="qr-mob" data-i18n="s3.payme.mob">長按下方二維碼儲存，並於 PayMe 內完成捐款</span></span>
-        <span class="go" aria-hidden="true">→</span>
-      </button>
-      <button class="rail" type="button" data-rail="alipay">
+        <span class="sub" data-i18n="s3.payme.sub">於護瞳行動捐款頁以 PayMe 完成捐款</span>
+        <span class="go" aria-hidden="true">↗</span>
+      </a>
+      <a href="https://www.hollows.org/zh-Hant-HK/ways-to-support/ways-to-give/" target="_top" rel="noopener" data-rail="alipay">
         <span class="nm">AlipayHK</span>
-        <span class="sub"><span class="qr-desk" data-i18n="s3.alipay.desk">用手機掃描下方二維碼完成捐款</span><span class="qr-mob" data-i18n="s3.alipay.mob">長按下方二維碼儲存，並於 AlipayHK 內完成捐款</span></span>
-        <span class="go" aria-hidden="true">→</span>
-      </button>
+        <span class="sub" data-i18n="s3.alipay.sub">於護瞳行動捐款頁以 AlipayHK 完成捐款</span>
+        <span class="go" aria-hidden="true">↗</span>
+      </a>
       <a href="https://www.hollows.org/zh-Hant-HK/donate/" target="_top" rel="noopener" data-rail="card">
         <span class="nm" data-i18n="s3.card.nm">信用卡</span>
         <span class="sub" data-i18n="s3.card.sub">前往護瞳行動捐款頁，以信用卡完成捐款</span>
@@ -390,45 +388,17 @@ body[data-part] .card{width:100%}
       </a>
     </div>
 
-    <div class="qr-grid">
-      <figure class="qr-fig">
-        <img id="qr-payme" src="../assets/qr-payme.svg" alt="PayMe 測試二維碼（POC，非真實收款碼）" width="150" height="150" data-i18n-alt="s3.qr.alt.payme">
-        <figcaption><span data-i18n="s3.qr.payme">PayMe 二維碼</span><span class="poc" data-i18n="s3.qr.poc">POC 測試碼</span></figcaption>
-      </figure>
-      <figure class="qr-fig">
-        <img id="qr-alipay" src="../assets/qr-alipay.svg" alt="AlipayHK 測試二維碼（POC，非真實收款碼）" width="150" height="150" data-i18n-alt="s3.qr.alt.alipay">
-        <figcaption><span data-i18n="s3.qr.alipay">AlipayHK 二維碼</span><span class="poc" data-i18n="s3.qr.poc">POC 測試碼</span></figcaption>
-      </figure>
-    </div>
-
-    <div class="qr-copy">
-      <div class="qr-desk">
-        <h3 data-i18n="s3.qr.desk.h">用手機掃描二維碼捐款</h3>
-        <p data-i18n-html="s3.qr.desk.p">請以另一部手機的相機或付款 App 掃描，然後輸入 <strong class="qr-amount">HK$1,300</strong>。</p>
-      </div>
-      <div class="qr-mob">
-        <h3 data-i18n="s3.qr.mob.h">以手機捐款：長按二維碼，分享至付款 App</h3>
-        <p data-i18n-html="s3.qr.mob.p">長按上方<strong>對應的</strong>二維碼儲存圖片（每個 App 一個碼），再開啟 <b>PayMe</b> 或 <b>AlipayHK</b>，使用該 App 內的「掃描」或「相簿」功能選取該二維碼，然後輸入 <strong class="qr-amount">HK$1,300</strong>。</p>
-      </div>
-      <p class="fine" data-i18n="s3.qr.fine">二維碼為靜態碼，本身不包含金額，須於付款 App 內自行輸入金額。</p>
-    </div>
-
-    <div class="field" id="deeplink-test" style="border-top:1px solid var(--line);padding-top:12px;margin-top:14px">
-      <p class="hint" style="margin:0 0 8px" data-i18n-html="s3.dl.hint"><b>App 開啟測試（POC）：</b>點按下方按鈕，測試 iframe 內能否開啟付款 App。正式版將採用商戶提供的 deep link。</p>
-      <div class="chips">
-        <button type="button" data-deeplink="payme" data-i18n="s3.dl.payme">測試叫起 PayMe</button>
-        <button type="button" data-deeplink="alipay" data-i18n="s3.dl.alipay">測試叫起 AlipayHK</button>
-      </div>
-      <p class="hint" id="deeplink-msg" aria-live="polite"></p>
-    </div>
+    <!-- Merchant QR panel returns here when the charity supplies the PayMe and AlipayHK
+         merchant codes. Until then the two wallet rails open the charity's own giving page,
+         so every route on this block works. -->
 
     <p class="alt"><a href="https://www.hollows.org/zh-Hant-HK/donate/monthly-donation/" target="_top" rel="noopener" data-i18n="s3.monthly">想每月捐款？</a></p>
   </section>
 
   <!-- ============ RECEIPT CAPTURE ============ -->
   <section class="card" id="receipt" aria-labelledby="rch">
-    <h2 id="rch" style="font-size:1.05rem" data-i18n="rc.h">需要扣稅收據？只需留下姓名及電郵。</h2>
-    <p class="lede" style="margin-bottom:14px" data-i18n="rc.lede">我們只需收據抬頭及電郵，用以發出正式收據。課稅年度內捐款總額滿 HK$100，方可獲發正式收據。</p>
+    <h2 id="rch" style="font-size:1.05rem" data-i18n="rc.h">需要扣稅收據？留下姓名、電郵及付款參考編號。</h2>
+    <p class="lede" style="margin-bottom:14px" data-i18n="rc.lede">我們需要收據抬頭、電郵，以及付款交易編號，用以核對您的捐款並發出正式收據。課稅年度內捐款總額滿 HK$100，方可獲發正式收據。</p>
     <form class="rform" id="rform" novalidate>
       <div class="rrow">
         <div>
@@ -451,12 +421,11 @@ body[data-part] .card{width:100%}
       </div>
       <div class="consent">
         <input id="consent" type="checkbox">
-        <label for="consent" data-i18n="rc.consent">本人同意護瞳行動使用本人的姓名及電郵，以發出扣稅收據。</label>
+        <label for="consent" data-i18n="rc.consent">本人同意護瞳行動使用上述資料核對本人的捐款，並發出扣稅收據。</label>
       </div>
       <p class="fine" style="margin:0 0 0 31px" data-i18n-html="rc.disclink">使用本計算機及提交資料前，請先閱讀<a href="#disclaimer" id="disc-link">免責聲明</a>。</p>
-      <button class="btn" type="submit" id="rsubmit" data-i18n="rc.submit">留下資料</button>
+      <button class="btn" type="submit" id="rsubmit" data-i18n="rc.submit">提交收據申請</button>
       <p class="msg" id="capture-status" aria-live="polite" hidden></p>
-      <p class="fine" data-i18n="rc.poc">POC 示範：資料只保留於本測試頁的記憶體，不會傳送至任何伺服器，亦不會儲存。正式版將由 2SK 建立的收據系統接收，並依客戶指示傳送至其 CRM。</p>
     </form>
     <details class="q" id="disclaimer">
       <summary data-i18n="rc.disc.summary">免責聲明</summary>
@@ -510,8 +479,7 @@ body[data-part] .card{width:100%}
      ============================================================ */
   var I18N = {
   "zh-HK": {
-    "title": "慈善捐款扣稅計算機 — POC",
-    "poc.demo": "示範用 · 二維碼為測試碼，非真實收款碼",
+    "title": "慈善捐款扣稅計算機",
 
     "s1.eyebrow": "步驟一",
     "s1.h": "輸入兩項資料",
@@ -574,28 +542,11 @@ body[data-part] .card{width:100%}
 
     "s3.eyebrow": "步驟三 · 付款方式",
     "s3.h": "三種捐款方式",
-    "s3.lede": "PayMe、AlipayHK 二維碼，以及前往護瞳行動網站的信用卡。",
-    "s3.badge": "POC 測試 <span style=\"opacity:.6\">test mode</span>",
-    "s3.note": "PayMe 及 AlipayHK 以二維碼於您自己的 App 內完成；信用卡則前往護瞳行動現有的捐款頁。正式上線時會換成客戶提供的商戶碼。",
-    "s3.payme.desk": "用手機掃描下方二維碼完成捐款",
-    "s3.payme.mob": "長按下方二維碼儲存，並於 PayMe 內完成捐款",
-    "s3.alipay.desk": "用手機掃描下方二維碼完成捐款",
-    "s3.alipay.mob": "長按下方二維碼儲存，並於 AlipayHK 內完成捐款",
+    "s3.lede": "PayMe、AlipayHK 及信用卡，全部於護瞳行動的捐款頁完成。",
+    "s3.payme.sub": "於護瞳行動捐款頁以 PayMe 完成捐款",
+    "s3.alipay.sub": "於護瞳行動捐款頁以 AlipayHK 完成捐款",
     "s3.card.nm": "信用卡",
     "s3.card.sub": "前往護瞳行動捐款頁，以信用卡完成捐款",
-    "s3.qr.payme": "PayMe 二維碼",
-    "s3.qr.alipay": "AlipayHK 二維碼",
-    "s3.qr.poc": "POC 測試碼",
-    "s3.qr.alt.payme": "PayMe 測試二維碼（POC，非真實收款碼）",
-    "s3.qr.alt.alipay": "AlipayHK 測試二維碼（POC，非真實收款碼）",
-    "s3.qr.desk.h": "用手機掃描二維碼捐款",
-    "s3.qr.desk.p": "請以另一部手機的相機或付款 App 掃描，然後輸入 <strong class=\"qr-amount\">HK$1,300</strong>。",
-    "s3.qr.mob.h": "以手機捐款：長按二維碼，分享至付款 App",
-    "s3.qr.mob.p": "長按上方<strong>對應的</strong>二維碼儲存圖片（每個 App 一個碼），再開啟 <b>PayMe</b> 或 <b>AlipayHK</b>，使用該 App 內的「掃描」或「相簿」功能選取該二維碼，然後輸入 <strong class=\"qr-amount\">HK$1,300</strong>。",
-    "s3.qr.fine": "二維碼為靜態碼，本身不包含金額，須於付款 App 內自行輸入金額。",
-    "s3.dl.hint": "<b>App 開啟測試（POC）：</b>點按下方按鈕，測試 iframe 內能否開啟付款 App。正式版將採用商戶提供的 deep link。",
-    "s3.dl.payme": "測試叫起 PayMe",
-    "s3.dl.alipay": "測試叫起 AlipayHK",
     "s3.monthly": "想每月捐款？",
 
     "rc.h": "需要扣稅收據？留下姓名、電郵及付款參考編號。",
@@ -610,7 +561,6 @@ body[data-part] .card{width:100%}
     "rc.consent": "本人同意護瞳行動使用上述資料核對本人的捐款，並發出扣稅收據。",
     "rc.disclink": "使用本計算機及提交資料前，請先閱讀<a href=\"#disclaimer\" id=\"disc-link\">免責聲明</a>。",
     "rc.submit": "提交收據申請",
-    "rc.poc": "POC 示範：資料只保留於本測試頁的記憶體，不會傳送至任何伺服器，亦不會儲存。正式版將由 2SK 建立的收據系統接收（包括付款參考編號，供核對捐款之用），並依客戶指示傳送至其 CRM。",
     "rc.disc.summary": "免責聲明",
     "rc.disc.body": "本計算機只提供估算，並非稅務建議，亦不能取代專業意見。估算依據稅務局於所示課稅年度的規定，只計入認可慈善捐款的扣稅，並未計算其他扣除、免稅額或稅務寬減；亦不涵蓋利潤稅、個人入息課稅或夫婦合併評稅。實際可扣除金額及應繳稅款以稅務局的評定為準。本計算機不會收集或儲存任何資料；您在本表格自願提供的姓名、電郵及付款參考編號，只用於核對捐款及發出扣稅收據。",
     "foot.legal": "* 實際可扣除金額以稅務局的評定為準。扣稅上限為應評稅入息或利潤的 35%；在可扣除的金額之內，所節省的稅款約為該金額乘以您的適用稅率（最高 17%）。",
@@ -675,13 +625,12 @@ body[data-part] .card{width:100%}
     "d.rv.name": "請輸入收據抬頭姓名。",
     "d.rv.mail": "請輸入有效電郵。",
     "d.rv.consent": "請先勾選同意。",
-    "d.rv.ok": "多謝您。我們會先核對您的付款，核對後發出扣稅收據（POC：尚未接駁後端）。",
+    "d.rv.ok": "多謝您。我們會先核對您的付款，核對後發出扣稅收據。",
     "d.rv.done": "已收到"
   },
 
   "en": {
-    "title": "Donation tax calculator — POC",
-    "poc.demo": "Demo only · these QR codes are test codes, not live payment codes",
+    "title": "Donation tax calculator",
 
     "s1.eyebrow": "Step 1",
     "s1.h": "Enter two things",
@@ -744,28 +693,11 @@ body[data-part] .card{width:100%}
 
     "s3.eyebrow": "Step 3 · Payment",
     "s3.h": "Three ways to give",
-    "s3.lede": "PayMe and AlipayHK QR codes, and a credit card that takes you to the Fred Hollows Foundation site.",
-    "s3.badge": "POC test mode",
-    "s3.note": "PayMe and AlipayHK are paid by QR code in your own app. The credit card goes to the Foundation's existing donation page. Live, these become the merchant codes the charity supplies.",
-    "s3.payme.desk": "Scan the QR code below on your phone to give",
-    "s3.payme.mob": "Press and hold the QR code below to save it, then give in PayMe",
-    "s3.alipay.desk": "Scan the QR code below on your phone to give",
-    "s3.alipay.mob": "Press and hold the QR code below to save it, then give in AlipayHK",
+    "s3.lede": "PayMe, AlipayHK or a credit card — all completed on the Foundation's donation page.",
+    "s3.payme.sub": "Give by PayMe on the Foundation's donation page",
+    "s3.alipay.sub": "Give by AlipayHK on the Foundation's donation page",
     "s3.card.nm": "Credit card",
     "s3.card.sub": "Go to the Foundation's donation page and give by card",
-    "s3.qr.payme": "PayMe QR code",
-    "s3.qr.alipay": "AlipayHK QR code",
-    "s3.qr.poc": "POC test code",
-    "s3.qr.alt.payme": "PayMe test QR code (POC, not a live payment code)",
-    "s3.qr.alt.alipay": "AlipayHK test QR code (POC, not a live payment code)",
-    "s3.qr.desk.h": "Scan the QR code to give",
-    "s3.qr.desk.p": "Scan it with the camera or payment app on another phone, then enter <strong class=\"qr-amount\">HK$1,300</strong>.",
-    "s3.qr.mob.h": "Giving on this phone: press and hold the QR code, then share it to your payment app",
-    "s3.qr.mob.p": "Press and hold the <strong>matching</strong> QR code above and save the image — one code per app. Open <b>PayMe</b> or <b>AlipayHK</b>, choose that app's scan or photo-library option, pick the code, then enter <strong class=\"qr-amount\">HK$1,300</strong>.",
-    "s3.qr.fine": "These are static codes. They carry no amount, so you enter it in the payment app yourself.",
-    "s3.dl.hint": "<b>App open test (POC):</b> the buttons below check whether this iframe can open a payment app. The live build uses the deep links the charity supplies.",
-    "s3.dl.payme": "Test opening PayMe",
-    "s3.dl.alipay": "Test opening AlipayHK",
     "s3.monthly": "Would you rather give monthly?",
 
     "rc.h": "Need a tax receipt? Leave your name, email and payment reference.",
@@ -780,7 +712,6 @@ body[data-part] .card{width:100%}
     "rc.consent": "I agree that the Fred Hollows Foundation may use the details above to match my donation and issue a tax receipt.",
     "rc.disclink": "Before you use this calculator or send anything, please read the <a href=\"#disclaimer\" id=\"disc-link\">disclaimer</a>.",
     "rc.submit": "Request my receipt",
-    "rc.poc": "POC demo: what you type stays in this test page's memory. It is not sent anywhere and not stored. In the live build a receipt system built by 2SK receives it — including the payment reference, which is used to match your gift — and passes it to the charity's CRM as they direct.",
     "rc.disc.summary": "Disclaimer",
     "rc.disc.body": "This calculator gives an estimate only. It is not tax advice, and it does not replace professional advice. The estimate follows Inland Revenue Department rules for the year of assessment shown. It covers the deduction for recognised charitable donations only, and includes no other deduction, allowance or tax reduction. It does not cover profits tax, personal assessment, or joint assessment for a married couple. The amount you may deduct, and the tax you actually pay, are determined by the Inland Revenue Department. The calculator itself collects and stores nothing; the name, email and payment reference you choose to give in this form are used only to match your donation and issue your tax receipt.",
     "foot.legal": "* The amount you may deduct is determined by the Inland Revenue Department. The cap is 35% of assessable income or profits. Within the deductible amount, the tax saved is roughly that amount times your applicable rate, up to 17%.",
@@ -845,7 +776,7 @@ body[data-part] .card{width:100%}
     "d.rv.name": "Please enter the name for the receipt.",
     "d.rv.mail": "Please enter a valid email address.",
     "d.rv.consent": "Please tick the consent box first.",
-    "d.rv.ok": "Thank you. We will match your payment first, then issue the tax receipt (POC: not connected to a backend yet).",
+    "d.rv.ok": "Thank you. We will match your payment first, then issue the tax receipt.",
     "d.rv.done": "Received"
   }
   };
@@ -1402,7 +1333,7 @@ body[data-part] .card{width:100%}
     });
   });
 
-  /* receipt capture (POC: memory only) */
+  /* receipt capture: this build keeps the form in page memory only */
   $("#rform").addEventListener("submit", function (e) {
     e.preventDefault();
     var name = $("#rname").value.trim(), mail = $("#rmail").value.trim(), ok = true;

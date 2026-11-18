@@ -231,13 +231,25 @@ with sync_playwright() as pw:
     leaked = [m for m in msgs(pg) if REF in json.dumps(m, ensure_ascii=False)]
     check("the payment reference never appears in any payload", [] if not leaked else [str(leaked)[:200]])
 
-    # ---------------------------------------------------------------- F · app-open (last: it may navigate)
-    f.click('[data-deeplink="payme"]')
-    settle(pg, 500)
-    dl = [m for m in msgs(pg) if m.get("type") == "deeplink"]
-    check("app-open attempt is observable from the host before any navigation",
-          [] if dl and dl[0].get("phase") == "attempt" else [str(dl)])
-    pg.close()   # the top frame may now be parked on an unhandled scheme
+    # ---------------------------------------------------------------- F · payment rails are live links
+    # The POC deep-link bench is gone: the wallet rails are now ordinary links to the
+    # charity's own giving page, so the assertion is that they navigate and that no
+    # dead control or placeholder text is left on the block.
+    rails = f.evaluate("""() => [...document.querySelectorAll('.rails [data-rail]')].map(el => ({
+        tag: el.tagName, rail: el.dataset.rail, href: el.getAttribute('href') || '',
+        target: el.getAttribute('target') || '', rel: el.getAttribute('rel') || '',
+        text: el.textContent.replace(/\\s+/g, ' ').trim()}))""")
+    check("three payment rails present", [] if len(rails) == 3 else [str(rails)])
+    bad_tag = [r for r in rails if r["tag"] != "A"]
+    check("every rail is a link, not a dead button", [] if not bad_tag else [str(bad_tag)])
+    bad_href = [r for r in rails if not r["href"].startswith("https://www.hollows.org/")]
+    check("every rail points at hollows.org", [] if not bad_href else [str(bad_href)])
+    bad_top = [r for r in rails if r["target"] != "_top"]
+    check("every rail escapes the frame (target=_top)", [] if not bad_top else [str(bad_top)])
+    body = f.evaluate("() => document.body.innerText")
+    banned = [w for w in ("POC", "test mode", "test code", "示意", "placeholder", "Placeholder") if w in body]
+    check("no POC or placeholder text remains in the payment block", [] if not banned else [str(banned)])
+    pg.close()
 
     # ---------------------------------------------------------------- D2 · narrow viewport
     pg2 = browser.new_page(viewport={"width": 390, "height": 800})
