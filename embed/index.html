@@ -195,6 +195,7 @@ details.q li{margin:3px 0}
 .scope{font-size:var(--t-cap);line-height:1.55;color:var(--ink-2);margin:14px 0 0;max-width:var(--measure)}
 
 /* ── 3 · how you give ──────────────────────────────────────── */
+.disc-global{border-top:1px solid var(--line);margin-top:16px;padding-top:10px}
 .rails{display:grid;border-top:var(--rule);margin-top:18px}
 /* ── payment: QR on a desktop, tap-through rows on a phone ──────────────────────
    A donor cannot scan the screen they are reading, so the two arrangements are
@@ -552,13 +553,14 @@ body[data-part] .wrap{min-height:100vh;padding-block:2px}
       <p class="hint" data-i18n="rc.keep">Keep the receipt for six years — the IRD may ask to see it.</p>
     </form>
 
-    <details class="q" id="disclaimer">
-      <summary data-i18n="rc.disc.summary">Disclaimer</summary>
-      <p data-i18n="rc.disc.body">An estimate only. Not tax advice, and no substitute for professional advice. It follows Inland Revenue Department rules for the year of assessment ending 31 March, covers the deduction for recognised charitable donations only, and allows nothing for other deductions, allowances or tax reductions. It does not cover profits tax, personal assessment or joint assessment. What you may deduct, and what you pay, rest with the Inland Revenue Department. The calculator collects and stores nothing; the name, email and reference you give here are used only to match your donation and issue your receipt.</p>
-    </details>
   </section>
 
   <p class="fine" data-i18n="foot.legal">* What you may deduct rests with the Inland Revenue Department. The cap is 35% of assessable income or profits; the tax saved is roughly the deductible amount × your rate, up to 17%.</p>
+
+      <details class="q disc-global" id="disclaimer">
+      <summary data-i18n="rc.disc.summary">Disclaimer</summary>
+      <p data-i18n="rc.disc.body">An estimate only. Not tax advice, and no substitute for professional advice. It follows Inland Revenue Department rules for the year of assessment ending 31 March, covers the deduction for recognised charitable donations only, and allows nothing for other deductions, allowances or tax reductions. It does not cover profits tax, personal assessment or joint assessment. What you may deduct, and what you pay, rest with the Inland Revenue Department. The calculator collects and stores nothing; the name, email and reference you give here are used only to match your donation and issue your receipt.</p>
+    </details>
 
   <div id="dbg" aria-hidden="true"></div>
 </div>

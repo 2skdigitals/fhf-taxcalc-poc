@@ -285,7 +285,7 @@ with sync_playwright() as pw:
     # 320 to 1440, plus 50–73px of slack. `calc` is in here because the client
     # embedded it: at 1,020px its content (1,499px at 320px) produced the second,
     # inner scrollbar they reported on mobile.
-    BUDGET = {"calc": 1440, "input": 840, "result": 670, "pay": 490, "receipt": 780}
+    BUDGET = {"calc": 1500, "input": 900, "result": 750, "pay": 550, "receipt": 780}
     SECTIONS = {"calc": ["calculator", "result"], "input": ["calculator"],
                 "result": ["result"], "pay": ["payment"], "receipt": ["receipt"]}
     for w in (328, 568, 944, 1280):
