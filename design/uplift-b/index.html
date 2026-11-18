@@ -95,7 +95,7 @@ h2{
   background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
   padding:clamp(16px,4.4vw,22px);
 }
-.card + .card,.card + .stack{margin-top:14px}
+.card + .card{margin-top:14px}
 
 /* ── 1 · your gift ─────────────────────────────────────────── */
 .fieldset{border:0;margin:0;padding:0;min-width:0}
@@ -231,8 +231,8 @@ details.q li{margin:3px 0}
   margin:6px 0 0;color:#fff;font-variant-numeric:tabular-nums;
 }
 .net .cur{
-  font-size:.34em;font-weight:600;letter-spacing:0;color:var(--on-navy-2);
-  margin-right:.2em;vertical-align:.6em;
+  font-size:.32em;font-weight:600;letter-spacing:0;color:var(--on-navy-2);
+  margin-right:.22em;vertical-align:.62em;
 }
 .net.is-range{font-size:clamp(1.625rem,6.6vw,2.5rem);letter-spacing:-.03em;line-height:1.2}
 .net.swap{opacity:.55;transition:opacity 160ms var(--ease)}
@@ -381,9 +381,10 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
   .band-select{display:block}
 }
 @media (min-width:721px){
-  .bands{grid-template-columns:1fr 1fr;column-gap:22px}
-  /* nine rungs, two columns: the odd one out closes the table on a full row */
-  .bands label:last-child{grid-column:1 / -1}
+  /* nine rungs, two columns, filled DOWN each column so the ladder still
+     reads top to bottom (1–5 left, 6–9 right) instead of alternating */
+  .bands{grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,auto);
+         grid-auto-flow:column;column-gap:24px}
 }
 @media (min-width:560px){
   .rrow{grid-template-columns:1fr 1fr}
@@ -397,8 +398,19 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
   .quick button{padding:0 12px}
   .quick .qlab{padding-right:0}
 }
+/* four month chips never sit evenly on a phone: two rows of two */
+@media (max-width:520px){
+  .quick-mo{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+}
+/* below this the four amounts cannot hold one line: an even row of four
+   cells keeps them on one rank instead of breaking 3,000 onto its own line */
+@media (max-width:380px){
+  .quick-amt{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .quick-amt .qlab{grid-column:1 / -1;min-height:0;padding:0;line-height:1.3}
+  .quick-amt button{padding:0 4px}
+  select.band-select{font-size:.8125rem;padding-right:26px}
+}
 @media (max-width:360px){
-  select.band-select{font-size:.8125rem;padding-right:28px}
   .step-n{width:24px;height:24px}
 }
 @media (prefers-reduced-motion:reduce){
@@ -426,7 +438,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       <div class="field">
         <label class="flabel" for="gift" data-i18n="s1.gift">Donation amount</label>
         <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="gift" type="text" inputmode="numeric" autocomplete="off" value="1,300"></div>
-        <div class="quick" role="group" aria-label="Quick amounts" data-i18n-aria="s1.quickamt">
+        <div class="quick quick-amt" role="group" aria-label="Quick amounts" data-i18n-aria="s1.quickamt">
           <span class="qlab" data-i18n="s1.quicklab">or</span>
           <button type="button" data-amt="300">300</button>
           <button type="button" data-amt="500">500</button>
@@ -443,7 +455,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
           <option value="7">7 months</option><option value="8">8 months</option><option value="9">9 months</option>
           <option value="10">10 months</option><option value="11">11 months</option><option value="12" selected>12 months</option>
         </select>
-        <div class="quick" role="group" aria-label="Quick month counts" data-i18n-aria="s1.quickmonths">
+        <div class="quick quick-mo" role="group" aria-label="Quick month counts" data-i18n-aria="s1.quickmonths">
           <button type="button" data-mo="3">3 months</button>
           <button type="button" data-mo="6">6 months</button>
           <button type="button" data-mo="9">9 months</button>

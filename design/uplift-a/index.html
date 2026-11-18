@@ -13,11 +13,18 @@
    shadows, no gradients: structure comes from rules and space.
    ───────────────────────────────────────────────────────────── */
 :root{
-  --orange:#E97824; --orange-h:#D06A1C; --on-action:#0A0909;
+  /* Brand — orange carries the action, navy carries authority. The only
+     orange that may be TEXT is --orange-ink: #E97824 measures 2.93:1 on
+     white and 2.66:1 on the tint, so it can never carry type or a state
+     boundary; #AE4E0E is the same hue at 5.09:1 / 4.91:1. */
+  --orange:#E97824; --orange-h:#D06A1C; --orange-ink:#AE4E0E; --on-action:#0A0909;
   --navy:#01014E;
-  --ink:#232323; --ink-2:#4E4E58; --muted:#76767F;
+  --ink:#232323; --ink-2:#4E4E58; --muted:#6B6B74;
   --line:rgba(10,9,9,.12); --line-2:rgba(10,9,9,.22);
   --white:#fff; --field:#F6F6FD;
+  /* the two surfaces this uplift adds: a warm band behind the result and a
+     recessed well behind controls. Both are tone steps, never shadows. */
+  --tint:#FBF3EA; --well:#F5F1EA; --well-2:#EDE6DA;
   --sans:system-ui,-apple-system,"PingFang HK","Noto Sans HK","Hiragino Sans HK","Microsoft JhengHei",Helvetica,Arial,sans-serif;
   --err:#A3161C; --ok:#1a6b3c;
 
@@ -335,6 +342,225 @@ body[data-part] .wrap{min-height:100vh;padding-block:2px}
 @media (prefers-reduced-motion:reduce){
   *{transition-duration:1ms!important}
 }
+/* UPLIFT-A:START */
+/* ═══════════════════════════════════════════════════════════════════════
+   UPLIFT A · warm brand editorial
+   One appended block, so the merge is mechanical: tokens live in :root
+   above, every changed rule lives here, and the calc/result markup is
+   untouched. Nothing below refers to the tax engine or the copy table.
+   ───────────────────────────────────────────────────────────────────── */
+
+/* ── 1 · the sequence marker ──────────────────────────────────────────
+   The eyebrow the direction asks for is a numeral, not a word: copy is
+   frozen, so no label may be invented. A numeral carries the order and
+   translates into nothing (both tables use the same digits). It is
+   suppressed when its section is the only one in the frame. */
+#s1h::before,#s2h::before{
+  content:"1";margin-right:.46em;
+  font-size:.5em;font-weight:600;letter-spacing:.04em;
+  color:var(--orange-ink);font-variant-numeric:tabular-nums;
+}
+#s2h::before{content:"2"}
+body[data-part="input"] #s1h::before,
+body[data-part="result"] #s2h::before{content:none}
+
+/* scoped: the payment and receipt blocks keep their own heading rule */
+#calculator h2,#result h2{font-size:clamp(1.5rem,4vw,2.0625rem);line-height:1.14;letter-spacing:-.026em}
+
+/* ── 2 · the frame ────────────────────────────────────────────────────
+   The block's first section drops its leading rule (a rule at the very
+   top of an embed reads as a border on the CMS box); the tinted band
+   below does the separating instead. */
+#calculator{border-top:0;padding-top:clamp(6px,1.4vw,14px)}
+/* clearance at the foot of the calc block only — the payment and receipt
+   parts keep their own frame geometry byte for byte */
+body[data-part="calc"] .wrap,
+body[data-part="input"] .wrap,
+body[data-part="result"] .wrap{padding-bottom:clamp(16px,2.4vw,26px)}
+
+/* ── 3 · one-off / monthly, as a real segmented control ───────────── */
+.seg{
+  display:inline-flex;gap:2px;padding:3px;margin-top:18px;
+  border:1px solid var(--line);border-radius:999px;background:var(--well);
+}
+.seg label{
+  margin:0;padding:0 clamp(14px,3vw,20px);min-height:44px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:999px;font-size:var(--t-sm);color:var(--ink-2);
+  transition:background-color 160ms var(--ease),color 160ms var(--ease);
+}
+.seg label:has(input:checked){background:var(--navy);color:#fff;font-weight:600}
+.seg label:has(input:checked)::after{content:none}
+.seg label:has(input:focus-visible){outline:2px solid var(--navy);outline-offset:2px}
+@media (hover:hover) and (pointer:fine){
+  .seg label:hover{color:var(--ink)}
+  .seg label:has(input:checked):hover{color:#fff}
+}
+
+/* ── 4 · the amount, and the quick values as filled pills ──────────── */
+.field{margin-top:26px}
+.amt{border-bottom:1px solid var(--line-2);padding-bottom:4px}
+.amt .pre{font-size:var(--t-sm);font-weight:500;color:var(--ink-2)}
+.amt input{
+  font-size:clamp(1.75rem,5.6vw,2.25rem);font-weight:600;
+  letter-spacing:-.03em;line-height:1.2;caret-color:var(--orange);
+}
+.quick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 0}
+.quick .qlab{
+  padding:0 2px 0 0;min-height:44px;display:flex;align-items:center;
+  font-size:var(--t-cap);color:var(--muted);
+}
+.quick button{
+  min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:999px;
+  background:var(--well);color:var(--ink-2);
+  font-size:var(--t-sm);font-weight:500;letter-spacing:0;
+  transition:background-color 160ms var(--ease),color 160ms var(--ease);
+}
+.quick button + button{box-shadow:none}
+/* selected = the value now in the field; set from render(), see syncChips */
+.quick button[aria-pressed="true"]{
+  background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600;
+}
+@media (hover:hover) and (pointer:fine){
+  .quick button:hover{background:var(--well-2);color:var(--ink)}
+  .quick button[aria-pressed="true"]:hover{background:var(--navy);color:#fff}
+}
+
+/* ── 5 · the income ladder, as a card ─────────────────────────────── */
+.bands{
+  border:1px solid var(--line);border-radius:14px;background:var(--white);overflow:hidden;margin-top:12px;
+}
+.bands label{
+  grid-template-columns:13px minmax(0,1fr) auto;gap:6px;
+  min-height:46px;padding:0 12px;border-bottom:1px solid var(--line);
+  border-left:3px solid transparent;font-size:12.5px;color:var(--ink-2);
+  /* the ranges may wrap before they ever overflow their track: a nowrap
+     label in a minmax(0,1fr) track prints straight over the rate */
+  white-space:normal;overflow-wrap:break-word;line-height:1.25;
+  transition:background-color 160ms var(--ease),color 160ms var(--ease);
+}
+.bands label:last-child{border-bottom:0}
+.bands label:has(input:checked){
+  background:var(--tint);border-left-color:var(--orange-ink);
+  color:var(--ink);font-weight:500;
+}
+.bands input{width:13px;height:13px;flex:0 0 auto;border-color:#8A8A99}
+/* the ring sits inside the 6px gap or it collides with the label */
+.bands input:focus-visible{outline-offset:1px}
+.bands input:checked{border-color:var(--orange-ink)}
+.bands .r{font-size:.6875rem}
+.bands label:has(input:checked) .r{color:var(--orange-ink)}
+@media (hover:hover) and (pointer:fine){
+  .bands label:hover{background:#FCF9F4}
+  .bands label:has(input:checked):hover{background:var(--tint)}
+}
+@media (min-width:721px){
+  .bands{grid-template-columns:1fr 1fr;column-gap:0}
+  /* each column is 287px at every desktop width (the block is a 40rem
+     column), so the type is sized for that column, not the viewport */
+  .bands label{padding:0 8px;gap:6px}
+  .bands label:not(:last-child):nth-child(odd){border-right:1px solid var(--line)}
+}
+
+/* the phone fallback is the same choice in a native control: give it the
+   card's geometry so it does not read as a leftover form field */
+select.band-select{
+  min-height:54px;padding:12px 38px 12px 13px;margin-top:12px;
+  border:1px solid var(--line);border-radius:14px;background-color:var(--white);
+  font-size:var(--t-sm);font-weight:500;color:var(--ink);
+}
+select.band-select:focus,select#months:focus{
+  outline:2px solid var(--navy);outline-offset:1px;
+  border-bottom-color:var(--line);box-shadow:none;
+}
+/* one hairline chevron (inline SVG) instead of two gradient slivers */
+select#months,select.band-select{
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1.2 1.6 6 6.4l4.8-4.8' fill='none' stroke='%234E4E58' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position:calc(100% - 2px) 50%;background-size:12px 8px;background-repeat:no-repeat;
+}
+select#months{border-bottom:1px solid var(--line-2);padding-right:26px}
+select#months:focus{outline:0;border-bottom-color:var(--navy);box-shadow:0 1px 0 var(--navy)}
+
+/* ── 6 · the result: a warm band, a hero figure, a receipt ────────── */
+#result{
+  position:relative;background:var(--tint);
+  box-shadow:0 0 0 100vmax var(--tint);clip-path:inset(0 -100vmax);
+  border-top:0;padding-block:clamp(26px,3.4vw,38px) clamp(24px,3.2vw,34px);
+}
+#result .net-label{
+  font-size:var(--t-cap);font-weight:600;letter-spacing:.05em;
+  color:var(--ink-2);margin:18px 0 0;
+}
+#result .net{
+  font-size:clamp(3rem,9.4vw,4.25rem);line-height:.96;letter-spacing:-.042em;
+  color:var(--navy);margin:6px 0 0;
+}
+#result .net .cur{
+  /* the currency mark is cap-aligned with the figure, not set on its
+     baseline: at 48-68px a baseline "HK$" reads as a footnote mark */
+  font-size:.34em;font-weight:600;letter-spacing:0;
+  color:var(--ink-2);margin-right:.1em;vertical-align:1.45em;
+}
+#result .net.is-range{font-size:clamp(1.8125rem,6.2vw,2.625rem);letter-spacing:-.032em;line-height:1.06}
+#result .hint{margin-top:10px}
+
+/* the three supporting figures leave the strip and become a receipt:
+   one label column, one numeric column, both right edges shared */
+#result .figs{
+  display:block;margin:26px 0 0;
+  border-top:1px solid var(--line-2);border-bottom:0;
+}
+#result .figs > div{
+  display:flex;align-items:baseline;justify-content:space-between;gap:18px;
+  padding:11px 0;border-bottom:1px solid var(--line);border-left:0;
+}
+#result .figs > div:last-child{border-bottom:1px solid var(--line-2)}
+#result .figs dt{font-size:var(--t-cap);color:var(--ink-2);margin:0;flex:0 0 auto}
+#result .figs dd{
+  font-size:clamp(1.125rem,2.1vw,1.3125rem);font-weight:600;
+  letter-spacing:-.02em;text-align:right;white-space:nowrap;min-width:0;
+}
+#result .figs dd.is-range{font-size:var(--t-sm);letter-spacing:0;line-height:1.35}
+#saved{color:var(--orange-ink)}
+
+#result .benefit{
+  font-size:clamp(1.125rem,2.4vw,1.3125rem);line-height:1.42;letter-spacing:-.012em;
+  color:var(--ink);margin-top:24px;text-wrap:pretty;
+}
+#result .assump{margin-top:14px;color:var(--ink-2)}
+#result .assump + .assump{margin-top:5px}
+#result .scope{margin-top:12px}
+
+/* ── 7 · disclosures: one quiet rule language for all three ───────── */
+details.q{border-top:1px solid var(--line)}
+details.q summary{color:var(--ink);font-weight:500;font-size:var(--t-sm)}
+details.q summary::before{color:var(--orange-ink)}
+details.q summary:hover{color:var(--navy)}
+#result details.q{margin-top:22px}
+/* the foot row keeps its box (min-height 44) and only gets quieter */
+#disclaimer summary{font-size:var(--t-cap);font-weight:400;color:var(--ink-2)}
+
+/* ── 8 · the one action in this block ─────────────────────────────── */
+#calculator .gotoline{margin-top:24px;gap:14px}
+#calculator .btn{
+  width:auto;min-height:52px;padding:14px 26px;border-radius:999px;
+  background:var(--orange);color:var(--on-action);
+  font-size:var(--t-sm);font-weight:600;letter-spacing:.01em;
+}
+#calculator .btn:active{transform:scale(.985)}
+
+/* ── 9 · interaction detail ───────────────────────────────────────── */
+:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+::selection{background:rgba(233,120,36,.18)}
+
+@media (max-width:400px){
+  .quick{gap:7px}
+  .quick button{padding:0 12px;font-size:var(--t-cap)}
+}
+@media (prefers-reduced-motion:reduce){
+  .seg label,.quick button,.bands label{transition-duration:1ms}
+}
+/* UPLIFT-A:END */
 </style>
 </head>
 <body>
@@ -1121,6 +1347,19 @@ body[data-part] .wrap{min-height:100vh;padding-block:2px}
     if (el && el.classList.contains("on")) el.innerHTML = "<b>" + V + "</b> h=" + lastH + "<br>" + t;
   }
 
+  /* ---------- control state, presentation only ---------- */
+  /* A quick pick reads as "on" while the field holds its value, so the row
+     of pills shows which one is in force. Sets an attribute; adds no copy,
+     changes no figure, and never touches the engine. */
+  function syncChips(amount, months){
+    $$("[data-amt]").forEach(function(b){
+      b.setAttribute("aria-pressed", String(parseInt(b.dataset.amt,10) === amount));
+    });
+    $$("[data-mo]").forEach(function(b){
+      b.setAttribute("aria-pressed", String(parseInt(b.dataset.mo,10) === months));
+    });
+  }
+
   /* ---------- render ---------- */
   var annT = 0;
   function render(){
@@ -1279,6 +1518,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:2px}
     }, 600);
 
     if (touched) { $("#upd").hidden = false; }
+    syncChips(once, months);
     scheduleHeight();
   }
   /* ---------- events ---------- */

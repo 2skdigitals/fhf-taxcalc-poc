@@ -1175,21 +1175,30 @@ body[data-part] .wrap{min-height:100vh;padding-block:2px}
     $("#net-label").textContent = (st.mode === "monthly" ? t("d.netlabel.monthly") : t("d.netlabel.once"))
       + (!isRange && capped ? t("d.netlabel.bound") : "");
 
+    /* Two statements can share this line — the monthly arithmetic and the note about
+       where the range comes from. They must not run together ("…for the year.Both ends
+       of your range."), and Chinese needs no space after a full stop, so the separator
+       is decided per case rather than hard-coded. */
     var cap = "";
+    function addCap(frag){
+      if (!frag) return;
+      if (cap && !/[。，、！？]$/.test(cap)) cap += " ";
+      cap += frag;
+    }
     if (st.mode === "monthly") {
-      cap = t("d.cap.monthly", {a: money(once), n: months, total: money(annual)});
+      addCap(t("d.cap.monthly", {a: money(once), n: months, total: money(annual)}));
     }
     if (annual <= 0) {
-      cap += t("d.cap.empty");
+      addCap(t("d.cap.empty"));
     } else if (exactInc) {
-      cap += t("d.cap.exact", {inc: money(exactInc)});
+      addCap(t("d.cap.exact", {inc: money(exactInc)}));
     } else if (isUnknown) {
-      cap += t("d.cap.unknown");
+      addCap(t("d.cap.unknown"));
     } else if (isRange) {
       /* the caption must name the source of the range: the band's two ends */
-      cap += t("d.cap.range");
+      addCap(t("d.cap.range"));
     } else {
-      cap += t("d.cap.same");
+      addCap(t("d.cap.same"));
     }
     $("#net-caption").textContent = cap;
 
