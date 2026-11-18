@@ -76,21 +76,30 @@ with sync_playwright() as pw:
     resizes = [m["height"] for m in msgs(pg) if m.get("type") == "resize"]
     check("widget posts at least one resize", [] if resizes else [str(msgs(pg))[:200]])
 
+    # Band mode now brackets the selected band's floor and ceiling, so a band
+    # wide enough to cross a slice renders a RANGE. These are the exact pairs
+    # the engine produces at each band's ends (qa/test_tax_engine.py proves the
+    # engine; this proves the render). The old flat multiplier printed one
+    # number here and overstated every gift large enough to cross a band.
     cases = [
-        ("500 @17% -> saved 85 / net 415", "once", 500, None, "r17",
-         {"gift": "HK$500", "saved": "−HK$85", "net": "HK$415"}),
-        ("1,800 @17% -> 306 / 1,494", "once", 1800, None, "r17",
-         {"gift": "HK$1,800", "saved": "−HK$306", "net": "HK$1,494"}),
-        ("500 @140k (below the allowance) -> 0 / 500", "once", 500, None, "r0",
+        ("500 in the 17% band -> 70 to 85 / net 415-430", "once", 500, None, "r17",
+         {"gift": "HK$500", "saved": "−HK$70 至 −HK$85", "net": "HK$415 – 430"}),
+        ("1,800 in the 17% band -> 252 to 306 / net 1,494-1,548", "once", 1800, None, "r17",
+         {"gift": "HK$1,800", "saved": "−HK$252 至 −HK$306", "net": "HK$1,494 – 1,548"}),
+        ("500 below the allowance -> 0 / 500", "once", 500, None, "r0",
          {"gift": "HK$500", "saved": "−HK$0", "net": "HK$500", "rate": "0%"}),
-        ("10,000 @2.5M (standard 15%) -> 1,500 / 8,500", "once", 10000, None, "r15",
-         {"gift": "HK$10,000", "saved": "−HK$1,500", "net": "HK$8,500",
-          "rateLabel": "估算用嘅標準稅率"}),
-        ("monthly 1,300 x 6 @17% -> 7,800 / 1,326", "monthly", 1300, 6, "r17",
-         {"gift": "HK$7,800", "saved": "−HK$1,326", "net": "HK$6,474",
+        ("10,000 in the 15% band -> 1,500 to 1,700 / net 8,300-8,500", "once", 10000, None, "r15",
+         {"gift": "HK$10,000", "saved": "−HK$1,500 至 −HK$1,700", "net": "HK$8,300 – 8,500",
+          # a band, not a single rate: the crossing of the standard/progressive tie
+          # at 2,132,500 means the band's ends save at 15% and 17%, so the row
+          # may not be labelled 邊際 or 標準 any more.
+          "rateLabel": "估算採用的稅率"}),
+        ("monthly 1,300 x 6 in the 17% band -> 7,800 / 1,092-1,326", "monthly", 1300, 6, "r17",
+         {"gift": "HK$7,800", "saved": "−HK$1,092 至 −HK$1,326", "net": "HK$6,474 – 6,708",
           "giftLabel": "全年捐款總額（6 個月）"}),
-        ("monthly 1,300 x 4 @2% -> 5,200 / 104", "monthly", 1300, 4, "r2",
-         {"gift": "HK$5,200", "saved": "−HK$104", "net": "HK$5,096", "rate": "2%"}),
+        ("monthly 1,300 x 4 in the 2% band -> 5,200 / 0-104", "monthly", 1300, 4, "r2",
+         {"gift": "HK$5,200", "saved": "−HK$0 至 −HK$104", "net": "HK$5,096 – 5,200",
+          "rate": "0% – 2%"}),
     ]
     for label, mode, amt, months, band, exp in cases:
         f.click(f'input[name="mode"][value="{mode}"]')
@@ -111,17 +120,25 @@ with sync_playwright() as pw:
     f.click('input[name="band"][value="unknown"]')
     settle(pg, 250)
     got = f.evaluate(READ)
-    check("未知入息 shows a 2%–17% range, never a single invented rate",
-          [] if (got["rate"] == "2% – 17%" and "至" in got["saved"]) else
+    check("未知入息 shows a 0%–17% range, never a single invented rate",
+          [] if (got["rate"] == "0% – 17%" and "至" in got["saved"]) else
           [f"rate={got['rate']!r} saved={got['saved']!r}"])
 
     f.click('input[name="band"][value="r17"]')
     f.fill("#gift", "175000")
     settle(pg, 250)
     got = f.evaluate(READ)
-    check("the 35% ceiling is flagged, never silently computed",
-          [] if ("上限" in got["cap"] and "最多" in got["savedLabel"]) else
-          [f"cap={got['cap'][:40]!r} savedLabel={got['savedLabel']!r}"])
+    # The 35% ceiling must be COMPUTED, not flagged and left out of the maths.
+    # At the band's floor the cap limits the deduction to 120,750 (saving
+    # 13,245); at its ceiling the gift is under the cap and saves 29,750. The
+    # old engine printed the flat 17% figure, 29,750 as a single number at both
+    # ends — and 42,500 for a 250,000 gift. Neither may come back.
+    check("the 35% ceiling is computed, and a band renders both of its ends",
+          [] if (got["saved"] == "−HK$13,245 至 −HK$29,750"
+                 and got["savedLabel"] == "預計節省稅款"
+                 and "35%" in got["cap"] and "未扣上限" not in got["savedLabel"]
+                 and "42,500" not in got["saved"]) else
+          [f"saved={got['saved']!r} label={got['savedLabel']!r} cap={got['cap'][:60]!r}"])
 
     f.click('input[name="mode"][value="monthly"]')
     f.fill("#gift", "1300")
@@ -141,7 +158,22 @@ with sync_playwright() as pw:
     payloads = json.dumps([m.get("params") for m in msgs(pg) if m.get("type") == "event"], ensure_ascii=False)
     forbidden = [r'"amount"', r'"income"', r'"rate"', r'"marginal"', r'1,?300\b', r'"5200"', r'5,200']
     hits = [p for p in forbidden if re.search(p, payloads)]
-    check("no amount / income / marginal-rate value in any payload", [] if not hits else [str(hits)])
+
+    # ...and the optional exact-income field must not leak either. Type a
+    # distinctive value, wait past the 800ms event debounce, and re-scan
+    # everything the frame has ever posted: the value and its formatted form
+    # must be absent, and the only permitted trace is exact:"yes"|"no".
+    f.evaluate("()=>{document.getElementById('exact-row').open = true;}")
+    f.fill("#exact", "654321")
+    settle(pg, 1100)
+    payloads = json.dumps([m.get("params") for m in msgs(pg) if m.get("type") == "event"], ensure_ascii=False)
+    hits += [p for p in [r'654,?321', r'"exact"\s*:\s*"(?!yes"|no")'] if re.search(p, payloads)]
+    if '"exact": "yes"' not in payloads:
+        hits.append('exact dimension missing from calc_result_shown')
+    check("no amount / income / marginal-rate value in any payload (exact income included)",
+          [] if not hits else [str(hits)])
+    f.fill("#exact", "")
+    settle(pg, 120)
 
     # ---------------------------------------------------------------- D · resize on change
     before = len(resizes)
@@ -208,7 +240,13 @@ with sync_playwright() as pw:
     # ---------------------------------------------------------------- H · fixed-height parts
     # The real acceptance test: open each block at the height the client will set,
     # at the widths their page actually produces (iframe 328px → 1280px).
-    BUDGET = {"input": 1000, "result": 750, "pay": 1100, "receipt": 650}
+    # These numbers come from qa/sweep_heights.py — the peak of 22 widths from
+    # 320 to 1440, plus 50–73px of slack. `calc` is in here because the client
+    # embedded it: at 1,020px its content (1,499px at 320px) produced the second,
+    # inner scrollbar they reported on mobile.
+    BUDGET = {"calc": 1650, "input": 900, "result": 800, "pay": 1040, "receipt": 650}
+    SECTIONS = {"calc": ["calculator", "result"], "input": ["calculator"],
+                "result": ["result"], "pay": ["payment"], "receipt": ["receipt"]}
     for w in (328, 568, 944, 1280):
         for part, budget in BUDGET.items():
             pf = browser.new_page(viewport={"width": w, "height": budget}, is_mobile=(w < 600), has_touch=(w < 600))
@@ -216,15 +254,103 @@ with sync_playwright() as pw:
             pf.wait_for_timeout(450)
             ov = pf.evaluate("()=>({sh:document.documentElement.scrollHeight, ch:document.documentElement.clientHeight})")
             vis = pf.evaluate("()=>[...document.querySelectorAll('section')].filter(s=>getComputedStyle(s).display!=='none').map(s=>s.id)")
+            want = SECTIONS[part]
             errs = []
             if ov["sh"] > budget + 1:
                 errs.append(f"content overflows the {budget}px box by {ov['sh'] - budget}px")
-            if len(vis) != 1:
-                errs.append(f"expected one visible section, got {vis}")
+            if vis != want:
+                errs.append(f"expected {want}, got {vis}")
             if pf.evaluate("()=>document.documentElement.scrollWidth > document.documentElement.clientWidth + 1"):
                 errs.append("horizontal overflow")
             check(f"part '{part}' fits {budget}px at {w}px", errs)
             pf.close()
+
+    # ---------------------------------------------------------------- K · C6 benefit line
+    # The client's "selling point" sentence must follow the same numbers as the
+    # figures strip, and it must never overclaim the benefit. Two falsifiable
+    # forms: the sentence's per-100 range must be the exact complement of the
+    # saving range it quotes, and "每捐 HK$100 實際付出約 HK$N" can never fall
+    # below 83, because 17% is the top marginal rate and the 35% cap is never a
+    # cash return. Both are pinned per band, so a drift in either fails.
+    BAND_EXPECT = {
+        # band: (saved range as rendered, per-100 range as rendered)
+        "r2":  ("−HK$0 至 −HK$26",   "HK$98 至 HK$100"),
+        "r6":  ("−HK$26 至 −HK$78",  "HK$94 至 HK$98"),
+        "r10": ("−HK$78 至 −HK$130", "HK$90 至 HK$94"),
+        "r14": ("−HK$130 至 −HK$182","HK$86 至 HK$90"),
+        "r17": ("−HK$182 至 −HK$221","HK$83 至 HK$86"),
+        "r15": ("−HK$195 至 −HK$221","HK$83 至 HK$85"),
+        "r16": ("−HK$195 至 −HK$208","HK$84 至 HK$85"),
+    }
+    bench = browser.new_page(viewport={"width": 390, "height": 900}, is_mobile=True, has_touch=True)
+    for band, (want_saved, want_100) in BAND_EXPECT.items():
+        # ?part=calc, not ?part=result: the income picker lives in the calculator
+        # block, so it is only reachable in a page where that block is visible.
+        bench.goto(f"{BASE}/embed/?part=calc")
+        bench.wait_for_timeout(350)
+        bench.select_option("#band-mobile", band)
+        bench.wait_for_timeout(220)
+        line = bench.evaluate("()=>document.getElementById('benefit').textContent")
+        shown = bench.evaluate("()=>document.getElementById('saved').textContent")
+        errs = []
+        if "認可慈善捐款扣除" not in line:
+            errs.append("does not name 認可慈善捐款")
+        if want_saved not in shown:
+            errs.append(f"figures strip {shown!r} does not match {want_saved!r}")
+        if f"實際付出約 {want_100}" not in line:
+            errs.append(f"want 實際付出約 HK${want_100} in {line!r}")
+        check(f"benefit line in band {band} matches the figures strip ({want_100} per HK$100)", errs)
+
+    bench.select_option("#band-mobile", "r17")
+    bench.fill("#gift", "175,000")
+    bench.wait_for_timeout(250)
+    line = bench.evaluate("()=>document.getElementById('benefit').textContent")
+    # The line may not promise more than the cap allows, and it may not say
+    # "lower than X" either — with the cap computed, X IS the achievable figure.
+    check("benefit line computes the 35% ceiling instead of promising a lower figure",
+          [] if ("35% 上限" in line and "HK$29,750" in line
+                 and "會低於" not in line and "42,500" not in line) else [line])
+
+    # ---------------------------------------------------------------- L · C2 declarations
+    d = bench.evaluate("""()=>({
+        scope: (document.querySelector('p.fine.scope')||{}).textContent || '',
+        spouse: (document.getElementById('spouse')||{}).textContent || '',
+        disc: (document.getElementById('disclaimer')||{}).textContent || '',
+        closed: !(document.getElementById('disclaimer')||{hasAttribute:()=>false}).hasAttribute('open'),
+        link: (document.querySelector('#receipt a[href="#disclaimer"]')||{}).textContent || ''
+    })""")
+    check("scope line states salaries-tax-only and 並非稅務建議",
+          [] if ("薪俸稅" in d["scope"] and "並非稅務建議" in d["scope"]) else [d["scope"][:80]])
+    check("spouse note does not promise the excess is freely transferable",
+          [] if ("BIR60" in d["spouse"] and "35%" in d["spouse"] and "並非可全數轉移" in d["spouse"])
+          else [d["spouse"][:120]])
+    check("disclaimer exists, is collapsed by default, and is reachable from the consent line",
+          [] if (d["closed"] and "免責聲明" in d["link"] and "稅務局的評定為準" in d["disc"]
+                 and "不會收集或儲存" in d["disc"]) else [str(d)[:200]])
+
+    # ---------------------------------------------------------------- M · C4 tap targets
+    # Measured per block, because the controls live in different blocks and a
+    # hidden element cannot be measured (offsetParent === null is skipped).
+    tap = []
+    for bench_part in ("calc", "pay", "receipt"):
+        bench.goto(f"{BASE}/embed/?part={bench_part}")
+        bench.wait_for_timeout(320)
+        tap += bench.evaluate("""()=>{
+            const sels = ['#calculator .chips button', '.seg label', '#band-mobile',
+                          '.rform .consent', '#rsubmit', '.rails button', '.rails a',
+                          'details.q summary', '.amt'];
+            const out = [];
+            for (const s of sels) {
+              for (const e of document.querySelectorAll(s)) {
+                if (e.offsetParent === null) continue;
+                const h = Math.round(e.getBoundingClientRect().height);
+                if (h < 44) out.push(`${s} ${h}px`);
+              }
+            }
+            return out;
+          }""")
+    check("every thumb target on the phone surface is at least 44px tall", tap)
+    bench.close()
 
     # ---------------------------------------------------------------- I · the event verification page
     pe = browser.new_page(viewport={"width": 1280, "height": 900})

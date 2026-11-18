@@ -1,2 +1,10 @@
 qa/shots/
 .DS_Store
+__pycache__/
+# internal artefacts — never served by GitHub Pages
+*.bak
+*.bak-*
+qa/zh-diff/
+qa/_baseline_zh_pre_en.html
+REVIEW-*.html
+screens/

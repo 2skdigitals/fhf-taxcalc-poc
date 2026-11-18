@@ -6,7 +6,7 @@ Run AFTER ops/google-auth.py has saved ~/.hermes/credentials/fhf-ga-gtm-token.js
 
 Creates, idempotently (safe to re-run):
   GA4  : account "2SK Solutions" (if none) · property "FHF Tax Calculator POC"
-         · web stream · 5 custom dimensions
+         · web stream · 6 custom dimensions
   GTM  : account (if none) · container "fhf-taxcalc-poc" · 5 data-layer variables
          · 1 custom-event trigger · 3 tags · published version
 
@@ -22,7 +22,7 @@ CONTAINER_NAME = "fhf-taxcalc-poc"
 EVENTS = ["calc_started", "calc_result_shown", "qr_view", "rail_click",
           "email_capture", "receipt_request", "receipt_fulfilled", "donation_self_report"]
 DIMS = [("rail", "Rail"), ("state", "Device state"), ("donation_type", "Donation type"),
-        ("band", "Income band (coarse)"), ("cap_state", "Cap state")]
+        ("band", "Income band (coarse)"), ("cap_state", "Cap state"), ("lang", "Language")]
 
 BRIDGE_HTML = """<script>
 window.dataLayer = window.dataLayer || [];

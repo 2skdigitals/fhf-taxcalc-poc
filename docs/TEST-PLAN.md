@@ -10,7 +10,8 @@
 
 | Purpose | URL |
 |---|---|
-| The four fixed-height blocks | `https://2skdigitals.github.io/fhf-taxcalc-poc/embed/?part=input` (then `result`, `pay`, `receipt`) |
+| The five fixed-height blocks | `https://2skdigitals.github.io/fhf-taxcalc-poc/embed/?part=input` (then `result`, `pay`, `receipt`, `calc`) |
+| The same blocks in English | append `&lang=en` — the heights differ, see Step 1 |
 | Test bench — configuration matrix + verdicts | `https://2skdigitals.github.io/fhf-taxcalc-poc/harness/` |
 | Page-context preview (mock Optimizely page) | `https://2skdigitals.github.io/fhf-taxcalc-poc/preview/` |
 
@@ -22,14 +23,17 @@ The component requires a height, so the experience is four blocks, each sized to
 
 Work in **their Optimizely staging**, not on the bench alone. The bench tells you what the widget does; staging tells you what *their component* does to it.
 
-### Step 1 — the four blocks render at their declared heights
-`input` 1000 · `result` 750 · `pay` 1100 · `receipt` 650. Confirm each renders and that **no internal scrollbar** appears. If one clips, record the width — we adjust the block, not the number.
+### Step 1 — the blocks render at their declared heights
+**Chinese build:** `input` 900 · `result` 800 · `pay` 1040 · `receipt` 650.
+**English build:** `input` 1000 · `result` 960 · `pay` 1210 · `receipt` 760.
+
+Confirm each renders and that **no internal scrollbar** appears. If one clips, record the width — we adjust the block, not the number. The two columns are not interchangeable (INTERFACE §2): English is ~35% more lines at 320px.
 
 **Fail signature:** blank box, or "refused to connect" → a header/CSP problem on their side (INTERFACE §2).
 
 ### Step 3 — interaction
 - Type an amount, switch 單次 → 每月. The months control must appear and the total must recalculate.
-- Press 唔知道 — the result must show a **range**, not a single number.
+- Press 不確定 — the result must show a **range**, not a single number.
 - Type a large gift (e.g. 175,000) — the label must switch to 「（最多）」/「（最少）」.
 - Submit the receipt form empty — field errors must appear **without** the iframe growing a scrollbar.
 
@@ -88,8 +92,15 @@ iPhone Safari **and** Android Chrome, on the real component. iOS decides the pay
 
 ## 5 · Automated checks (already passing)
 
-`python3 qa/poc_test.py https://2skdigitals.github.io/fhf-taxcalc-poc`
+Four scripts. The first needs no browser at all.
 
-23 assertions: the six verified tax examples, the range behaviour, the cap flag, monthly arithmetic, the message contract, height convergence, no horizontal overflow at 390/1100 px, receipt validation, the honesty invariant (no amount/income/rate in any payload), the app-open observable, and the bench itself.
+```bash
+python3 qa/test_tax_engine.py                      # 6/6 verified examples, engine only, runs in node
+python3 qa/verify_six_examples.py                  # the same six, driven through the DOM via the exact-income row
+python3 qa/poc_test.py http://127.0.0.1:8765       # 57 assertions — contract, honesty, heights, taps
+python3 qa/sweep_heights.py                        # peak content height of every block across 22 widths
+```
 
-Last run: **23 passed, 0 failed** — local and against the live URL.
+`poc_test.py` covers: the six verified examples as ranges, the range behaviour per band, the 35% ceiling being computed rather than flagged, monthly arithmetic, the message contract, height convergence, fixed-height fit for all four blocks at 328/568/944/1280px, no horizontal overflow, receipt validation, the honesty invariant (no amount / income / rate in any payload — including the exact-income field, whose only permitted trace is `exact:"yes"`), the app-open observable, and the bench itself.
+
+Last run 15 Nov 2026: **57 passed, 0 failed**; `test_tax_engine.py` **6/6 exact**; `sweep_heights.py` **all five blocks fit** their declared heights. See `docs/TAXFIX-20261115.md` for the numbers and the two examples that used to be wrong.
