@@ -19,7 +19,13 @@ Usage:
 """
 import json
 import sys
-from playwright.sync_api import sync_playwright
+try:
+    from playwright.sync_api import sync_playwright
+except ModuleNotFoundError:                      # the system 3.9 has no playwright
+    raise SystemExit(
+        "playwright is not in this interpreter.\n"
+        "Run: /Library/Developer/CommandLineTools/usr/bin/python3 qa/sweep_heights.py"
+    )
 
 ARGS = sys.argv[1:]
 BASE = "http://127.0.0.1:8765"
