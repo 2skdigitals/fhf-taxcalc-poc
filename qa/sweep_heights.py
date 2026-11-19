@@ -44,8 +44,8 @@ WIDTHS = [320, 328, 360, 390, 414, 430, 480, 540, 568, 600, 640, 700, 721, 768,
 # English peaks are HIGHER than Chinese at every width: 35% more lines at 320px,
 # where the column is ~288px wide and a sentence costs two lines instead of one.
 DECLARED = {
-    "zh-HK": {"calc": 2050, "input": 1280, "result": 860, "pay": 600, "receipt": 780},
-    "en":    {"calc": 2070, "input": 1280, "result": 860, "pay": 600, "receipt": 890},
+    "zh-HK": {"calc": 1920, "input": 1120, "result": 920, "pay": 600, "receipt": 780},
+    "en":    {"calc": 1920, "input": 1120, "result": 920, "pay": 600, "receipt": 890},
 }
 
 peaks = {}
@@ -79,8 +79,9 @@ with sync_playwright() as pw:
                         # third shape: monthly AND the exact-income disclosure open — the
                         # tallest reachable state, and the one that was still clipping the
                         # 1950px declaration by 179px at 320px (found 19 Nov)
-                        p.evaluate("""()=>{const d=[...document.querySelectorAll('details')]
-                                         .find(x=>x.querySelector('#exact')); if(d) d.open=true;}""")
+                        # exact income is now a swap inside the income card, not a
+                        # disclosure — the third shape is monthly + exact together
+                        p.click("#exact-toggle", timeout=1500)
                         p.fill("#exact", "800000", timeout=1500)
                         p.wait_for_timeout(320)
                         exact = p.evaluate("()=>document.documentElement.scrollHeight")

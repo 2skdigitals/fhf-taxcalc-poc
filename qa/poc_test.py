@@ -163,7 +163,8 @@ with sync_playwright() as pw:
     # distinctive value, wait past the 800ms event debounce, and re-scan
     # everything the frame has ever posted: the value and its formatted form
     # must be absent, and the only permitted trace is exact:"yes"|"no".
-    f.evaluate("()=>{document.getElementById('exact-row').open = true;}")
+    # exact income is a swap inside the income card now, not a disclosure
+    f.click("#exact-toggle")
     f.fill("#exact", "654321")
     settle(pg, 1100)
     payloads = json.dumps([m.get("params") for m in msgs(pg) if m.get("type") == "event"], ensure_ascii=False)
@@ -285,7 +286,7 @@ with sync_playwright() as pw:
     # 320 to 1440, plus 50–73px of slack. `calc` is in here because the client
     # embedded it: at 1,020px its content (1,499px at 320px) produced the second,
     # inner scrollbar they reported on mobile.
-    BUDGET = {"calc": 2070, "input": 1280, "result": 860, "pay": 600, "receipt": 780}
+    BUDGET = {"calc": 1920, "input": 1120, "result": 920, "pay": 600, "receipt": 780}
     SECTIONS = {"calc": ["calculator", "result"], "input": ["calculator"],
                 "result": ["result"], "pay": ["payment"], "receipt": ["receipt"]}
     for w in (328, 568, 944, 1280):

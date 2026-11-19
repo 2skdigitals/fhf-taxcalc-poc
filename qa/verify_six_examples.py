@@ -63,7 +63,7 @@ READ = """() => ({
   caption: document.getElementById('net-caption').textContent.trim(),
   cap:   document.getElementById('cap').textContent.trim(),
   benefit: document.getElementById('benefit').textContent.trim(),
-  exactOpen: document.getElementById('exact-row').open,
+  exactOpen: !document.getElementById('exact-wrap').hidden,
   giftLabel: document.getElementById('gift-label').textContent.trim(),
 })"""
 
@@ -86,8 +86,8 @@ with sync_playwright() as pw:
         p.wait_for_timeout(350)
         p.fill("#gift", str(gift))
         p.wait_for_timeout(120)
-        # the row is collapsed by default; a donor (and this test) has to open it
-        p.evaluate("() => { document.getElementById('exact-row').open = true; }")
+        # exact income is a swap inside the income card: open it, then type
+        p.click("#exact-toggle")
         p.fill("#exact", str(income))
         p.wait_for_timeout(250)
         g = p.evaluate(READ)

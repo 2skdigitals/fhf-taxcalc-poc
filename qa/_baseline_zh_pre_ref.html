@@ -196,6 +196,19 @@ select#months:focus,select.band-select:focus{outline:0;border-color:var(--navy);
 
 /* ── disclosure rows ───────────────────────────────────────── */
 details.q{margin-top:16px;border-top:1px solid var(--line)}
+/* inside a card the rule already exists at the card edge, so the disclosure only
+   needs a whisper of separation */
+details.q.inset{margin-top:10px;padding-top:2px}
+/* the two precisions of one question: a quiet link, 44px tall, not a second field */
+.swap{display:inline-flex;align-items:center;min-height:44px;margin-top:2px;padding:0;
+      background:none;border:0;color:var(--navy);font:inherit;font-size:var(--t-sm);
+      font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left}
+.swap:hover{color:var(--orange-ink)}
+.swap:focus-visible{outline:2px solid var(--navy);outline-offset:3px}
+/* the closing reference group: questions, not a step */
+.faq{margin-top:26px;padding-top:16px;border-top:1px solid var(--line-2)}
+.faq-h{margin:0 0 2px;font-size:var(--t-cap);font-weight:600;letter-spacing:.06em;
+       text-transform:uppercase;color:var(--muted)}
 details.q summary{
   list-style:none;display:flex;align-items:center;gap:12px;min-height:48px;
   cursor:pointer;font-size:var(--t-sm);font-weight:500;color:var(--navy);
@@ -460,11 +473,18 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
              press?" moment. The select is the complete one, so it stays. -->
         <p class="hint" id="months-hint" data-i18n="s1.months.hint">The year of assessment ends 31 March. The deduction uses your total for that year.</p>
       </div>
+
+      <details class="q inset" id="what-counts">
+        <summary data-i18n="s1.what.summary">What counts as a deductible gift</summary>
+        <p data-i18n="s1.what.body">Only money given to a charity approved under section 88 of the Inland Revenue Ordinance can be deducted. Money paid for something in return is not a donation — raffle tickets, auction purchases, dinner seats, sponsorship that buys advertising. At or below the basic allowance you pay no salaries tax, so a gift saves you nothing.</p>
+      </details>
     </div>
 
-    <div class="card">
-      <fieldset class="fieldset" aria-describedby="band-hint">
-        <legend class="flabel" data-i18n="s1.band.label">Your assessable income this year, roughly</legend>
+    <div class="step"><span class="step-n" aria-hidden="true">2</span><h2 id="s1bh" data-i18n="s1.band.label">Your assessable income this year, roughly</h2></div>
+
+    <div class="card" id="income-card">
+      <fieldset class="fieldset" aria-describedby="band-hint" id="band-wrap">
+        <legend class="sr" data-i18n="s1.band.label">Your assessable income this year, roughly</legend>
         <p class="hint" id="band-hint" data-i18n="s1.band.hint">Before allowances; the basic allowance is assumed at HK$145,000.</p>
         <div class="bands">
           <label><input type="radio" name="band" value="unknown"><span data-i18n="s1.band.unknown">Not sure</span><span class="r">2% – 17%</span></label>
@@ -492,24 +512,20 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
         </select>
         <p class="note" data-i18n="s1.band.note">Above HK$2,132,500 the standard rate takes over — 15% on the first HK$5 million, 16% above it — so the last two rungs fall rather than rise. That is how the tax is built, not a bug.</p>
       </fieldset>
-    </div>
 
-    <!-- Optional exact income. Collapsed by default: the range picker stays the
-         primary path, and the value is used for the maths only — it never enters
-         an analytics payload, never leaves the frame. -->
-    <details class="q" id="exact-row">
-      <summary data-i18n="s1.exact.summary">Use your exact income</summary>
-      <div>
+      <!-- Same question, higher precision. Swapped in place rather than stacked:
+           one income control at a time, and the value is used for the maths only —
+           it never enters an analytics payload, never leaves the frame. -->
+      <div id="exact-wrap" hidden>
         <label class="flabel" for="exact" data-i18n="s1.exact.label">Assessable income for the year</label>
         <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="exact" type="text" inputmode="numeric" autocomplete="off" value="" placeholder="e.g. 500,000" aria-describedby="exact-hint" data-i18n-ph="s1.exact.ph"></div>
         <p class="hint" id="exact-hint" data-i18n="s1.exact.hint">One figure instead of a range, worked through the bands and the 35% cap. Never sent, never stored.</p>
       </div>
-    </details>
 
-    <details class="q" id="what-counts">
-      <summary data-i18n="s1.what.summary">What counts as a deductible gift</summary>
-      <p data-i18n="s1.what.body">Only money given to a charity approved under section 88 of the Inland Revenue Ordinance can be deducted. Money paid for something in return is not a donation — raffle tickets, auction purchases, dinner seats, sponsorship that buys advertising. At or below the basic allowance you pay no salaries tax, so a gift saves you nothing.</p>
-    </details>
+      <button type="button" class="swap" id="exact-toggle" aria-controls="band-wrap exact-wrap" aria-expanded="false">
+        <span data-i18n="s1.exact.summary">Use your exact income</span>
+      </button>
+    </div>
 
     <div class="gotoline" id="goto-row">
       <a class="btn" href="#result" id="goto-result" data-i18n="s1.goto">See what it costs you</a>
@@ -519,7 +535,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
 
   <!-- ── 2 · what it costs you ─────────────────────────────────── -->
   <section class="panel hero" id="result" aria-labelledby="s2h">
-    <div class="step"><span class="step-n" aria-hidden="true">2</span><h2 id="s2h" data-i18n="s2.h">What it costs you</h2></div>
+    <div class="step"><span class="step-n" aria-hidden="true">3</span><h2 id="s2h" data-i18n="s2.h">What it costs you</h2></div>
 
     <div class="result">
       <p class="net-label" id="net-label" data-i18n="s2.netlabel">You pay</p>
@@ -540,10 +556,13 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     <p class="assump" id="cap" data-i18n="s2.cap.def">The cap is 35% of assessable income for the year; an ordinary gift does not reach it.</p>
     <p class="scope" data-i18n="s2.scope">One person, salaries tax only. An estimate, not tax advice.</p>
 
-    <details class="q" id="spouse">
-      <summary data-i18n="s2.spouse.q">Can a couple combine the deduction?</summary>
-      <p data-i18n="s2.spouse.a">Partly. What you cannot use — including the part above the 35% cap — your spouse may claim on their own BIR60. Their claim is capped at 35% of their own income or profits, so an unused deduction does not pass across in full.</p>
-    </details>
+    <div class="faq">
+      <h3 class="faq-h" data-i18n="s2.faq.label">Common questions</h3>
+      <details class="q inset" id="spouse">
+        <summary data-i18n="s2.spouse.q">Can a couple combine the deduction?</summary>
+        <p data-i18n="s2.spouse.a">Partly. What you cannot use — including the part above the 35% cap — your spouse may claim on their own BIR60. Their claim is capped at 35% of their own income or profits, so an unused deduction does not pass across in full.</p>
+      </details>
+    </div>
   </section>
 
   <!-- ── 3 · how you give ──────────────────────────────────────── -->
@@ -727,6 +746,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s1.mob.r15": "HK$2,132,500 – 5,000,000 · 標準 15%",
       "s1.mob.r16": "HK$5,000,000 以上 · 標準 16%",
       "s1.exact.summary": "改用自己的入息數字",
+      "s1.exact.back": "改以入息範圍計算",
       "s1.exact.label": "全年應評稅入息",
       "s1.exact.ph": "例如 500,000",
       "s1.exact.hint": "由範圍改為單一數字，並計入累進稅級及 35% 上限。只用於本頁計算，不會傳送或儲存。",
@@ -744,6 +764,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s2.assume.def": "假設入息 HK$345,000 – 2,132,500。",
       "s2.cap.def": "扣稅上限為應評稅入息的 35%（全年合計）；一般捐款不會觸及上限。",
       "s2.scope": "只估算個人在薪俸稅下的捐款扣稅，並非稅務建議。",
+      "s2.faq.label": "常見問題",
       "s2.spouse.q": "夫婦的扣稅額可否合併使用？",
       "s2.spouse.a": "可以，但只限未用的部分。您未能用盡的扣稅額（包括超出 35% 上限而未扣除的部分），配偶可在其 BIR60 報稅表內申報；配偶本人的申報同樣以 35% 為上限，上限按其本人的入息或利潤計算，因此未用的扣稅額不能全數轉移。",
       "s3.h": "捐款方式",
@@ -869,6 +890,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s1.mob.r15": "HK$2,132,500 – 5,000,000 · std 15%",
       "s1.mob.r16": "HK$5,000,000 and above · std 16%",
       "s1.exact.summary": "Use your exact income",
+      "s1.exact.back": "Use an income range instead",
       "s1.exact.label": "Assessable income for the year",
       "s1.exact.ph": "e.g. 500,000",
       "s1.exact.hint": "One figure instead of a range, worked through the bands and the 35% cap. Never sent, never stored.",
@@ -886,6 +908,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s2.assume.def": "Income assumed HK$345,000 – 2,132,500.",
       "s2.cap.def": "The cap is 35% of assessable income for the year; an ordinary gift does not reach it.",
       "s2.scope": "One person, salaries tax only. An estimate, not tax advice.",
+      "s2.faq.label": "Common questions",
       "s2.spouse.q": "Can a couple combine the deduction?",
       "s2.spouse.a": "Partly. What you cannot use — including the part above the 35% cap — your spouse may claim on their own BIR60. Their claim is capped at 35% of their own income or profits, so an unused deduction does not pass across in full.",
       "s3.h": "How you give",
@@ -1481,6 +1504,27 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     var ex = $("#exact");
     if (ex) ex.value = "";
   }
+  /* One question, two precisions. The band picker and the exact figure are the same
+     answer at different confidence, so only one is on screen: swapping keeps the
+     donor's place, and turning exact off clears it so the two can never disagree. */
+  var exactMode = false, $swap = $("#exact-toggle");
+  function setExactMode(on) {
+    exactMode = !!on;
+    var bw = $("#band-wrap"), ew = $("#exact-wrap");
+    if (bw) bw.hidden = exactMode;
+    if (ew) ew.hidden = !exactMode;
+    if ($swap) {
+      $swap.setAttribute("aria-expanded", exactMode ? "true" : "false");
+      var lab = $swap.querySelector("span") || $swap;
+      lab.setAttribute("data-i18n", exactMode ? "s1.exact.back" : "s1.exact.summary");
+      lab.textContent = t(exactMode ? "s1.exact.back" : "s1.exact.summary");
+    }
+    if (!exactMode) clearExact();
+    else { var ex0 = $("#exact"); if (ex0) ex0.focus(); }
+    render(); scheduleHeight();
+  }
+  if ($swap) $swap.addEventListener("click", function () { firstTouch(); setExactMode(!exactMode); });
+
   var $exact = $("#exact");
   if ($exact) {
     $exact.addEventListener("input", function (e) {

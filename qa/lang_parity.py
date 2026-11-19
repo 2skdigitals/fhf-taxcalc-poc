@@ -140,7 +140,7 @@ STATES = {
                        "g.dispatchEvent(new Event('input',{bubbles:true}));}"),
         ("big gift r17", "()=>{const g=document.getElementById('gift');g.value='175000';"
                          "g.dispatchEvent(new Event('input',{bubbles:true}));}"),
-        ("exact capped", "(function(){document.getElementById('exact-row').open=true;"
+        ("exact capped", "(function(){document.getElementById('exact-toggle').click();"
                          "var g=document.getElementById('gift');g.value='250000';"
                          "g.dispatchEvent(new Event('input',{bubbles:true}));"
                          "var e=document.getElementById('exact');e.value='500000';"
@@ -157,7 +157,7 @@ STATES = {
         ("default", None),
         ("band r15", set_band("r15")),
         ("band r2", set_band("r2")),
-        ("exact", "(function(){document.getElementById('exact-row').open=true;"
+        ("exact", "(function(){document.getElementById('exact-toggle').click();"
                   "var e=document.getElementById('exact');e.value='654321';"
                   "e.dispatchEvent(new Event('input',{bubbles:true}));})()"),
     ],
@@ -369,7 +369,7 @@ with sync_playwright() as pw:
         p.wait_for_timeout(900)
         f = p.frames[1]
         f.fill("#gift", "2500")
-        f.evaluate("()=>{document.getElementById('exact-row').open=true;}")
+        f.click("#exact-toggle")   # exact income is a swap now, not a disclosure
         f.fill("#exact", "654321")
         p.wait_for_timeout(1300)
         msgs = p.evaluate("()=>window.__msgs||[]")
