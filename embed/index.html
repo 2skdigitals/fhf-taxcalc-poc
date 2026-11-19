@@ -813,7 +813,8 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "d.capline.band.capped": "35% 上限；範圍下限可扣除 {d}。",
       "d.capline.band.ok": "35% 上限；範圍下限全數可扣除。",
       "d.benefit.empty": "輸入捐款金額後，即顯示實際付出。",
-      "d.benefit.range": "您捐 {g}，可作認可慈善捐款扣除{cap}。每捐 HK$100，實際付出約 {a} 至 {b}。",
+      "d.benefit.range": "您捐 {g}，可作認可慈善捐款扣除。每捐 HK$100，實際付出約 {a} 至 {b}。",
+      "d.benefit.range.capped": "您捐 {g}，可作認可慈善捐款扣除（受 35% 上限所限）。每捐 HK$100，實際付出約 {a} 至 {b}。",
       "d.benefit.capnote": "（受 35% 上限所限）",
       "d.benefit.zero": "您捐 {g}。以此入息水平無須繳付薪俸稅，捐款不會減少稅款。",
       "d.benefit.capped": "受應評稅入息 35% 上限所限，可扣除 {taxed}；節省稅款 {s}。",
@@ -954,7 +955,8 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "d.capline.band.capped": "35% cap — {d} deductible at your range's low end.",
       "d.capline.band.ok": "35% cap — all of it deductible at your range's low end.",
       "d.benefit.empty": "Enter an amount to see what it costs you.",
-      "d.benefit.range": "{g} given, deductible{cap}. Every HK$100 costs you about {a} to {b}.",
+      "d.benefit.range": "{g} given, all of it deductible. Every HK$100 costs you about {a} to {b}.",
+      "d.benefit.range.capped": "{g} given; the deductible part is held to the 35% cap. Every HK$100 costs you about {a} to {b}.",
       "d.benefit.capnote": " (held to the 35% cap)",
       "d.benefit.zero": "You give {g}. At this income you pay no salaries tax, so the gift saves you nothing.",
       "d.benefit.capped": "The 35% cap holds the deduction to {taxed}. Tax saved {s}.",
@@ -1340,9 +1342,11 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       if (annual <= 0) {
         bEl.textContent = t("d.benefit.empty");
       } else if (isRange) {
-        bEl.textContent = t("d.benefit.range", {
+        /* Two sentences, not one with an optional parenthetical: spliced in, the
+           uncapped case read "HK$1,300 given, deductible." and the capped case read
+           "…deductible (held to the 35% cap)." — both fragments. */
+        bEl.textContent = t(capped ? "d.benefit.range.capped" : "d.benefit.range", {
           g: money(annual),
-          cap: capped ? t("d.benefit.capnote") : "",
           lo: money(savedLow), hi: money(savedHigh),
           a: "HK$" + Math.round(100*(1-rateHigh)),
           b: "HK$" + Math.round(100*(1-rateLow))
