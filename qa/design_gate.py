@@ -155,6 +155,30 @@ def main():
                 fails.append(f"FAIL tap target {part}: {s['tag']} is {s['h']}px")
         pg.close()
 
+        # ── D0 · every same-origin request must actually resolve. A variant authored in
+        #     its own folder keeps working there and 404s the moment it is merged: that is
+        #     how the two payment QR images shipped dead (src="assets/…" not "../assets/…").
+        pg = browser.new_page(viewport={"width": 1280, "height": 900})
+        bad = []
+        pg.on("response", lambda r: bad.append((r.status, r.url)) if r.status >= 400 else None)
+        for part in PARTS:
+            pg.goto(f"{args.base}/embed/?part={part}", wait_until="load")
+            pg.wait_for_timeout(500)
+        pg.close()
+        for status, url in bad:
+            fails.append(f"FAIL asset {status}: {url}")
+
+        # ── E · images that are present but empty render as a dead box
+        pg = browser.new_page(viewport={"width": 1280, "height": 900})
+        pg.goto(f"{args.base}/embed/?part=pay", wait_until="load")
+        pg.wait_for_timeout(900)
+        broken = pg.evaluate("""() => [...document.images]
+            .filter(i => i.offsetParent && (!i.complete || i.naturalWidth === 0))
+            .map(i => i.getAttribute('src'))""")
+        pg.close()
+        for src in broken:
+            fails.append(f"FAIL image did not load: {src}")
+
         # ── D · the disclaimer still closes every block, collapsed
         for part in PARTS:
             pg = browser.new_page(viewport={"width": 390, "height": 900})
