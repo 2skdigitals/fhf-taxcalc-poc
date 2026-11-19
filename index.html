@@ -59,11 +59,11 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
   <table>
     <thead><tr><th style="width:26%">Block</th><th style="width:30%">URL</th><th style="width:20%">Set height</th><th>Content at their widths (328–1280px)</th></tr></thead>
     <tbody>
-      <tr><td><b>1 · Calculator</b></td><td><code id="p1">/embed/?part=input</code></td><td><b>1190px</b></td><td>770 – 1137</td></tr>
+      <tr><td><b>1 · Calculator</b></td><td><code id="p1">/embed/?part=input</code></td><td><b>1280px</b></td><td>770 – 1230</td></tr>
       <tr><td><b>2 · Result</b></td><td><code id="p2">/embed/?part=result</code></td><td><b>860px</b></td><td>725 – 808</td></tr>
       <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>600px</b></td><td>431 – 543</td></tr>
       <tr><td><b>4 · Receipt</b></td><td><code id="p4">/embed/?part=receipt</code></td><td><b>780px</b></td><td>621 – 724</td></tr>
-      <tr><td><b>1+2 combined</b></td><td><code id="p5">/embed/?part=calc</code></td><td><b>1950px</b></td><td>1573 – 1912</td></tr>
+      <tr><td><b>1+2 combined</b></td><td><code id="p5">/embed/?part=calc</code></td><td><b>2070px</b></td><td>1511 – 2025</td></tr>
     </tbody>
   </table>
   <p class="lede" style="margin:-6px 0 10px;font-size:13px;color:#68707b">These are the worst cases across every width their page actually produces (iframe 328px on a small phone → 1280px on a wide desktop), plus margin. If the component can take a <b>different height per breakpoint</b>, tell us and we'll hand you a two-number set instead — that removes the remaining vertical slack on desktop.</p>
@@ -100,7 +100,7 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
 
   <h2>4 · What to record (one pass, five minutes)</h2>
   <ol>
-    <li>Paste <b>Block 1</b> at <b>1190px</b>. Confirm it renders and that <b>no internal scrollbar</b> appears (that is the whole point of the height table — the content must fit the box).</li>
+    <li>Paste <b>Block 1</b> at <b>1280px</b>. Confirm it renders and that <b>no internal scrollbar</b> appears (that is the whole point of the height table — the content must fit the box).</li>
     <li>Repeat for Blocks 2–4 at 860 / 600 / 780px. If any block clips, tell us the width and we adjust the block, not the number.</li>
     <li>If the component sets a <b>sandbox</b>, add it in the bench first — then confirm the credit-card tile still leaves the iframe and lands on hollows.org/donate.</li>
     <li>Press <b>“測試叫起 PayMe”</b> in the bench and read the message: does the browser let the frame open the wallet app, or is the QR the only mobile path?</li>

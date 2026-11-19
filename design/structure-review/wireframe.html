@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Where the text should go — proposed structure, Fred Hollows HK tax calculator</title>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:#fff;color:#16161C;
+  font-family:system-ui,-apple-system,"PingFang HK","Noto Sans HK","Hiragino Sans HK","Microsoft JhengHei",Helvetica,Arial,sans-serif;
+  font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;
+}
+.inner{max-width:1280px;margin:0 auto;padding:0 clamp(18px,4vw,44px)}
+.doc-head{background:#01014E;color:#fff;padding:clamp(32px,4.6vw,56px) 0 clamp(26px,3.2vw,36px)}
+.doc-head h1{font-size:clamp(28px,4.2vw,44px);line-height:1.04;letter-spacing:-.032em;font-weight:700;margin:0;max-width:22ch;text-wrap:balance}
+.doc-head .sub{color:#C6C8DD;font-size:clamp(15px,1.6vw,18px);line-height:1.5;margin:16px 0 0;max-width:58ch}
+.doc-head .meta{color:#8E90AE;font-size:13px;margin:20px 0 0}
+.langsw{display:flex;margin:24px 0 0;border:1px solid rgba(255,255,255,.34);border-radius:3px;width:max-content;overflow:hidden}
+.langsw button{appearance:none;border:0;background:none;color:#C6C8DD;font:inherit;font-size:14px;font-weight:500;padding:8px 16px;min-height:44px;cursor:pointer}
+.langsw button + button{border-left:1px solid rgba(255,255,255,.34)}
+.langsw button[aria-pressed="true"]{background:#fff;color:#01014E;font-weight:600}
+.langsw .lbl{display:flex;align-items:center;padding:0 14px;font-size:12.5px;color:#8E90AE;border-right:1px solid rgba(255,255,255,.2)}
+
+section.doc{padding:clamp(36px,4.6vw,60px) 0 0}
+section.doc > h2{font-size:clamp(21px,2.4vw,27px);line-height:1.15;letter-spacing:-.022em;font-weight:700;color:#01014E;margin:0 0 8px;max-width:36ch;text-wrap:balance}
+section.doc > .lede{font-size:16px;color:#3F3F4A;margin:0 0 26px;max-width:70ch}
+
+.map{border-top:1px solid #DCDCD6}
+.map-row{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:8px 34px;padding:15px 0;border-bottom:1px solid #DCDCD6;align-items:start}
+.map-row .now{font-weight:600;color:#16161C;font-size:15px;line-height:1.4}
+.map-row .now span{display:block;font-weight:400;color:#6A6A75;font-size:13.5px;margin-top:4px;line-height:1.5}
+.map-row .then{font-size:15px;line-height:1.55;color:#3F3F4A}
+.map-row .then b{color:#01014E;font-weight:600}
+@media (max-width:720px){ .map-row{grid-template-columns:1fr;gap:5px} }
+
+.frames{display:flex;flex-direction:column;gap:46px}
+.frame{margin:0}
+.frame figcaption{font-size:13.5px;color:#5B5B66;line-height:1.5;margin:10px 0 0;max-width:70ch}
+.frame figcaption b{color:#01014E;font-weight:600}
+.frame figcaption .h{color:#01014E;font-weight:600;font-variant-numeric:tabular-nums}
+.frame figcaption .over{color:#A3161C;font-weight:700}
+.pair{display:flex;gap:56px 40px;align-items:flex-start;flex-wrap:wrap}
+.pair.mobile{justify-content:center}
+.pair.desktop{justify-content:flex-start;overflow-x:auto;max-width:100%}
+/* at a phone width the frames must stay at their true pixel width, so the section
+   drops its padding and the frames get their own scroll container instead */
+@media (max-width:430px){
+  .doc-frames > .inner{padding:0}
+  .doc-frames > .inner > h2,.doc-frames > .inner > .lede{padding:0 18px}
+  .doc-frames .pair{gap:48px 30px;overflow-x:auto;justify-content:flex-start;padding-bottom:6px}
+  .doc-frames .frame figcaption{padding:0 18px}
+}
+
+.legend{display:grid;grid-template-columns:1fr;border-top:1px solid #DCDCD6}
+.legend > div{display:grid;grid-template-columns:32px minmax(0,1fr);gap:4px 14px;padding:14px 0;border-bottom:1px solid #DCDCD6}
+.legend .n{font-size:15px;font-weight:700;color:#E97824;line-height:1.5}
+.legend .txt{font-size:15px;line-height:1.55;color:#3F3F4A}
+.legend .txt b{color:#16161C;font-weight:600}
+@media (min-width:900px){ .legend{grid-template-columns:1fr 1fr;column-gap:48px} }
+
+.scroll{overflow-x:auto;max-width:100%}
+table.h{border-collapse:collapse;width:100%;min-width:600px;font-size:14.5px;font-variant-numeric:tabular-nums}
+table.h th{text-align:left;font-weight:600;font-size:12.5px;color:#6A6A75;padding:9px 16px 9px 0;border-bottom:1px solid #C9C9C3;white-space:nowrap}
+table.h td{padding:9px 16px 9px 0;border-bottom:1px solid #DCDCD6;vertical-align:top;white-space:nowrap}
+table.h .num{text-align:right}
+table.h th.num{text-align:right}
+table.h .bad{color:#A3161C;font-weight:700}
+table.h .good{color:#1a6b3c;font-weight:600}
+table.h .delta{color:#3F3F4A}
+.mnote{display:none;font-size:13px;color:#6A6A75;margin:12px 0 0;max-width:52ch}
+@media (max-width:620px){
+  table.h{min-width:0}
+  table.h th:nth-child(3),table.h th:nth-child(4),
+  table.h td:nth-child(3),table.h td:nth-child(4){display:none}
+  .mnote{display:block}
+  table.h td,table.h th{padding-right:8px;white-space:normal}
+  table.h td:first-child{max-width:20ch}
+}
+table.h tr.decl td{color:#6A6A75;border-bottom:1px solid #C9C9C3}
+table.h tr.sep td{border-bottom:1px solid #C9C9C3}
+
+.foot{border-top:1px solid #DCDCD6;margin-top:clamp(44px,6vw,70px);padding:26px 0 60px}
+.foot p{margin:0;font-size:13px;color:#6A6A75;max-width:84ch;line-height:1.6}
+.foot p + p{margin-top:8px}
+
+/* ── the block: live values, scoped to its stage ─────────────── */
+.stage{
+  --orange:#E97824;--navy:#01014E;
+  --ink:#16161C;--ink-2:#3F3F4A;--muted:#6A6A75;
+  --line:rgba(1,1,78,.14);--line-2:rgba(1,1,78,.26);
+  --wash:rgba(1,1,78,.055);--on-navy-2:#C6C8DD;--hair-inv:rgba(255,255,255,.22);
+  --white:#fff;
+  --sans:system-ui,-apple-system,"PingFang HK","Noto Sans HK","Hiragino Sans HK","Microsoft JhengHei",Helvetica,Arial,sans-serif;
+  container-type:inline-size;
+  background:#F3F3F0;border:1px solid #D3D3CC;border-radius:6px;overflow:hidden;text-align:left;
+}
+.stage *{box-sizing:border-box}
+.stage .wrap{
+  max-width:44rem;margin:0 auto;
+  padding:clamp(18px,3.4cqw,26px) clamp(18px,4.6cqw,32px) 24px;
+  font-family:var(--sans);font-size:1.0625rem;line-height:1.6;color:var(--ink);
+  font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;overflow-wrap:break-word
+}
+.stage h2{font-size:clamp(1.375rem,3.4cqw,1.75rem);line-height:1.14;font-weight:700;letter-spacing:-.024em;margin:0;color:var(--navy);text-wrap:balance}
+.stage .step{display:flex;align-items:center;gap:11px;margin:0 0 16px}
+.stage .step-n{flex:0 0 auto;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font-size:.75rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.stage .panel + .panel{margin-top:clamp(26px,4.4cqw,36px)}
+.stage .card{background:var(--white);border:1px solid var(--line);border-radius:4px;padding:clamp(16px,4.4cqw,22px)}
+.stage .card + .card{margin-top:14px}
+.stage .fieldset2{border:0;margin:0;padding:0;min-width:0}
+.stage .flabel{display:block;font-size:.8125rem;color:var(--ink-2);font-weight:600;margin:0 0 8px}
+.stage .field{margin-top:20px}
+.stage .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line-2);border-radius:3px;overflow:hidden;background:var(--white)}
+.stage .seg span{display:flex;align-items:center;justify-content:center;min-height:46px;padding:0 8px;font-size:.9375rem;font-weight:500;color:var(--ink-2);text-align:center}
+.stage .seg span + span{border-left:1px solid var(--line-2)}
+.stage .seg span.on{background:var(--navy);color:#fff;font-weight:600}
+.stage .amt{display:flex;align-items:center;gap:.34em;border:1px solid var(--line-2);border-radius:3px;background:var(--white);padding:1px 13px}
+.stage .amt .pre{font-size:.9375rem;color:var(--muted);font-weight:600;letter-spacing:-.01em}
+.stage .amt .val{flex:1 1 auto;padding:10px 0;font-size:clamp(1.5rem,6.4cqw,2rem);font-weight:700;letter-spacing:-.03em;line-height:1.2;color:var(--navy)}
+.stage .quick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 0}
+.stage .quick .qlab{font-size:.8125rem;color:var(--muted);padding-right:2px}
+.stage .quick button{min-height:44px;padding:0 15px;border:1px solid var(--line-2);border-radius:999px;background:var(--white);color:var(--ink-2);font-family:inherit;font-size:.9375rem;font-weight:500}
+.stage .quick button.is-on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600}
+.stage select{
+  width:100%;font-family:inherit;font-size:.9375rem;color:var(--ink);min-height:46px;
+  padding:0 32px 0 12px;border:1px solid var(--line-2);border-radius:3px;background-color:var(--white);
+  -webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--navy) 50%),linear-gradient(135deg,var(--navy) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 55%,calc(100% - 9px) 55%;
+  background-size:6px 6px,6px 6px;background-repeat:no-repeat
+}
+.stage .hint{font-size:.8125rem;line-height:1.55;color:var(--muted);margin:8px 0 0;max-width:34rem}
+.stage .note{font-size:.8125rem;line-height:1.6;color:var(--muted);margin:12px 0 0;max-width:34rem}
+.stage .fine{font-size:.8125rem;line-height:1.55;color:var(--muted);margin:14px 0 0;max-width:34rem}
+
+.stage .bands{display:grid;margin-top:14px;border-top:1px solid var(--line)}
+.stage .bands .row{position:relative;display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:10px;align-items:center;min-height:44px;padding:9px 8px 9px 13px;border-bottom:1px solid var(--line);font-size:.8125rem;color:var(--ink-2);white-space:nowrap}
+.stage .bands .row.sel{color:var(--ink);font-weight:600;background:var(--wash)}
+.stage .bands .row.sel::before{content:"";position:absolute;left:0;top:-1px;bottom:-1px;width:3px;background:var(--orange)}
+.stage .bands .rd{width:14px;height:14px;border:1.5px solid #9a9aa8;border-radius:50%;background:var(--white)}
+.stage .bands .row.sel .rd{border-color:var(--navy);border-width:4.5px}
+.stage .bands .r{font-size:.6875rem;color:var(--muted);text-align:right;white-space:nowrap;font-weight:400}
+.stage .bands .row.sel .r{color:var(--navy);font-weight:600}
+.stage[data-mode="desktop"] .bands{grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,auto);grid-auto-flow:column;column-gap:24px}
+.stage .band-select{display:none;margin-top:14px}
+.stage[data-mode="mobile"] .bands{display:none}
+.stage[data-mode="mobile"] .band-select{display:block}
+.stage[data-mode="mobile"] .quick-mo{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+
+.stage .exact-toggle{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
+  min-height:48px;margin-top:16px;padding:0;border:0;border-top:1px solid var(--line);
+  background:none;color:var(--navy);font-family:inherit;font-size:.9375rem;font-weight:500;text-align:left;cursor:pointer
+}
+.stage .exact-toggle .tl{display:block}
+.stage .exact-toggle::after{content:"\2192";color:var(--navy);flex:0 0 auto}
+.stage .exact-toggle.back{justify-content:flex-start;gap:10px}
+.stage .exact-toggle.back::after{content:none}
+.stage .exact-toggle.back::before{content:"\2190";order:-1;flex:0 0 auto}
+
+.stage details.q{margin-top:16px;border-top:1px solid var(--line)}
+.stage details.q summary{list-style:none;display:flex;align-items:center;gap:12px;min-height:48px;cursor:pointer;font-size:.9375rem;font-weight:500;color:var(--navy)}
+.stage details.q summary::-webkit-details-marker{display:none}
+.stage details.q summary::before{content:"";flex:0 0 auto;width:8px;height:8px;margin-right:2px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg) translate(-1px,-1px)}
+.stage details.q[open] summary::before{transform:rotate(45deg) translate(-2px,-2px)}
+.stage details.q p{font-size:.9375rem;line-height:1.62;color:var(--ink-2);max-width:34rem;margin:2px 0 12px}
+.stage details.q > div{margin:2px 0 12px}
+.stage details.q.in-card{margin-top:18px}
+.stage .disc-global{margin-top:16px;padding-top:10px}
+
+.stage .result{background:var(--navy);color:#fff;border-radius:4px;padding:clamp(20px,5.4cqw,30px);margin-top:4px}
+.stage .net-label{font-size:.9375rem;line-height:1.4;color:var(--on-navy-2);font-weight:500;margin:0}
+.stage .net{font-size:clamp(2.75rem,11cqw,4.25rem);font-weight:700;letter-spacing:-.04em;line-height:1;margin:6px 0 0;color:#fff;font-variant-numeric:tabular-nums}
+.stage .net.is-range{font-size:clamp(1.625rem,6.6cqw,2.5rem);letter-spacing:-.03em;line-height:1.2}
+.stage .net .cur{font-size:.32em;font-weight:600;letter-spacing:0;color:var(--on-navy-2);margin-right:.22em;vertical-align:.62em}
+.stage .result .hint{color:var(--on-navy-2);margin:10px 0 0;font-size:.8125rem;line-height:1.5}
+.stage .figs{display:grid;margin:22px 0 0;border-top:1px solid var(--hair-inv)}
+.stage .figs > div{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:16px;padding:11px 0;border-bottom:1px solid var(--hair-inv)}
+.stage .figs dt{font-size:.8125rem;line-height:1.35;color:var(--on-navy-2);margin:0}
+.stage .figs dd{margin:0;font-size:1.3125rem;font-weight:600;letter-spacing:-.02em;white-space:nowrap;color:#fff}
+.stage .figs dd.is-range{font-size:.9375rem;line-height:1.4;letter-spacing:0;font-weight:600}
+.stage .figs .saved{color:var(--orange)}
+.stage .benefit{font-size:clamp(1.0625rem,2.2cqw,1.1875rem);line-height:1.48;letter-spacing:-.008em;color:var(--ink);font-weight:500;margin:20px 0 0;max-width:34rem}
+.stage .assump{font-size:.8125rem;line-height:1.6;color:var(--muted);margin:0;max-width:34rem}
+.stage .assumption{margin-top:22px;padding-top:14px;border-top:1px solid var(--line)}
+.stage .assumption + .assump{margin-top:6px}
+.stage .scope{font-size:.8125rem;line-height:1.55;color:var(--ink-2);margin:14px 0 0;max-width:34rem}
+.stage .meta{margin-top:22px;padding-top:14px;border-top:1px solid var(--line);display:grid;gap:1px}
+.stage .meta p{margin:0;font-size:.8125rem;line-height:1.5;color:var(--muted);max-width:34rem}
+.stage .meta p.scope2{color:var(--ink-2)}
+
+.stage .faq{margin-top:20px}
+.stage .faq-h{margin:0;padding:14px 0 0;border-top:1px solid var(--line);font-size:.8125rem;font-weight:600;color:var(--ink-2)}
+.stage .faq details.q{margin-top:0;border-top:1px solid var(--line)}
+
+/* the two narrow-screen rules the live block applies at 380 px */
+@container (max-width:380px){
+  .stage .quick-amt{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .stage .quick-amt .qlab{grid-column:1 / -1;min-height:0;padding:0;line-height:1.3}
+  .stage .quick-amt button{padding:0 4px}
+  .stage select.band-select{font-size:.8125rem;padding-right:26px}
+}
+.stage .mk{font-family:var(--sans);font-size:11px;font-weight:700;color:#E97824;margin-left:7px;vertical-align:.24em;font-variant-numeric:normal;letter-spacing:0;white-space:nowrap}
+.stage .mk.pre{margin-left:0;margin-right:7px;vertical-align:0}
+.measure-stage{position:absolute;left:-20000px;top:0;pointer-events:none}
+</style>
+</head>
+<body>
+
+<header class="doc-head">
+  <div class="inner">
+    <h1>Where the text should go</h1>
+    <p class="sub">The same words, regrouped. A static wireframe of the proposed calculator block — nothing here
+      computes, and nothing has been built.</p>
+    <div class="langsw" role="group" aria-label="Calculator copy language">
+      <span class="lbl">Calculator copy</span>
+      <button type="button" data-lang="en" aria-pressed="true">English</button>
+      <button type="button" data-lang="zh-HK" aria-pressed="false">中文</button>
+    </div>
+    <p class="meta">Fred Hollows Foundation HK · donation tax calculator · structure review, 19 November 2026</p>
+  </div>
+</header>
+
+<main>
+  <section class="doc"><div class="inner">
+    <h2>The page has seven areas and two decisions</h2>
+    <p class="lede">Everything a donor must decide is in the first two rows. Everything else is reference material,
+      and belongs to the thing it explains — not beside it at the same weight.</p>
+    <div class="map" id="map"></div>
+  </div></section>
+
+  <section class="doc doc-frames"><div class="inner">
+    <h2>The block, as built and as proposed</h2>
+    <p class="lede">Both columns use the live block's own type scale, gutters and controls, and the live figures for
+      HK$1,300. The marked numbers <b style="color:#E97824">①–⑧</b> are annotations; they are explained under
+      the frames. The height under each frame is measured from that frame in this file — the wireframe runs up
+      to 16 px taller than the live block (1,459 here against 1,450 live), so read the pairs as equal and the
+      table below as the record.</p>
+    <div class="frames" id="frames"></div>
+  </div></section>
+
+  <section class="doc"><div class="inner">
+    <h2>What the marked numbers are</h2>
+    <p class="lede">Eight changes, each stated with the height it costs or saves.</p>
+    <div class="legend" id="legend"></div>
+  </div></section>
+
+  <section class="doc"><div class="inner">
+    <h2>Height, measured</h2>
+    <p class="lede">The block is embedded at a fixed pixel height the client sets in the CMS — 1,950 px English,
+      1,940 px Chinese for this block, measured including the monthly state. That height is the real constraint,
+      so every change above is priced in pixels.</p>
+    <div class="scroll"><table class="h" id="htable"></table></div>
+    <p class="mnote">On a phone this table shows the 320 px column only — the width that decides it. The 390 px
+      and 1,280 px columns are in NOTES §6.</p>
+    <p class="lede" id="htnote" style="margin-top:22px;font-size:15px;color:#3F3F4A;max-width:80ch"></p>
+  </div></section>
+
+  <footer class="foot"><div class="inner">
+    <p>Prepared for The Fred Hollows Foundation HK. Analysis and wireframe only — the calculator itself is
+      untouched, and every figure shown is read from the live block.</p>
+    <p>Copy is frozen. The only strings this proposal adds are listed with their before/after in the accompanying
+      <em>NOTES.md</em> and marked as proposals; nothing in this file assumes approval.</p>
+  </div></footer>
+</main>
+
+<script>
+const C = {"en": {"s1.h": "Your gift", "s1.legend": "One-off or monthly", "s1.once": "One-off", "s1.monthly": "Monthly", "s1.gift": "Donation amount", "s1.quicklab": "or", "s1.months.label": "Months given this year of assessment", "s1.months.hint": "The year of assessment ends 31 March. The deduction uses your total for that year.", "s1.band.label": "Your assessable income this year, roughly", "s1.band.hint": "Before allowances (HK$145,000 assumed).", "s1.band.note": "Above HK$2,132,500 the standard rate applies — 15%, then 16% — so the last two rungs fall, by design.", "s1.band.unknown": "Not sure", "s1.band.r0.label": "Below HK$145,000", "s1.band.r0": "No tax", "s1.band.r2": "About 2%", "s1.band.r6": "About 6%", "s1.band.r10": "About 10%", "s1.band.r14": "About 14%", "s1.band.r17": "About 17%", "s1.band.r15": "Standard 15%", "s1.band.r16": "Standard 16%", "s1.band.r16.label": "HK$5,000,000 and above", "s1.mob.unknown": "Not sure · 2%–17%", "s1.mob.r0": "Below HK$145,000 · no tax", "s1.mob.r2": "HK$145,000 – 195,000 · 2%", "s1.mob.r6": "HK$195,000 – 245,000 · 6%", "s1.mob.r10": "HK$245,000 – 295,000 · 10%", "s1.mob.r14": "HK$295,000 – 345,000 · 14%", "s1.mob.r15": "HK$2,132,500 – 5,000,000 · std 15%", "s1.mob.r16": "HK$5,000,000 and above · std 16%", "s1.mob.r17": "HK$345,000 – 2,132,500 · 17%", "s1.exact.summary": "Use your exact income", "s1.exact.label": "Assessable income for the year", "s1.exact.ph": "e.g. 500,000", "s1.exact.hint": "One figure instead of a range, worked through the bands and the 35% cap. Never sent, never stored.", "s1.what.summary": "What counts as a deductible gift", "s1.what.body": "Only money given to a charity approved under section 88 of the Inland Revenue Ordinance can be deducted. Money paid for something in return is not a donation — raffle tickets, auction purchases, dinner seats, sponsorship that buys advertising. At or below the basic allowance you pay no salaries tax, so a gift saves you nothing.", "d.months.n": "{n} months", "d.months.one": "1 month", "s2.h": "What it costs you", "s2.netlabel": "You pay", "s2.gift": "Donation", "s2.saved": "Tax saved", "s2.rate": "Rate", "s2.spouse.q": "Can a couple combine the deduction?", "s2.spouse.a": "Partly. What you cannot use — including the part above the 35% cap — your spouse may claim on their own BIR60. Their claim is capped at 35% of their own income or profits, so an unused deduction does not pass across in full.", "foot.legal": "* The IRD decides what you may deduct. Cap 35% of assessable income or profits; tax saved ≈ deductible × your rate, up to 17%.", "rc.disc.summary": "Disclaimer", "rc.disc.body": "An estimate only. Not tax advice, and no substitute for professional advice. It follows Inland Revenue Department rules for the year of assessment ending 31 March, covers the deduction for recognised charitable donations only, and allows nothing for other deductions, allowances or tax reductions. It does not cover profits tax, personal assessment or joint assessment. What you may deduct, and what you pay, rest with the Inland Revenue Department. The calculator collects and stores nothing; the name, email and reference you give here are used only to match your donation and issue your receipt.", "s1.exact.back": "Use an income range instead", "faq.h": "Common questions", "s2.capq.q": "What if my gift is more than 35% of my income?", "s2.capq.a": "The cap is 35% of assessable income for the year. What you cannot use — including the part above the 35% cap — your spouse may claim on their own BIR60."}, "zh-HK": {"s1.h": "您的捐款", "s1.legend": "單次或每月", "s1.once": "單次", "s1.monthly": "每月", "s1.gift": "捐款金額", "s1.quicklab": "或", "s1.months.label": "本課稅年度的捐款月數", "s1.months.hint": "課稅年度至 3 月 31 日止；扣稅按全年捐款總額計算。", "s1.band.label": "您全年應評稅入息（大約）", "s1.band.hint": "未扣除免稅額（以 HK$145,000 估算）。", "s1.band.note": "應評稅入息淨額超過 HK$2,132,500 後改用標準稅率（15%，其後 16%），故最頂兩級回落，並非計算錯誤。", "s1.band.unknown": "不確定", "s1.band.r0.label": "HK$145,000 以下", "s1.band.r0": "無須繳稅", "s1.band.r2": "約 2%", "s1.band.r6": "約 6%", "s1.band.r10": "約 10%", "s1.band.r14": "約 14%", "s1.band.r17": "約 17%", "s1.band.r15": "標準 15%", "s1.band.r16": "標準 16%", "s1.band.r16.label": "HK$5,000,000 以上", "s1.mob.unknown": "不確定 · 2%–17%", "s1.mob.r0": "HK$145,000 以下 · 無須繳稅", "s1.mob.r2": "HK$145,000 – 195,000 · 2%", "s1.mob.r6": "HK$195,000 – 245,000 · 6%", "s1.mob.r10": "HK$245,000 – 295,000 · 10%", "s1.mob.r14": "HK$295,000 – 345,000 · 14%", "s1.mob.r15": "HK$2,132,500 – 5,000,000 · 標準 15%", "s1.mob.r16": "HK$5,000,000 以上 · 標準 16%", "s1.mob.r17": "HK$345,000 – 2,132,500 · 17%", "s1.exact.summary": "改用自己的入息數字", "s1.exact.label": "全年應評稅入息", "s1.exact.ph": "例如 500,000", "s1.exact.hint": "由範圍改為單一數字，並計入累進稅級及 35% 上限。只用於本頁計算，不會傳送或儲存。", "s1.what.summary": "哪些捐款才可扣稅", "s1.what.body": "只有捐予《稅務條例》第 88 條認可慈善團體的款項才可扣稅。換取貨品、服務或利益的付款不屬捐款，例如獎券、拍賣購入的物品、慈善晚宴或酒席、以及帶廣告回報的贊助。應評稅入息不高於基本免稅額者無須繳付薪俸稅，捐款亦不會減少稅款。", "d.months.n": "{n} 個月", "d.months.one": "1 個月", "s2.h": "實際付出", "s2.netlabel": "您實際付出", "s2.gift": "捐款金額", "s2.saved": "節省稅款", "s2.rate": "稅率", "s2.spouse.q": "夫婦的扣稅額可否合併使用？", "s2.spouse.a": "可以，但只限未用的部分。您未能用盡的扣稅額（包括超出 35% 上限而未扣除的部分），配偶可在其 BIR60 報稅表內申報；配偶本人的申報同樣以 35% 為上限，上限按其本人的入息或利潤計算，因此未用的扣稅額不能全數轉移。", "foot.legal": "* 以稅務局評定為準。上限為應評稅入息或利潤的 35%；節省稅款約為可扣除金額 × 適用稅率（最高 17%）。", "rc.disc.summary": "免責聲明", "rc.disc.body": "僅為估算，並非稅務建議，亦不能取代專業意見。估算依稅務局截至 3 月 31 日止課稅年度的規定，只計入認可慈善捐款的扣稅，並無計及其他扣除、免稅額或稅務寬減；亦不涵蓋利潤稅、個人入息課稅或夫婦合併評稅。實際可扣除金額及應繳稅款以稅務局評定為準。本計算機不收集、不儲存任何資料；您在此提供的姓名、電郵及付款參考編號，只用於核對捐款及發出收據。", "s1.exact.back": "改用入息範圍", "faq.h": "常見問題", "s2.capq.q": "捐款超過入息 35% 會怎樣？", "s2.capq.a": "扣稅上限為應評稅入息的 35%（全年合計）。您未能用盡的扣稅額（包括超出 35% 上限而未扣除的部分），配偶可在其 BIR60 報稅表內申報。"}};
+const R = {"band": {"en": {"net": "HK$1,079 – 1,118", "cap": "Both ends of your range.", "gift": "HK$1,300", "saved": "−HK$182 to −HK$221", "rate": "14% – 17%", "rateLabel": "Rate used", "savedLabel": "Tax saved", "giftLabel": "Donation", "benefit": "HK$1,300 given, deductible. Every HK$100 costs you about HK$83 to HK$86.", "assume": "Income assumed HK$345,000 – 2,132,500.", "capline": "35% cap — all of it deductible at your range's low end.", "scope": "One person, salaries tax only. An estimate, not tax advice."}, "zh-HK": {"net": "HK$1,079 – 1,118", "cap": "按範圍上下限計算。", "gift": "HK$1,300", "saved": "−HK$182 至 −HK$221", "rate": "14% – 17%", "rateLabel": "採用的稅率", "savedLabel": "節省稅款", "giftLabel": "捐款金額", "benefit": "您捐 HK$1,300，可作認可慈善捐款扣除。每捐 HK$100，實際付出約 HK$83 至 HK$86。", "assume": "假設入息 HK$345,000 – 2,132,500。", "capline": "35% 上限；範圍下限全數可扣除。", "scope": "只估算個人在薪俸稅下的捐款扣稅，並非稅務建議。"}}, "bandM": {"en": {"net": "HK$12,948 – 13,416", "cap": "HK$1,300 a month × 12 months = HK$15,600 for the year. Both ends of your range.", "gift": "HK$15,600", "saved": "−HK$2,184 to −HK$2,652", "rate": "14% – 17%", "rateLabel": "Rate used", "savedLabel": "Tax saved", "giftLabel": "Total for the year (12 months)", "benefit": "HK$15,600 given, deductible. Every HK$100 costs you about HK$83 to HK$86.", "assume": "Income assumed HK$345,000 – 2,132,500.", "capline": "35% cap — all of it deductible at your range's low end.", "scope": "One person, salaries tax only. An estimate, not tax advice."}, "zh-HK": {"net": "HK$12,948 – 13,416", "cap": "每月 HK$1,300 × 12 個月 = 全年 HK$15,600。按範圍上下限計算。", "gift": "HK$15,600", "saved": "−HK$2,184 至 −HK$2,652", "rate": "14% – 17%", "rateLabel": "採用的稅率", "savedLabel": "節省稅款", "giftLabel": "全年總額（12 個月）", "benefit": "您捐 HK$15,600，可作認可慈善捐款扣除。每捐 HK$100，實際付出約 HK$83 至 HK$86。", "assume": "假設入息 HK$345,000 – 2,132,500。", "capline": "35% 上限；範圍下限全數可扣除。", "scope": "只估算個人在薪俸稅下的捐款扣稅，並非稅務建議。"}}, "exact": {"en": {"net": "HK$1,079", "cap": "Worked exactly from HK$500,000.", "gift": "HK$1,300", "saved": "−HK$221", "rate": "17%", "rateLabel": "Marginal rate", "savedLabel": "Tax saved", "giftLabel": "Donation", "benefit": "HK$1,300 given, all of it deductible as a recognised charitable donation. Every HK$100 costs you about HK$83.", "assume": "Income assumed HK$500,000, as you entered it.", "capline": "35% cap — not reached, so all of it is deductible.", "scope": "One person, salaries tax only. An estimate, not tax advice."}, "zh-HK": {"net": "HK$1,079", "cap": "按您輸入的 HK$500,000 精確計算。", "gift": "HK$1,300", "saved": "−HK$221", "rate": "17%", "rateLabel": "邊際稅率", "savedLabel": "節省稅款", "giftLabel": "捐款金額", "benefit": "您捐 HK$1,300，全數可作認可慈善捐款扣除。每捐 HK$100，實際付出約 HK$83。", "assume": "假設入息 HK$500,000（您輸入）。", "capline": "35% 上限；未觸及，全數可扣除。", "scope": "只估算個人在薪俸稅下的捐款扣稅，並非稅務建議。"}}, "exactM": {"en": {"net": "HK$12,948", "cap": "HK$1,300 a month × 12 months = HK$15,600 for the year. Worked exactly from HK$500,000.", "gift": "HK$15,600", "saved": "−HK$2,652", "rate": "17%", "rateLabel": "Marginal rate", "savedLabel": "Tax saved", "giftLabel": "Total for the year (12 months)", "benefit": "HK$15,600 given, all of it deductible as a recognised charitable donation. Every HK$100 costs you about HK$83.", "assume": "Income assumed HK$500,000, as you entered it.", "capline": "35% cap — not reached, so all of it is deductible.", "scope": "One person, salaries tax only. An estimate, not tax advice."}, "zh-HK": {"net": "HK$12,948", "cap": "每月 HK$1,300 × 12 個月 = 全年 HK$15,600。按您輸入的 HK$500,000 精確計算。", "gift": "HK$15,600", "saved": "−HK$2,652", "rate": "17%", "rateLabel": "邊際稅率", "savedLabel": "節省稅款", "giftLabel": "全年總額（12 個月）", "benefit": "您捐 HK$15,600，全數可作認可慈善捐款扣除。每捐 HK$100，實際付出約 HK$83。", "assume": "假設入息 HK$500,000（您輸入）。", "capline": "35% 上限；未觸及，全數可扣除。", "scope": "只估算個人在薪俸稅下的捐款扣稅，並非稅務建議。"}}};
+let LANG = 'en';
+const t = k => (C[LANG] && C[LANG][k]) || C.en[k] || '';
+
+const MAP = [
+  ['Your gift',
+   'Mode, amount, four quick chips, and — when monthly — a twelve-option select plus four month chips, both bound to the same value.',
+   '<b>Keeps its step.</b> The month chips go; the select is the single control. Nothing else changes.'],
+  ['Your assessable income, roughly',
+   'A 13 px grey legend inside a second card, with no numeral of its own — so the second decision never announces itself as a decision.',
+   '<b>Promoted to a step of its own</b>, at heading size, with its own numeral.'],
+  ['Use your exact income',
+   'A disclosure below the card: visually the peer of the eligibility note, and set larger and darker than the income question itself.',
+   '<b>Moves inside the income group</b> as a control that swaps the ladder for an input, in place. See the fourth frame.'],
+  ['What counts as a deductible gift',
+   'A disclosure below the card, after the income question it has nothing to do with.',
+   '<b>Moves into the gift group</b>, under the amount it qualifies — it is a gate on the first decision, not a footnote to the second. Words unchanged.'],
+  ['What it costs you',
+   'The figure, its caption, a three-row ledger, a benefit sentence, then three separate grey lines, then the spouse question.',
+   '<b>The figure and the ledger are unchanged.</b> The three grey lines become one meta block; the spouse rule moves into one closing group.'],
+  ['How you give',
+   'QR codes on a desktop, tap-through rows on a phone.',
+   '<b>Unchanged.</b> Out of scope here — it is a commitment, not a decision, and it already reads as one.'],
+  ['Legal line and disclaimer',
+   'A starred line, then a collapsed disclaimer at the very end.',
+   '<b>Unchanged</b> — still last, still collapsed. Non-negotiable.']
+];
+
+const LEGEND = [
+  ['①','<b>Months — one control.</b> The four-chip row is removed; the select carries all twelve values. Saves 106 px in the monthly state at 320 px, which is the state that sets the block\'s height.'],
+  ['②','<b>Eligibility moves into the gift group.</b> “What counts as a deductible gift” is a gate on the amount, not a footnote to the income question. Same words, same collapsed row, different parent.'],
+  ['③','<b>Income becomes a step of its own.</b> Today it is a 13 px grey legend — smaller, lighter and dimmer than the two disclosures hanging beneath it. Now it is a heading at heading size.'],
+  ['④','<b>“Use your exact income” is a control, not a section.</b> It sits at the foot of the group it belongs to and swaps the ladder for an input in place. That is the state that returns one figure instead of a range — HK$1,079 rather than HK$1,079 – 1,118.'],
+  ['⑤','<b>The figure, its caption and the three-row ledger are untouched.</b> This is the strongest part of the block and nothing in this proposal goes near it.'],
+  ['⑥','<b>Three grey lines become one meta block.</b> Assumed income, the 35% cap and the scope line keep every word; they lose the rules and gaps between them — 60 px less, and they read as one note about the figure.'],
+  ['⑦','<b>One closing group for the question that follows the number.</b> It is the only position both halves of a split embed — <code>?part=input</code> and <code>?part=result</code> — can see. The eligibility question deliberately stays in the input half, where it is asked.'],
+  ['⑧','<b>The disclaimer stays collapsed, at the very end.</b> Unchanged, and it must stay the last element in the block.']
+];
+
+/* ── the block ────────────────────────────────────────────────── */
+function bandRows(){
+  return [
+    { lab:t('s1.band.unknown'),       rate:'2% – 17%',         mob:t('s1.mob.unknown') },
+    { lab:t('s1.band.r0.label'),      rate:t('s1.band.r0'),    mob:t('s1.mob.r0') },
+    { lab:'HK$145,000 – 195,000',     rate:t('s1.band.r2'),    mob:t('s1.mob.r2') },
+    { lab:'HK$195,000 – 245,000',     rate:t('s1.band.r6'),    mob:t('s1.mob.r6') },
+    { lab:'HK$245,000 – 295,000',     rate:t('s1.band.r10'),   mob:t('s1.mob.r10') },
+    { lab:'HK$295,000 – 345,000',     rate:t('s1.band.r14'),   mob:t('s1.mob.r14') },
+    { lab:'HK$345,000 – 2,132,500',   rate:t('s1.band.r17'),   mob:t('s1.mob.r17'), sel:true },
+    { lab:'HK$2,132,500 – 5,000,000', rate:t('s1.band.r15'),   mob:t('s1.mob.r15') },
+    { lab:t('s1.band.r16.label'),     rate:t('s1.band.r16'),   mob:t('s1.mob.r16') }
+  ];
+}
+function monthLabel(n){
+  return (n === 1) ? t('d.months.one') : t('d.months.n').replace('{n}', n);
+}
+function monthsOptions(){
+  let out = '';
+  for (let i = 1; i <= 12; i++) out += '<option' + (i === 12 ? ' selected' : '') + '>' + monthLabel(i) + '</option>';
+  return out;
+}
+function monthsField(isToday, chips){
+  return '<div class="field">' +
+      '<span class="flabel">' + t('s1.months.label') + (isToday ? '' : '<span class="mk">①</span>') + '</span>' +
+      '<select>' + monthsOptions() + '</select>' +
+      ((isToday || chips)
+        ? '<div class="quick quick-mo"><button>' + monthLabel(3) + '</button><button>' + monthLabel(6) + '</button>' +
+          '<button>' + monthLabel(9) + '</button><button class="is-on">' + monthLabel(12) + '</button></div>'
+        : '') +
+      '<p class="hint">' + t('s1.months.hint') + '</p>' +
+    '</div>';
+}
+function ladder(withMark){
+  const rows = bandRows();
+  const desk = rows.map(r =>
+    '<div class="row' + (r.sel ? ' sel' : '') + '"><span class="rd"></span><span>' + r.lab + '</span>' +
+    '<span class="r">' + r.rate + '</span></div>').join('');
+  const mob = '<select class="band-select">' +
+    rows.map(r => '<option' + (r.sel ? ' selected' : '') + '>' + r.mob + '</option>').join('') + '</select>';
+  return '<div class="bands">' + desk + '</div>' + mob +
+    '<p class="note">' + t('s1.band.note') + '</p>';
+}
+function exactFields(){
+  return '<span class="flabel">' + t('s1.exact.label') + '</span>' +
+    '<div class="amt"><span class="pre">HK$</span><span class="val">500,000</span></div>' +
+    '<p class="hint">' + t('s1.exact.hint') + '</p>';
+}
+function resultHTML(state){
+  const r = R[state][LANG];
+  const isRange = (state.indexOf('band') === 0);
+  const net = r.net.replace(/^HK\$/, '');
+  return '<div class="result">' +
+      '<p class="net-label">' + t('s2.netlabel') + '</p>' +
+      '<p class="net' + (isRange ? ' is-range' : '') + '"><span class="cur">HK$</span>' + net + '</p>' +
+      '<p class="hint">' + r.cap + '</p>' +
+      '<div class="figs">' +
+        '<div><dt>' + r.giftLabel + '</dt><dd>' + r.gift + '</dd></div>' +
+        '<div><dt>' + r.savedLabel + '</dt><dd class="saved' + (isRange ? ' is-range' : '') + '">' + r.saved + '</dd></div>' +
+        '<div><dt>' + r.rateLabel + '</dt><dd' + (isRange ? ' class="is-range"' : '') + '>' + r.rate + '</dd></div>' +
+      '</div>' +
+    '</div>' +
+    '<p class="benefit">' + r.benefit + '</p>';
+}
+
+function blockHTML(o){
+  const opt = Object.assign({qa2:false, faq:true, resultNum:true, incomeStep:true, chips:false, flatMeta:false, eligInCard:true, swap:true}, o.opt || {});
+  const isToday  = (o.variant === 'today');
+  const monthly  = !!o.monthly;
+  const exactOn  = !!o.exact;
+  const state    = (exactOn ? 'exact' : 'band') + (monthly ? 'M' : '');
+
+  /* 1 · the gift */
+  const giftCard = '<div class="card">' +
+      '<div class="seg">' +
+        '<span class="' + (monthly ? '' : 'on') + '">' + t('s1.once') + '</span>' +
+        '<span class="' + (monthly ? 'on' : '') + '">' + t('s1.monthly') + '</span>' +
+      '</div>' +
+      '<div class="field">' +
+        '<span class="flabel">' + t('s1.gift') + '</span>' +
+        '<div class="amt"><span class="pre">HK$</span><span class="val">1,300</span></div>' +
+        '<div class="quick quick-amt"><span class="qlab">' + t('s1.quicklab') + '</span>' +
+          '<button>300</button><button>500</button><button class="is-on">1,300</button><button>3,000</button></div>' +
+      '</div>' +
+      (monthly ? monthsField(isToday, opt.chips) : '') +
+      (!isToday && opt.eligInCard
+        ? '<details class="q in-card"><summary>' + t('s1.what.summary') + '<span class="mk">②</span></summary>' +
+          '<p>' + t('s1.what.body') + '</p></details>'
+        : '') +
+    '</div>' +
+    (!isToday && !opt.eligInCard
+      ? '<details class="q"><summary>' + t('s1.what.summary') + '</summary><p>' + t('s1.what.body') + '</p></details>'
+      : '');
+
+  /* 2 · the income */
+  const incomeCard = isToday
+    ? '<div class="card"><div class="fieldset2">' +
+        '<span class="flabel">' + t('s1.band.label') + '</span>' +
+        '<p class="hint">' + t('s1.band.hint') + '</p>' +
+        ladder(false) +
+      '</div></div>'
+    : '<div class="card">' +
+        (exactOn
+          ? exactFields() + '<p class="note">' + t('s1.band.note') + '</p>' +
+            '<button class="exact-toggle back">' + t('s1.exact.back') + '</button>'
+          : '<p class="hint">' + t('s1.band.hint') + '</p>' + ladder(true) +
+            '<button class="exact-toggle"><span class="tl">' + t('s1.exact.summary') + '<span class="mk">④</span></span></button>') +
+      '</div>';
+
+  const exactRowToday = (isToday || !opt.swap)
+    ? '<details class="q"' + (exactOn ? ' open' : '') + '><summary>' + t('s1.exact.summary') + '</summary>' +
+      '<div>' + exactFields() + '</div></details>'
+    : '';
+  const whatToday = isToday
+    ? '<details class="q"><summary>' + t('s1.what.summary') + '</summary><p>' + t('s1.what.body') + '</p></details>'
+    : '';
+
+  const section1 = '<div class="panel">' +
+      '<div class="step"><span class="step-n">1</span><h2>' + t('s1.h') + '</h2></div>' +
+      giftCard +
+      (isToday ? incomeCard + exactRowToday + whatToday : '') +
+    '</div>';
+
+  const section2 = isToday ? '' :
+    '<div class="panel">' +
+      (opt.incomeStep
+        ? '<div class="step"><span class="step-n">2</span><h2>' + t('s1.band.label') + '<span class="mk">③</span></h2></div>'
+        : '<div class="step"><h2>' + t('s1.band.label') + '<span class="mk">③</span></h2></div>') +
+      incomeCard +
+    '</div>';
+
+  /* 3 · the result */
+  const meta = (isToday || opt.flatMeta)
+    ? '<p class="assump assumption">' + R[state][LANG].assume + '</p>' +
+      '<p class="assump">' + R[state][LANG].capline + '</p>' +
+      '<p class="scope">' + R[state][LANG].scope + '</p>'
+    : '<div class="meta"><p><span class="mk pre">⑥</span>' + R[state][LANG].assume + '</p>' +
+        '<p>' + R[state][LANG].capline + '</p>' +
+        '<p class="scope2">' + R[state][LANG].scope + '</p></div>' +
+      '<div class="faq">' +
+        (opt.faq ? '<p class="faq-h">' + t('faq.h') + '<span class="mk">⑦</span></p>' : '') +
+        '<details class="q"' + (opt.faq ? '' : ' style="margin-top:20px"') + '><summary>' + t('s2.spouse.q') + '</summary><p>' + t('s2.spouse.a') + '</p></details>' +
+        (opt.qa2 ? '<details class="q"><summary>' + t('s2.capq.q') + '</summary><p>' + t('s2.capq.a') + '</p></details>' : '') +
+      '</div>';
+
+  const spouseToday = isToday
+    ? '<details class="q"><summary>' + t('s2.spouse.q') + '</summary><p>' + t('s2.spouse.a') + '</p></details>'
+    : '';
+
+  const section3 = '<div class="panel">' +
+      '<div class="step">' +
+        (isToday || opt.resultNum ? '<span class="step-n">' + (isToday ? '2' : '3') + '</span>' : '') +
+        '<h2>' + t('s2.h') + (isToday ? '' : '<span class="mk">⑤</span>') + '</h2></div>' +
+      resultHTML(state) +
+      meta + spouseToday +
+    '</div>';
+
+  const foot = '<p class="fine">' + t('foot.legal') + '</p>' +
+    '<details class="q disc-global"><summary>' + t('rc.disc.summary') + '<span class="mk">⑧</span></summary>' +
+    '<p>' + t('rc.disc.body') + '</p></details>';
+
+  return '<div class="wrap">' + section1 + section2 + section3 + foot + '</div>';
+}
+
+/* ── rendering ────────────────────────────────────────────────── */
+function stageEl(o, width){
+  const s = document.createElement('div');
+  s.className = 'stage';
+  s.dataset.mode = (width <= 480) ? 'mobile' : 'desktop';
+  s.style.width = width + 'px';
+  s.innerHTML = blockHTML(o);
+  return s;
+}
+function heightOf(stage){
+  const w = stage.querySelector('.wrap');
+  const wt = w.getBoundingClientRect();
+  const cs = getComputedStyle(w);
+  let bottom = 0;
+  for (const c of w.children){
+    const b = c.getBoundingClientRect();
+    if (b.height > 0 && b.bottom > bottom) bottom = b.bottom;
+  }
+  return Math.round(bottom - wt.top + parseFloat(cs.paddingBottom || 0));
+}
+const DECLARED = 1950;
+
+const FRAMES = [
+  { w:390,  variant:'today',    monthly:false, exact:false, label:'390 px · as built — one-off' },
+  { w:390,  variant:'proposed', monthly:false, exact:false, label:'390 px · proposed — one-off' },
+  { w:390,  variant:'proposed', monthly:true,  exact:false, label:'390 px · proposed — monthly' },
+  { w:390,  variant:'proposed', monthly:true,  exact:true,  label:'390 px · proposed — exact income on' },
+  { w:1140, variant:'today',    monthly:false, exact:false, label:'1,140 px · as built — one-off' },
+  { w:1140, variant:'proposed', monthly:false, exact:false, label:'1,140 px · proposed — one-off' },
+  { w:1140, variant:'proposed', monthly:true,  exact:false, label:'1,140 px · proposed — monthly' }
+];
+
+function renderFrames(){
+  const host = document.getElementById('frames');
+  host.innerHTML = '';
+  const mob = FRAMES.filter(f => f.w <= 480);
+  const desk = FRAMES.filter(f => f.w > 480);
+  const mkPair = (list) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'pair ' + (list[0].w > 480 ? 'desktop' : 'mobile');
+    host.appendChild(wrap);
+    list.forEach(f => {
+      const fig = document.createElement('figure');
+      fig.className = 'frame';
+      const st = stageEl(f, f.w);
+      fig.appendChild(st);
+      wrap.appendChild(fig);
+      const h = heightOf(st);
+      const cap = document.createElement('figcaption');
+      cap.innerHTML = '<b>' + f.label + '</b> · content height <span class="h">' + h.toLocaleString('en') + ' px</span>' +
+        (h > DECLARED ? ' · <span class="over">' + (h - DECLARED) + ' px over the ' + DECLARED + ' px declaration</span>' : '');
+      fig.appendChild(cap);
+    });
+  };
+  mkPair(mob);
+  mkPair(desk);
+}
+
+function renderMap(){
+  document.getElementById('map').innerHTML = MAP.map(r =>
+    '<div class="map-row"><div class="now">' + r[0] + '<span>' + r[1] + '</span></div>' +
+    '<div class="then">' + r[2] + '</div></div>').join('');
+}
+function renderLegend(){
+  document.getElementById('legend').innerHTML = LEGEND.map(r =>
+    '<div><div class="n">' + r[0] + '</div><div class="txt">' + r[1] + '</div></div>').join('');
+}
+
+function measure(o, width){
+  const s = stageEl(o, width);
+  s.classList.add('measure-stage');
+  document.body.appendChild(s);
+  const h = heightOf(s);
+  s.remove();
+  return h;
+}
+
+function renderTable(){
+  /* "as built" = measured on the live block (embed/?part=calc), one fresh load per state.
+     "proposed" = measured from this wireframe, which reproduces the live block to within 16 px. */
+  const LIVE = {
+    once:         {320:1573, 390:1450, 1280:1700},
+    monthly:      {320:1912, 390:1719, 1280:1879},
+    monthlyExact: {320:2129, 390:1909, 1280:2081}
+  };
+  const combos = [
+    { live:'once',         label:'as built · one-off', cls:'today' },
+    { live:'monthly',      label:'as built · monthly', cls:'today' },
+    { live:'monthlyExact', label:'as built · monthly, exact income open', cls:'today' },
+    { o:{monthly:false, exact:false}, label:'proposed · one-off', cls:'sep' },
+    { o:{monthly:true,  exact:false}, label:'proposed · monthly' },
+    { o:{monthly:true,  exact:true }, label:'proposed · monthly, exact income on' }
+  ];
+  const pairs = { once:'once', monthly:'monthly', monthlyExact:'monthlyExact' };
+  let rows = '';
+  combos.forEach(c => {
+    const vals = [320, 390, 1280].map(w =>
+      c.live ? LIVE[c.live][w] : measure({variant:'proposed', monthly:c.o.monthly, exact:c.o.exact}, w));
+    const key = c.o ? (c.o.exact ? 'monthlyExact' : (c.o.monthly ? 'monthly' : 'once')) : null;
+    const delta = key ? (vals[0] - LIVE[key][320]) : null;
+    rows += '<tr class="' + (c.cls || '') + '"><td>' + c.label + '</td>' +
+      vals.map(v => '<td class="num' + (v > DECLARED ? ' bad' : '') + '">' + v.toLocaleString('en') + '</td>').join('') +
+      '<td class="num delta">' + (delta === null ? '' : (delta > 0 ? '+' : '−') + Math.abs(delta).toLocaleString('en')) + '</td>' +
+      '</tr>';
+  });
+  document.getElementById('htable').innerHTML =
+    '<thead><tr><th>state</th><th class="num">320 px</th><th class="num">390 px</th><th class="num">1,280 px</th><th class="num">Δ at 320</th></tr></thead>' +
+    '<tbody>' + rows +
+    '<tr class="decl"><td>declared height in the CMS</td><td class="num">1,950</td><td class="num">1,950</td><td class="num">1,950</td><td></td></tr>' +
+    '</tbody>';
+  document.getElementById('htnote').innerHTML =
+    'The “as built” rows are measured on the live block, one fresh load per state. The “proposed” rows are measured ' +
+    'from this wireframe, which reproduces the live block to within 16 px — so they are if anything a few pixels ' +
+    'pessimistic. <b>Red</b> means the state runs past the declared height and the frame will clip or scroll internally. ' +
+    '<br><br>Two things follow. First, the block has never fitted its own declaration in the exact-income state: at ' +
+    '320 px that state is <b>179 px</b> over today. The proposal removes <b>132 px</b> of that, and at 390 px and above ' +
+    'the exact state now fits with room to spare. Second, at 320 px it is still <b>47 px</b> over — the only cell left. ' +
+    'Closing it means either hiding the standard-rate note in exact mode (not acceptable: it is the only place the ' +
+    '15% / 16% rule is explained) or raising this block\'s declaration by 60 px to 2,010. That is a decision for the ' +
+    'client, priced in NOTES §6.';
+}
+
+function renderAll(){
+  renderMap(); renderLegend(); renderFrames(); renderTable();
+  document.querySelectorAll('.langsw button').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.lang === LANG ? 'true' : 'false'));
+  document.documentElement.lang = (LANG === 'en') ? 'en' : 'zh-Hant-HK';
+}
+
+document.querySelectorAll('.langsw button').forEach(b => {
+  b.addEventListener('click', () => { LANG = b.dataset.lang; renderAll(); });
+});
+
+renderAll();
+</script>
+</body>
+</html>

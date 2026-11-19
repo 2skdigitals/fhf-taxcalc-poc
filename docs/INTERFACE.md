@@ -26,8 +26,8 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 
 | # | Block | URL | Height · zh-HK | Height · en | Content peak zh-HK | Content peak en |
 |---|---|---|---|---|---|---|
-| 1 | Calculator + result | `/embed/?part=calc` | **1940px** | **1950px** | 1879 (at 900px, monthly) | 1912 (at 320px, monthly) |
-| 1a | Calculator only | `/embed/?part=input` | **1190px** | **1190px** | 1137 (at 944px, monthly) | 1137 (at 944px, monthly) |
+| 1 | Calculator + result | `/embed/?part=calc` | **2050px** | **2070px** | 2006 (at 900px, monthly+exact) | 2025 (at 900px, monthly+exact) |
+| 1a | Calculator only | `/embed/?part=input` | **1280px** | **1280px** | 1230 (at 820px, monthly+exact) | 1230 (at 820px, monthly+exact) |
 | 1b | Result only | `/embed/?part=result` | **860px** | **860px** | 808 (at 944px) | 808 (at 944px) |
 | 2 | Payment | `/embed/?part=pay` | **600px** | **600px** | 543 (at 820px) | 543 (at 820px) |
 | 3 | Receipt | `/embed/?part=receipt` | **780px** | **890px** | 724 (at 320px) | 830 (at 320px) |

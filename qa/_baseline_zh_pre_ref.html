@@ -455,12 +455,9 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
           <option value="7">7 months</option><option value="8">8 months</option><option value="9">9 months</option>
           <option value="10">10 months</option><option value="11">11 months</option><option value="12" selected>12 months</option>
         </select>
-        <div class="quick quick-mo" role="group" aria-label="Quick month counts" data-i18n-aria="s1.quickmonths">
-          <button type="button" data-mo="3">3 months</button>
-          <button type="button" data-mo="6">6 months</button>
-          <button type="button" data-mo="9">9 months</button>
-          <button type="button" data-mo="12">12 months</button>
-        </div>
+        <!-- The chips that used to sit here offered 3/6/9/12 next to a select that already
+             lists all twelve: two controls for one value, 106px of height and a "which do I
+             press?" moment. The select is the complete one, so it stays. -->
         <p class="hint" id="months-hint" data-i18n="s1.months.hint">The year of assessment ends 31 March. The deduction uses your total for that year.</p>
       </div>
     </div>
@@ -560,12 +557,12 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
          campaign-tagged codes; nothing else changes. -->
     <div class="paygrid">
       <figure class="qrcard">
-        <img loading="lazy" src="assets/logos/payme.png" width="450" height="306"
+        <img loading="lazy" src="../assets/logos/payme.png" width="450" height="306"
              alt="PayMe donation QR code for The Fred Hollows Foundation" data-i18n-alt="s3.qr.alt.payme">
         <figcaption><b>PayMe</b><span data-i18n="s3.scan">Scan with your phone</span></figcaption>
       </figure>
       <figure class="qrcard">
-        <img loading="lazy" src="assets/logos/alipayhk.png" width="450" height="350"
+        <img loading="lazy" src="../assets/logos/alipayhk.png" width="450" height="350"
              alt="AlipayHK donation QR code for The Fred Hollows Foundation" data-i18n-alt="s3.qr.alt.alipay">
         <figcaption><b>AlipayHK</b><span data-i18n="s3.scan">Scan with your phone</span></figcaption>
       </figure>

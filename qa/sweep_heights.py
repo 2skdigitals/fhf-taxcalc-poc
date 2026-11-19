@@ -44,8 +44,8 @@ WIDTHS = [320, 328, 360, 390, 414, 430, 480, 540, 568, 600, 640, 700, 721, 768,
 # English peaks are HIGHER than Chinese at every width: 35% more lines at 320px,
 # where the column is ~288px wide and a sentence costs two lines instead of one.
 DECLARED = {
-    "zh-HK": {"calc": 1940, "input": 1190, "result": 860, "pay": 600, "receipt": 780},
-    "en":    {"calc": 1950, "input": 1190, "result": 860, "pay": 600, "receipt": 890},
+    "zh-HK": {"calc": 2050, "input": 1280, "result": 860, "pay": 600, "receipt": 780},
+    "en":    {"calc": 2070, "input": 1280, "result": 860, "pay": 600, "receipt": 890},
 }
 
 peaks = {}
@@ -70,14 +70,23 @@ with sync_playwright() as pw:
                 # donor picks monthly (found 19 Nov: the live calc clipped by 70px at
                 # 320px in exactly this state).
                 monthly = once
+                exact = once
                 if part in ("calc", "input"):
                     try:
                         p.click('input[name="mode"][value="monthly"]', timeout=1500)
                         p.wait_for_timeout(320)
                         monthly = p.evaluate("()=>document.documentElement.scrollHeight")
+                        # third shape: monthly AND the exact-income disclosure open — the
+                        # tallest reachable state, and the one that was still clipping the
+                        # 1950px declaration by 179px at 320px (found 19 Nov)
+                        p.evaluate("""()=>{const d=[...document.querySelectorAll('details')]
+                                         .find(x=>x.querySelector('#exact')); if(d) d.open=true;}""")
+                        p.fill("#exact", "800000", timeout=1500)
+                        p.wait_for_timeout(320)
+                        exact = p.evaluate("()=>document.documentElement.scrollHeight")
                     except Exception:
-                        monthly = once
-                rows.append((w, max(once, monthly)))
+                        monthly, exact = once, once
+                rows.append((w, max(once, monthly, exact)))
                 p.close()
             top = max(rows, key=lambda r: r[1])
             declared = DECLARED[lang][part]
