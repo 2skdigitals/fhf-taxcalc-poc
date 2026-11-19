@@ -20,9 +20,11 @@ import sys
 from playwright.sync_api import sync_playwright
 
 # declared heights the client will paste into the CMS (updated per pass)
+# heights the client pastes into the CMS — must cover the MONTHLY layout too, which is
+# a second, taller shape (that omission shipped a 70px inner scroll at 320px)
 DECLARED = {
-    "zh-HK": {"calc": 1500, "input": 900, "result": 750, "pay": 550, "receipt": 780},
-    "en": {"calc": 1500, "input": 900, "result": 750, "pay": 550, "receipt": 890},
+    "zh-HK": {"calc": 1840, "input": 1190, "result": 860, "pay": 550, "receipt": 780},
+    "en": {"calc": 1880, "input": 1190, "result": 860, "pay": 550, "receipt": 890},
 }
 WIDTHS = (320, 360, 390, 414, 568, 768, 944, 1280, 1440)
 PARTS = ("calc", "input", "result", "pay", "receipt")

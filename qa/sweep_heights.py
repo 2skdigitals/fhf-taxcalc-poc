@@ -38,8 +38,8 @@ WIDTHS = [320, 328, 360, 390, 414, 430, 480, 540, 568, 600, 640, 700, 721, 768,
 # English peaks are HIGHER than Chinese at every width: 35% more lines at 320px,
 # where the column is ~288px wide and a sentence costs two lines instead of one.
 DECLARED = {
-    "zh-HK": {"calc": 1500, "input": 900, "result": 750, "pay": 550, "receipt": 780},
-    "en":    {"calc": 1500, "input": 900, "result": 750, "pay": 550, "receipt": 890},
+    "zh-HK": {"calc": 1840, "input": 1190, "result": 860, "pay": 550, "receipt": 780},
+    "en":    {"calc": 1880, "input": 1190, "result": 860, "pay": 550, "receipt": 890},
 }
 
 peaks = {}
@@ -47,7 +47,7 @@ with sync_playwright() as pw:
     b = pw.chromium.launch(channel="chrome", headless=True)
     for lang in LANGS:
         peaks[lang] = {}
-        print(f"\n=== ?lang={lang} ===")
+        print(f"\n=== ?lang={lang} (default + monthly state) ===")
         for part in PARTS:
             rows = []
             for w in WIDTHS:
@@ -57,7 +57,21 @@ with sync_playwright() as pw:
                                is_mobile=(w < 600), has_touch=(w < 600))
                 p.goto(f"{BASE}/embed/?part={part}&lang={lang}", wait_until="load")
                 p.wait_for_timeout(400)
-                rows.append((w, p.evaluate("()=>document.documentElement.scrollHeight")))
+                once = p.evaluate("()=>document.documentElement.scrollHeight")
+                # The monthly layout is a SECOND shape, not a variation: it adds the
+                # months control, a longer caption and an extra ledger row. Measured
+                # default-only, this is how a block ships that scrolls the moment a
+                # donor picks monthly (found 19 Nov: the live calc clipped by 70px at
+                # 320px in exactly this state).
+                monthly = once
+                if part in ("calc", "input"):
+                    try:
+                        p.click('input[name="mode"][value="monthly"]', timeout=1500)
+                        p.wait_for_timeout(320)
+                        monthly = p.evaluate("()=>document.documentElement.scrollHeight")
+                    except Exception:
+                        monthly = once
+                rows.append((w, max(once, monthly)))
                 p.close()
             top = max(rows, key=lambda r: r[1])
             declared = DECLARED[lang][part]

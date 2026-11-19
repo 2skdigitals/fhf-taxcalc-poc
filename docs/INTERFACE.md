@@ -26,9 +26,9 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 
 | # | Block | URL | Height · zh-HK | Height · en | Content peak zh-HK | Content peak en |
 |---|---|---|---|---|---|---|
-| 1 | Calculator + result | `/embed/?part=calc` | **1500px** | **1500px** | 1449 (at 944px) | 1449 (at 944px) |
-| 1a | Calculator only | `/embed/?part=input` | **900px** | **900px** | 849 (at 944px) | 849 (at 944px) |
-| 1b | Result only | `/embed/?part=result` | **750px** | **750px** | 681 (at 320px) | 701 (at 320px) |
+| 1 | Calculator + result | `/embed/?part=calc` | **1840px** | **1880px** | 1782 (at 944px, monthly) | 1823 (at 320px, monthly) |
+| 1a | Calculator only | `/embed/?part=input` | **1190px** | **1190px** | 1137 (at 944px, monthly) | 1137 (at 944px, monthly) |
+| 1b | Result only | `/embed/?part=result` | **860px** | **860px** | 808 (at 944px) | 808 (at 944px) |
 | 2 | Payment | `/embed/?part=pay` | **550px** | **550px** | 502 (at 320px) | 502 (at 320px) |
 | 3 | Receipt | `/embed/?part=receipt` | **780px** | **890px** | 724 (at 320px) | 830 (at 320px) |
 
