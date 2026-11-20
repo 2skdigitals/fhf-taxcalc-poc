@@ -64,10 +64,11 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
       <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>580px</b></td><td>442 – 523</td></tr>
       <tr><td><b>4 · Receipt</b></td><td><code id="p4">/embed/?part=receipt</code></td><td><b>810px</b> / 910 en</td><td>661 – 852</td></tr>
       <tr><td><b>1+2 combined</b></td><td><code id="p5">/embed/?part=calc</code></td><td><b>1800px</b></td><td>1547 – 1742</td></tr>
+      <tr><td><b>All four combined</b></td><td><code id="p6">/embed/?part=all</code></td><td><b>2880px</b> / 2990 en</td><td>2528 – 2927</td></tr>
     </tbody>
   </table>
   <p class="lede" style="margin:-6px 0 10px;font-size:13px;color:#68707b">These are the worst cases across every width their page actually produces (iframe 328px on a small phone → 1280px on a wide desktop), plus margin. If the component can take a <b>different height per breakpoint</b>, tell us and we'll hand you a two-number set instead — that removes the remaining vertical slack on desktop.</p>
-  <p class="lede" style="margin:0 0 34px;font-size:13px;color:#68707b">All four still work as a single page if you prefer one block: <code>/embed/</code> (≈3700px — not recommended; that is the version with an internal scrollbar).</p>
+  <p class="lede" style="margin:0 0 34px;font-size:13px;color:#68707b">All four also work as <b>one</b> document: <code>/embed/?part=all</code> — and a bare <code>/embed/</code> now defaults to it. It is 2,811px (zh) / 2,927px (en) at its tallest reachable state, so it fits a single frame; it is still a tall frame on a phone, which is why the four-block split stays the recommended arrangement.</p>
 
   <h2>3 · The test bench + the context preview</h2>
   <div class="cards">
@@ -123,7 +124,7 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
   document.getElementById("u1").textContent = b + "embed/";
   document.getElementById("u2").textContent = b + "embed/?debug=1";
   document.getElementById("u3").textContent = b + "embed/?h=600";
-  [["p1","input"],["p2","result"],["p3","pay"],["p4","receipt"],["p5","calc"]].forEach(function(pair){
+  [["p1","input"],["p2","result"],["p3","pay"],["p4","receipt"],["p5","calc"],["p6","all"]].forEach(function(pair){
     var el = document.getElementById(pair[0]); if (el) el.textContent = b + "embed/?part=" + pair[1];
   });
 })();
