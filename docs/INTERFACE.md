@@ -26,11 +26,37 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 
 | # | Block | URL | Height · zh-HK | Height · en | Content peak zh-HK | Content peak en |
 |---|---|---|---|---|---|---|
-| 1 | Calculator + result | `/embed/?part=calc` | **1920px** | **1920px** | 1871 (at 900px, monthly) | 1871 (at 320px, monthly) |
-| 1a | Calculator only | `/embed/?part=input` | **1120px** | **1120px** | 1069 (at 900px, monthly) | 1069 (at 900px, monthly) |
-| 1b | Result only | `/embed/?part=result` | **920px** | **920px** | 867 (at 900px) | 867 (at 900px) |
-| 2 | Payment | `/embed/?part=pay` | **600px** | **600px** | 543 (at 820px) | 543 (at 820px) |
-| 3 | Receipt | `/embed/?part=receipt` | **780px** | **890px** | 724 (at 320px) | 830 (at 320px) |
+| 0 | **One link (all four)** | `/embed/?part=all` (also the bare `/embed/`) | **2880px** | **2990px** | 2811 (at 900px, monthly) | 2927 (at 320px, monthly) |
+| 1 | Calculator + result | `/embed/?part=calc` | **1800px** | **1800px** | 1722 (at 900px, monthly) | 1742 (at 900px, monthly) |
+| 1a | Calculator only | `/embed/?part=input` | **1040px** | **1040px** | 974 (at 820px, monthly) | 974 (at 820px, monthly) |
+| 1b | Result only | `/embed/?part=result` | **890px** | **890px** | 833 (at 900px) | 833 (at 900px) |
+| 2 | Payment | `/embed/?part=pay` | **580px** | **580px** | 523 (at 900px) | 523 (at 900px) |
+| 3 | Receipt | `/embed/?part=receipt` | **810px** | **910px** | 747 (at 390px) | 852 (at 320px) |
+
+**Quoted at the five widths the client asked for (content height, px) — 20 Nov 2026**
+
+| Block | 320 | 390 | 768 | 1024 | 1440 |
+|---|---|---|---|---|---|
+| `?part=input` · zh | 799 | 764 | 970 | 974 | 974 |
+| `?part=input` · en | 845 | 808 | 970 | 974 | 974 |
+| `?part=result` · zh | 775 | 751 | 823 | 833 | 833 |
+| `?part=result` · en | 796 | 751 | 823 | 833 | 833 |
+| `?part=pay` · zh/en | 462 | 463 | 501 | 523 | 523 |
+| `?part=receipt` · zh | 746 | 747 | 682 | 687 | 687 |
+| `?part=receipt` · en | 852 | 787 | 682 | 687 | 687 |
+| `?part=calc` · zh | 1576 | 1465 | 1708 | 1722 | 1722 |
+| `?part=calc` · en | 1702 | 1547 | 1728 | 1742 | 1742 |
+| `?part=all` · zh | 2695 | 2586 | 2770 | 2811 | 2811 |
+| `?part=all` · en | 2927 | 2708 | 2790 | 2831 | 2831 |
+
+> **Revised 20 Nov 2026 (client comment pass 2, `docs/CLIENT-COMMENTS-2-2026120.md`).** White ground,
+> 56rem desktop column, the HK$100 floor, the months control removed (monthly is now a fixed 12 months),
+> a positive saving figure and the client's own disclaimer. Every block moved, so **every number in §2 is
+> reissued**: calc 1920 → 1800, input 1120 → 1040, result 920 → 890, pay 600 → 580, receipt 780 → 810
+> (zh) / 890 → 910 (en). `?part=all` is new and is also the default for a bare `/embed/` URL: the whole
+> journey is **2,811px zh / 2,927px en** at its tallest reachable state, which fits a single iframe. It is
+> still a tall frame on a phone, so the four-block split stays the recommended production arrangement.
+
 
 > **Added 15 Nov 2026 (EN build, `docs/EN-BUILD-20261115.md`).** The two languages are one file — `/embed/?part=pay&lang=en` — with one engine and two string tables. **The English block is taller at every width we measured**, and the phone is where it costs most: English copy runs ~35% more lines at 320px, because the column is ~288px and a sentence that fits one line in Chinese wraps to two. Peak Δ en−zh: calc **+347px**, input **+105** (its Chinese peak is at 1200px, not 320px), result **+172**, pay **+174**, receipt **+101**; at 1280px the same blocks are still +21…+83px. **Do not assume English is shorter anywhere — measure it.** If the English page reuses the Chinese heights, every block gets the inner scrollbar they reported on mobile.
 >

@@ -23,11 +23,11 @@ from playwright.sync_api import sync_playwright
 # heights the client pastes into the CMS — must cover the MONTHLY layout too, which is
 # a second, taller shape (that omission shipped a 70px inner scroll at 320px)
 DECLARED = {
-    "zh-HK": {"calc": 1920, "input": 1120, "result": 920, "pay": 600, "receipt": 780},
-    "en": {"calc": 1920, "input": 1120, "result": 920, "pay": 600, "receipt": 890},
+    "zh-HK": {"calc": 1800, "input": 1040, "result": 890, "pay": 580, "receipt": 810, "all": 2880},
+    "en": {"calc": 1800, "input": 1040, "result": 890, "pay": 580, "receipt": 910, "all": 2990},
 }
 WIDTHS = (320, 360, 390, 414, 568, 768, 944, 1280, 1440)
-PARTS = ("calc", "input", "result", "pay", "receipt")
+PARTS = ("calc", "input", "result", "pay", "receipt", "all")
 
 # the strings a text pair is checked on: the roles a designer actually restyles
 CONTRAST_TARGETS = [

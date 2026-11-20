@@ -36,16 +36,18 @@ for i, a in enumerate(ARGS):
     if a == "--lang" and i + 1 < len(ARGS):
         LANGS = [ARGS[i + 1]]
 
-PARTS = ["calc", "input", "result", "pay", "receipt"]
+PARTS = ["calc", "input", "result", "pay", "receipt", "all"]
 WIDTHS = [320, 328, 360, 390, 414, 430, 480, 540, 568, 600, 640, 700, 721, 768,
           820, 900, 944, 1024, 1100, 1200, 1280, 1440]
+# the five widths the client asked to be quoted at (docs/INTERFACE.md §2)
+REPORT_WIDTHS = (320, 390, 768, 1024, 1440)
 
 # peak + 45..70px of slack, measured not assumed (see the peaks printed below).
 # English peaks are HIGHER than Chinese at every width: 35% more lines at 320px,
 # where the column is ~288px wide and a sentence costs two lines instead of one.
 DECLARED = {
-    "zh-HK": {"calc": 1920, "input": 1120, "result": 920, "pay": 600, "receipt": 780},
-    "en":    {"calc": 1920, "input": 1120, "result": 920, "pay": 600, "receipt": 890},
+    "zh-HK": {"calc": 1800, "input": 1040, "result": 890, "pay": 580, "receipt": 810, "all": 2880},
+    "en":    {"calc": 1800, "input": 1040, "result": 890, "pay": 580, "receipt": 910, "all": 2990},
 }
 
 peaks = {}
@@ -71,7 +73,7 @@ with sync_playwright() as pw:
                 # 320px in exactly this state).
                 monthly = once
                 exact = once
-                if part in ("calc", "input"):
+                if part in ("calc", "input", "all"):
                     try:
                         p.click('input[name="mode"][value="monthly"]', timeout=1500)
                         p.wait_for_timeout(320)
@@ -98,6 +100,10 @@ with sync_playwright() as pw:
                   f"{'OK' if declared >= top[1] else 'OVERFLOW'}")
             lo = min(r[1] for r in rows)
             print(f"{'':16} range {lo}–{top[1]} across {len(WIDTHS)} widths")
+            at = {w: h for w, h in rows if w in REPORT_WIDTHS}
+            print(f"{'':16} quoted: " + " · ".join(f"{w}px {at[w]}" for w in REPORT_WIDTHS
+                                                  if w in at)
+                  + "   (client's five widths)")
     b.close()
 
 if len(LANGS) == 2:
@@ -107,6 +113,10 @@ if len(LANGS) == 2:
         z, e = peaks["zh-HK"][part], peaks["en"][part]
         print(f"?part={part:<4} {z['max']:>8} @{z['at']:<4} {e['max']:>5} @{e['at']:<4}      | "
               f"{z['declared']:>12} {e['declared']:>12}")
+    al, ae = peaks["zh-HK"]["all"]["max"], peaks["en"]["all"]["max"]
+    print(f"\n?part=all — the one-link arrangement (calculator -> result -> payment -> receipt): "
+          f"{al}px zh-HK · {ae}px en. "
+          f"{'Inside' if max(al, ae) <= 4000 else 'EXCEEDS'} a sane 4,000px iframe.")
 
 with open("/tmp/fhf-sweep.json", "w") as f:
     json.dump(peaks, f, indent=2)

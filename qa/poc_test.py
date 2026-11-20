@@ -83,22 +83,24 @@ with sync_playwright() as pw:
     # number here and overstated every gift large enough to cross a band.
     cases = [
         ("500 in the 17% band -> 70 to 85 / net 415-430", "once", 500, None, "r17",
-         {"gift": "HK$500", "saved": "−HK$70 至 −HK$85", "net": "HK$415 – 430"}),
+         {"gift": "HK$500", "saved": "HK$70 至 HK$85", "net": "HK$415 – 430"}),
         ("1,800 in the 17% band -> 252 to 306 / net 1,494-1,548", "once", 1800, None, "r17",
-         {"gift": "HK$1,800", "saved": "−HK$252 至 −HK$306", "net": "HK$1,494 – 1,548"}),
+         {"gift": "HK$1,800", "saved": "HK$252 至 HK$306", "net": "HK$1,494 – 1,548"}),
         ("500 below the allowance -> 0 / 500", "once", 500, None, "r0",
-         {"gift": "HK$500", "saved": "−HK$0", "net": "HK$500", "rate": "0%"}),
+         {"gift": "HK$500", "saved": "HK$0", "net": "HK$500", "rate": "0%"}),
         ("10,000 in the 15% band -> 1,500 to 1,700 / net 8,300-8,500", "once", 10000, None, "r15",
-         {"gift": "HK$10,000", "saved": "−HK$1,500 至 −HK$1,700", "net": "HK$8,300 – 8,500",
+         {"gift": "HK$10,000", "saved": "HK$1,500 至 HK$1,700", "net": "HK$8,300 – 8,500",
           # a band, not a single rate: the crossing of the standard/progressive tie
           # at 2,132,500 means the band's ends save at 15% and 17%, so the row
           # may not be labelled 邊際 or 標準 any more.
           "rateLabel": "採用的稅率"}),
-        ("monthly 1,300 x 6 in the 17% band -> 7,800 / 1,092-1,326", "monthly", 1300, 6, "r17",
-         {"gift": "HK$7,800", "saved": "−HK$1,092 至 −HK$1,326", "net": "HK$6,474 – 6,708",
-          "giftLabel": "全年總額（6 個月）"}),
-        ("monthly 1,300 x 4 in the 2% band -> 5,200 / 0-104", "monthly", 1300, 4, "r2",
-         {"gift": "HK$5,200", "saved": "−HK$0 至 −HK$104", "net": "HK$5,096 – 5,200",
+        # Monthly is amount x 12 since the client's slide-2 note removed the months
+        # control: the annual deduction is a full year of gifts, stated in the caption.
+        ("monthly 1,300 x 12 in the 17% band -> 15,600 / 2,184-2,652", "monthly", 1300, None, "r17",
+         {"gift": "HK$15,600", "saved": "HK$2,184 至 HK$2,652", "net": "HK$12,948 – 13,416",
+          "giftLabel": "全年總額（12 個月）"}),
+        ("monthly 1,300 x 12 in the 2% band -> 15,600 / 0-312", "monthly", 1300, None, "r2",
+         {"gift": "HK$15,600", "saved": "HK$0 至 HK$312", "net": "HK$15,288 – 15,600",
           "rate": "0% – 2%"}),
     ]
     for label, mode, amt, months, band, exp in cases:
@@ -108,9 +110,6 @@ with sync_playwright() as pw:
         settle(pg, 90)
         f.click(f'input[name="band"][value="{band}"]')
         settle(pg, 90)
-        if months is not None:
-            f.select_option("#months", str(months))
-            settle(pg, 120)
         got = f.evaluate(READ)
         errs = [f"{k}: got {got.get(k)!r} want {v!r}" for k, v in exp.items() if got.get(k) != v]
         check(label, errs)
@@ -134,7 +133,7 @@ with sync_playwright() as pw:
     # old engine printed the flat 17% figure, 29,750 as a single number at both
     # ends — and 42,500 for a 250,000 gift. Neither may come back.
     check("the 35% ceiling is computed, and a band renders both of its ends",
-          [] if (got["saved"] == "−HK$13,245 至 −HK$29,750"
+          [] if (got["saved"] == "HK$13,245 至 HK$29,750"
                  and got["savedLabel"] == "節省稅款"
                  and "35%" in got["cap"] and "未扣上限" not in got["savedLabel"]
                  and "42,500" not in got["saved"]) else
@@ -142,11 +141,10 @@ with sync_playwright() as pw:
 
     f.click('input[name="mode"][value="monthly"]')
     f.fill("#gift", "1300")
-    f.select_option("#months", "4")
     settle(pg, 300)
     got = f.evaluate(READ)
-    check("monthly caption shows the arithmetic",
-          [] if "每月 HK$1,300 × 4 個月 = 全年 HK$5,200" in got["caption"] else
+    check("monthly caption shows the arithmetic, with the fixed 12-month year",
+          [] if "每月 HK$1,300 × 12 個月 = 全年 HK$15,600" in got["caption"] else
           [repr(got["caption"])])
 
     # ---------------------------------------------------------------- C
@@ -286,9 +284,10 @@ with sync_playwright() as pw:
     # 320 to 1440, plus 50–73px of slack. `calc` is in here because the client
     # embedded it: at 1,020px its content (1,499px at 320px) produced the second,
     # inner scrollbar they reported on mobile.
-    BUDGET = {"calc": 1920, "input": 1120, "result": 920, "pay": 600, "receipt": 780}
+    BUDGET = {"calc": 1800, "input": 1040, "result": 890, "pay": 580, "receipt": 810, "all": 2880}
     SECTIONS = {"calc": ["calculator", "result"], "input": ["calculator"],
-                "result": ["result"], "pay": ["payment"], "receipt": ["receipt"]}
+                "result": ["result"], "pay": ["payment"], "receipt": ["receipt"],
+                "all": ["calculator", "result", "payment", "receipt"]}
     for w in (328, 568, 944, 1280):
         for part, budget in BUDGET.items():
             pf = browser.new_page(viewport={"width": w, "height": budget}, is_mobile=(w < 600), has_touch=(w < 600))
@@ -316,13 +315,13 @@ with sync_playwright() as pw:
     # cash return. Both are pinned per band, so a drift in either fails.
     BAND_EXPECT = {
         # band: (saved range as rendered, per-100 range as rendered)
-        "r2":  ("−HK$0 至 −HK$26",   "HK$98 至 HK$100"),
-        "r6":  ("−HK$26 至 −HK$78",  "HK$94 至 HK$98"),
-        "r10": ("−HK$78 至 −HK$130", "HK$90 至 HK$94"),
-        "r14": ("−HK$130 至 −HK$182","HK$86 至 HK$90"),
-        "r17": ("−HK$182 至 −HK$221","HK$83 至 HK$86"),
-        "r15": ("−HK$195 至 −HK$221","HK$83 至 HK$85"),
-        "r16": ("−HK$195 至 −HK$208","HK$84 至 HK$85"),
+        "r2":  ("HK$0 至 HK$26",   "HK$98 至 HK$100"),
+        "r6":  ("HK$26 至 HK$78",  "HK$94 至 HK$98"),
+        "r10": ("HK$78 至 HK$130", "HK$90 至 HK$94"),
+        "r14": ("HK$130 至 HK$182","HK$86 至 HK$90"),
+        "r17": ("HK$182 至 HK$221","HK$83 至 HK$86"),
+        "r15": ("HK$195 至 HK$221","HK$83 至 HK$85"),
+        "r16": ("HK$195 至 HK$208","HK$84 至 HK$85"),
     }
     bench = browser.new_page(viewport={"width": 390, "height": 900}, is_mobile=True, has_touch=True)
     for band, (want_saved, want_100) in BAND_EXPECT.items():
@@ -357,22 +356,65 @@ with sync_playwright() as pw:
                  and "會低於" not in line and "42,500" not in line
                  and "42,500" not in strip) else [f"line={line!r} strip={strip!r}"])
 
+    # ---------------------------------------------------------------- N · the HK$100 floor
+    # The client's slide-1 note: the donation field has a minimum of HK$100.
+    # Below it NO estimate is shown and her own line takes its place — and the
+    # figure the donor typed is never silently clamped, because a clamp both hides
+    # the problem and mis-states the gift.
+    bench.goto(f"{BASE}/embed/?part=calc")
+    bench.wait_for_timeout(350)
+    bench.fill("#gift", "50")
+    bench.wait_for_timeout(320)
+    fl = bench.evaluate("""()=>({
+        shown: !document.getElementById('min-note').hidden,
+        line: document.getElementById('min-note').textContent,
+        estimate: getComputedStyle(document.querySelector('#result .result')).display,
+        benefit: getComputedStyle(document.getElementById('benefit')).display,
+        typed: document.getElementById('gift').value
+    })""")
+    check("below HK$100 no estimate is shown and the client's own line replaces it",
+          [] if (fl["shown"] and "捐款金額達到或超過 HK$100" in fl["line"]
+                 and fl["estimate"] == "none" and fl["benefit"] == "none") else [str(fl)])
+    check("below HK$100 the amount is not clamped — the donor keeps the figure they typed",
+          [] if fl["typed"] == "50" else [f"field={fl['typed']!r}"])
+    bench.fill("#gift", "100")
+    bench.wait_for_timeout(320)
+    fl2 = bench.evaluate("""()=>({
+        minHidden: document.getElementById('min-note').hidden,
+        estimate: getComputedStyle(document.querySelector('#result .result')).display,
+        saved: document.getElementById('saved').textContent})""")
+    check("HK$100 itself is inside the floor — the estimate comes back",
+          [] if (fl2["minHidden"] and fl2["estimate"] != "none"
+                 and fl2["saved"] == "HK$14 至 HK$17") else [str(fl2)])
+
     # ---------------------------------------------------------------- L · C2 declarations
     d = bench.evaluate("""()=>({
         scope: (document.querySelector('.scope')||{}).textContent || '',
         spouse: (document.getElementById('spouse')||{}).textContent || '',
         disc: (document.getElementById('disclaimer')||{}).textContent || '',
         closed: !(document.getElementById('disclaimer')||{hasAttribute:()=>false}).hasAttribute('open'),
-        link: (document.querySelector('#receipt a[href="#disclaimer"]')||{}).textContent || ''
+        link: (document.querySelector('#receipt a[href="#disclaimer"]')||{}).textContent || '',
+        foot: (document.querySelector('.wrap > p.fine')||{}).textContent || '',
+        floorline: (document.getElementById('gift-min')||{}).textContent || ''
     })""")
-    check("scope line states salaries-tax-only and 並非稅務建議",
-          [] if ("薪俸稅" in d["scope"] and "並非稅務建議" in d["scope"]) else [d["scope"][:80]])
+    # The client's slide-7 note removes the scope reminder beside the figures: the
+    # single-person allowance is already stated once, where the income is chosen.
+    # The check therefore asserts the REMOVAL and that the client's own disclaimer —
+    # not our draft — is what now stands behind the numbers. Note for the record:
+    # their approved text does not itself say "salaries tax only", so the widget no
+    # longer states that scope anywhere; that is the client's call, flagged in
+    # docs/CLIENT-COMMENTS-2-2026120.md rather than silently re-added.
+    check("the result block no longer repeats the allowance/scope reminder (client instruction)",
+          [] if not d["scope"] else [d["scope"][:80]])
     check("spouse note does not promise the excess is freely transferable",
           [] if ("BIR60" in d["spouse"] and "35%" in d["spouse"] and "不能全數轉移" in d["spouse"])
           else [d["spouse"][:120]])
-    check("disclaimer exists, is collapsed by default, and is reachable from the consent line",
-          [] if (d["closed"] and "免責聲明" in d["link"] and "稅務局評定為準" in d["disc"]
-                 and "不收集、不儲存" in d["disc"]) else [str(d)[:200]])
+    check("disclaimer is the client's approved text, collapsed, reachable from the consent line",
+          [] if (d["closed"] and "免責聲明" in d["link"] and "最終以稅務局核定為準" in d["disc"]
+                 and "不會收集、記錄或儲存任何輸入資料" in d["disc"]
+                 and "不能取代專業意見" not in d["disc"]) else [str(d)[:220]])
+    check("the HK$100 floor line is on the donation field, in the client's words",
+          [] if "捐款金額達到或超過 HK$100 可獲得稅收減免。" in d["floorline"] else [d["floorline"][:80]])
 
     # ---------------------------------------------------------------- M · C4 tap targets
     # Measured per block, because the controls live in different blocks and a

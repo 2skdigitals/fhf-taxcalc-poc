@@ -51,6 +51,10 @@ BAK = ROOT / "embed" / "index.html.bak-pre-en-20261115"
 # payment-reference pass (18 Nov) changed seven zh strings on purpose, so the baseline was
 # rebased to the file that pass started from. Refresh it only when a zh copy change is signed
 # off, and record the change list — the assertions below are what catch an accidental drift.
+# Rebases on record: 18 Nov (payment reference, 7 strings) · 20 Nov (client comment pass 2 —
+# white ground, 56rem column, HK$100 floor, months control removed, positive saving, scope
+# line and monthly link removed, the client's own disclaimer; list in
+# docs/CLIENT-COMMENTS-2-2026120.md and qa/apply_client_comments2_2026120.py).
 FIXTURE = ROOT / "qa" / "_baseline_zh_pre_ref.html"
 if BAK.exists() and (not FIXTURE.exists() or FIXTURE.stat().st_mtime < BAK.stat().st_mtime):
     FIXTURE.write_bytes(BAK.read_bytes())
@@ -133,9 +137,8 @@ STATES = {
         ("band r6", set_band("r6")),
         ("band r16", set_band("r16")),
         ("band unknown", set_band("unknown")),
-        ("monthly 4", "(function(){document.querySelector('input[name=\"mode\"][value=\"monthly\"]').checked=true;"
-                      "document.querySelector('input[name=\"mode\"][value=\"monthly\"]').dispatchEvent(new Event('change',{bubbles:true}));"
-                      "var m=document.getElementById('months');m.value='4';m.dispatchEvent(new Event('change',{bubbles:true}));})()"),
+        ("monthly 12", "(function(){document.querySelector('input[name=\"mode\"][value=\"monthly\"]').checked=true;"
+                      "document.querySelector('input[name=\"mode\"][value=\"monthly\"]').dispatchEvent(new Event('change',{bubbles:true}));})()"),
         ("empty gift", "()=>{const g=document.getElementById('gift');g.value='';"
                        "g.dispatchEvent(new Event('input',{bubbles:true}));}"),
         ("big gift r17", "()=>{const g=document.getElementById('gift');g.value='175000';"
@@ -288,8 +291,11 @@ with sync_playwright() as pw:
           [f"{k}: {n} CJK chars" for k, n in cjk.items()])
 
     all_en = " ".join(v["text"] for v in en_snaps.values())
+    # "year of assessment" became "the relevant assessment year" when the client's
+    # approved disclaimer replaced our draft and their slide-2 note removed the
+    # months hint that carried the full phrase — their wording governs.
     terms = ["recognised charitable donation", "assessable income", "marginal rate",
-             "standard rate", "year of assessment"]
+             "standard rate", "assessment year"]
     missing = [t for t in terms if t.lower() not in all_en.lower()]
     check("English copy uses the IRD terms (" + ", ".join(terms) + ")", missing)
 
@@ -315,6 +321,44 @@ with sync_playwright() as pw:
         if digits_of(z) != digits_of(e):
             fig_diffs.append(f"{key}: {digits_of(z)} vs {digits_of(e)}")
     check("the whole result block renders the same digits in both languages", fig_diffs)
+
+    # the client's 5th note: the saving is money kept, so it never carries a minus
+    neg = [k for snaps in (zh_snaps, en_snaps) for k, v in snaps.items()
+           if "−HK$" in (v["ids"].get("saved") or "")]
+    check("the tax-saved figure never renders with a minus sign, in either language", neg)
+
+    # ---------------------------------------------------------------- H · the client's disclaimer
+    # Downloads/Tax Calculator.docx carries the wording the client has approved.
+    # Their text beats our draft, so this pins it character for character in both
+    # languages rather than trusting that the edit landed.
+    DISC = {
+        "zh-HK": ("根據稅務局相關課稅年度資料估算，僅供一般參考."
+                  "不會收集、記錄或儲存任何輸入資料."
+                  "以累進稅率或標準稅率（以較低者為準）估算應繳稅款；最終以稅務局核定為準。"
+                  "不構成專業意見，詳情請參閱香港稅務局網頁或諮詢顧問."
+                  "護瞳行動（香港）有限公司概不承擔相關法律責任。"),
+        "en": ("Based on IRD tax rates and info for the relevant assessment year; for general reference only."
+               "Does not collect, record, or store entered data."
+               "Estimates tax using progressive or standard rates (whichever is lower); "
+               "actual results depend on the IRD."
+               "Not formal financial/tax advice; refer to the Hong Kong Inland Revenue Department "
+               "website or a professional."
+               "The Fred Hollows Foundation (HK) Limited assumes no liability for use or reliance."),
+    }
+    got, errs = {}, []
+    for lang in ("zh-HK", "en"):
+        pd = browser.new_page(viewport={"width": 390, "height": 900})
+        pd.goto(f"{BASE}/embed/?part=receipt&lang={lang}", wait_until="load")
+        pd.wait_for_timeout(450)
+        got[lang] = pd.evaluate(
+            "()=>{const d=document.getElementById('disclaimer');"
+            "return d ? d.querySelector('p').textContent : '';}")
+        pd.close()
+        if got[lang] != DISC[lang]:
+            i = next((i for i in range(min(len(got[lang]), len(DISC[lang])))
+                      if got[lang][i] != DISC[lang][i]), min(len(got[lang]), len(DISC[lang])))
+            errs.append(f"{lang} @{i}: {got[lang][max(0,i-25):i+35]!r} != {DISC[lang][max(0,i-25):i+35]!r}")
+    check("the disclaimer is the client's approved text, verbatim, in both languages", errs)
 
     # ---------------------------------------------------------------- F
     # language switch by postMessage inside a live frame, through the real host

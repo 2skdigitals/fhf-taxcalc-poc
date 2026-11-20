@@ -21,7 +21,7 @@
 
   /* ink on light */
   --ink:#16161C; --ink-2:#3F3F4A; --muted:#6A6A75;
-  --ground:#F3F3F0;
+  --ground:#fff;
   --line:rgba(1,1,78,.14); --line-2:rgba(1,1,78,.26);
   --rule:1px solid var(--line);
   --wash:rgba(1,1,78,.055);
@@ -67,7 +67,7 @@ button{font:inherit;color:inherit}
 ::selection{background:rgba(1,1,78,.14)}
 
 /* ── the column ────────────────────────────────────────────── */
-.wrap{max-width:44rem;margin:0 auto;padding:clamp(18px,3.4vw,26px) var(--gut) 24px}
+.wrap{max-width:56rem;margin:0 auto;padding:clamp(18px,3.4vw,26px) var(--gut) 24px}
 section.panel{padding:0;border:0}
 section.panel + section.panel{margin-top:clamp(26px,4.4vw,36px)}
 
@@ -79,6 +79,17 @@ h2{
 .hint{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:8px 0 0;max-width:var(--measure)}
 .fine{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:14px 0 0;max-width:var(--measure)}
 .note{font-size:var(--t-cap);line-height:1.6;color:var(--muted);margin:12px 0 0;max-width:var(--measure)}
+
+/* below the HK$100 floor no estimate is shown — the client's own sentence takes
+   its place. Nothing is clamped: the donor's figure stays what they typed. */
+#result.is-below-min .result,
+#result.is-below-min .benefit,
+#result.is-below-min .assump{display:none}
+.min-note{
+  margin:16px 0 0;padding:14px 16px;border:1px solid var(--line-2);
+  border-radius:var(--radius);background:var(--white);color:var(--ink);
+  font-size:var(--t-body);line-height:1.5;max-width:var(--measure);
+}
 
 /* ── step marker: a filled navy disc with a white numeral ───── */
 .step{display:flex;align-items:center;gap:11px;margin:0 0 16px}
@@ -378,13 +389,18 @@ body[data-part="calc"] #result,
 body[data-part="input"] #calculator,
 body[data-part="result"] #result,
 body[data-part="pay"] #payment,
-body[data-part="receipt"] #receipt{display:block}
+body[data-part="receipt"] #receipt,
+body[data-part="all"] #calculator,
+body[data-part="all"] #result,
+body[data-part="all"] #payment,
+body[data-part="all"] #receipt{display:block}
 body[data-part="input"] #goto-row,
 body[data-part="result"] #goto-row,
 body[data-part="calc"] #goto-row{display:none!important}
 html[data-embed="part"] #deeplink-test,
 html[data-embed="part"] .wrap > p.fine{display:none}
-body[data-part="calc"] .wrap > p.fine{display:block}
+body[data-part="calc"] .wrap > p.fine,
+body[data-part="all"] .wrap > p.fine{display:block}
 html[data-embed="part"] .wrap,
 body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
 
@@ -458,20 +474,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
           <button type="button" data-amt="1300">1,300</button>
           <button type="button" data-amt="3000">3,000</button>
         </div>
-      </div>
-
-      <div class="field" id="months-field" hidden>
-        <label class="flabel" for="months" data-i18n="s1.months.label">Months given this year of assessment</label>
-        <select id="months" aria-describedby="months-hint">
-          <option value="1">1 month</option><option value="2">2 months</option><option value="3">3 months</option>
-          <option value="4">4 months</option><option value="5">5 months</option><option value="6">6 months</option>
-          <option value="7">7 months</option><option value="8">8 months</option><option value="9">9 months</option>
-          <option value="10">10 months</option><option value="11">11 months</option><option value="12" selected>12 months</option>
-        </select>
-        <!-- The chips that used to sit here offered 3/6/9/12 next to a select that already
-             lists all twelve: two controls for one value, 106px of height and a "which do I
-             press?" moment. The select is the complete one, so it stays. -->
-        <p class="hint" id="months-hint" data-i18n="s1.months.hint">The year of assessment ends 31 March. The deduction uses your total for that year.</p>
+        <p class="hint" id="gift-min" data-i18n="s1.min">捐款金額達到或超過 HK$100 可獲得稅收減免。</p>
       </div>
 
       <details class="q inset" id="what-counts">
@@ -545,16 +548,17 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
 
       <dl class="figs">
         <div><dt id="gift-label" data-i18n="s2.gift">Donation</dt><dd id="gift-out">HK$1,300</dd></div>
-        <div><dt id="saved-label" data-i18n="s2.saved">Tax saved</dt><dd id="saved">−HK$221</dd></div>
+        <div><dt id="saved-label" data-i18n="s2.saved">Tax saved</dt><dd id="saved">HK$221</dd></div>
         <div><dt id="rate-label" data-i18n="s2.rate">Rate</dt><dd id="rate">17%</dd></div>
       </dl>
     </div>
+
+    <p class="min-note" id="min-note" data-i18n="s2.min" hidden>捐款金額達到或超過 HK$100 可獲得稅收減免。</p>
 
     <p class="benefit" id="benefit" data-i18n="s2.benefit">You give HK$1,300, all of it deductible. Every HK$100 costs you about HK$83.</p>
 
     <p class="assump" id="assumption" data-i18n="s2.assume.def">Assumed assessable income HK$345,000 – 2,132,500.</p>
     <p class="assump" id="cap" data-i18n="s2.cap.def">The cap is 35% of assessable income for the year; an ordinary gift does not reach it.</p>
-    <p class="scope" data-i18n="s2.scope">One person, salaries tax only. An estimate, not tax advice.</p>
 
     <div class="faq">
       <h3 class="faq-h" data-i18n="s2.faq.label">Common questions</h3>
@@ -567,7 +571,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
 
   <!-- ── 3 · how you give ──────────────────────────────────────── -->
   <section class="panel" id="payment" aria-labelledby="s3h">
-    <h2 id="s3h" data-i18n="s3.h">How you give</h2>
+    <div class="step"><span class="step-n" aria-hidden="true">4</span><h2 id="s3h" data-i18n="s3.h">How you give</h2></div>
     <p class="lede" data-i18n="s3.lede">Scan the code with your phone, or open the app on this device.</p>
 
     <!-- Desktop: the two live donation codes the Foundation already publishes on its
@@ -618,12 +622,11 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       </a>
     </div>
 
-    <p class="alt"><a href="https://www.hollows.org/zh-Hant-HK/donate/monthly-donation/" target="_top" rel="noopener" data-i18n="s3.monthly">Give monthly instead</a></p>
   </section>
 
   <!-- ── 4 · claim your receipt ────────────────────────────────── -->
   <section class="panel" id="receipt" aria-labelledby="rch">
-    <h2 id="rch" data-i18n="rc.h">Claim your receipt</h2>
+    <div class="step"><span class="step-n" aria-hidden="true">5</span><h2 id="rch" data-i18n="rc.h">Claim your receipt</h2></div>
     <p class="lede" data-i18n="rc.lede">Three details: the name for the receipt, an email address, and the reference from your payment.</p>
     <p class="hint" data-i18n="rc.threshold">A receipt is issued once your gifts for the year of assessment reach HK$100.</p>
 
@@ -659,11 +662,11 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
 
   </section>
 
-  <p class="fine" data-i18n="foot.legal">* What you may deduct rests with the Inland Revenue Department. The cap is 35% of assessable income or profits; the tax saved is roughly the deductible amount × your rate, up to 17%.</p>
+  <p class="fine" data-i18n="foot.legal">Based on IRD tax rates and info for the relevant assessment year; for general reference only.</p>
 
       <details class="q disc-global" id="disclaimer">
       <summary data-i18n="rc.disc.summary">Disclaimer</summary>
-      <p data-i18n="rc.disc.body">An estimate only. Not tax advice, and no substitute for professional advice. It follows Inland Revenue Department rules for the year of assessment ending 31 March, covers the deduction for recognised charitable donations only, and allows nothing for other deductions, allowances or tax reductions. It does not cover profits tax, personal assessment or joint assessment. What you may deduct, and what you pay, rest with the Inland Revenue Department. The calculator collects and stores nothing; the name, email and reference you give here are used only to match your donation and issue your receipt.</p>
+      <p data-i18n-html="rc.disc.body">Based on IRD tax rates and info for the relevant assessment year; for general reference only.<br>Does not collect, record, or store entered data.<br>Estimates tax using progressive or standard rates (whichever is lower); actual results depend on the IRD.<br>Not formal financial/tax advice; refer to the Hong Kong Inland Revenue Department website or a professional.<br>The Fred Hollows Foundation (HK) Limited assumes no liability for use or reliance.</p>
     </details>
 
   <div id="dbg" aria-hidden="true"></div>
@@ -690,7 +693,11 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     r15: {lo:2132500, hi:5000000},
     r16: {lo:5000000, hi:10000000}
   };
-  var st = {amount:1300, band:"r17", mode:"once", months:12, exact:0};
+  var st = {amount:1300, band:"r17", mode:"once", exact:0};
+  /* Monthly is a full year of gifts. The client slide-2 note removes the
+     months control, so the annual deduction is amount x 12 — stated in the
+     caption, never silently assumed. */
+  var MONTHS = 12;
   var touched = false, lastH = 0, sent = {};
 
   /* ============================================================
@@ -719,8 +726,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s1.quickamt": "常用金額",
       "s1.quickmonths": "常用月數",
       "s1.quicklab": "或",
-      "s1.months.label": "本課稅年度的捐款月數",
-      "s1.months.hint": "課稅年度至 3 月 31 日止；扣稅按全年捐款總額計算。",
+      "s1.min": "捐款金額達到或超過 HK$100 可獲得稅收減免。",
       "s1.band.label": "您全年應評稅入息（大約）",
       "s1.band.hint": "未扣除免稅額（以 HK$145,000 估算）。",
       "s1.band.aria": "您全年應評稅入息（大約）",
@@ -763,7 +769,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s2.benefit": "您捐 HK$1,300，全數可作認可慈善捐款扣除。每捐 HK$100，實際付出約 HK$83。",
       "s2.assume.def": "假設入息 HK$345,000 – 2,132,500。",
       "s2.cap.def": "扣稅上限為應評稅入息的 35%（全年合計）；一般捐款不會觸及上限。",
-      "s2.scope": "只估算個人在薪俸稅下的捐款扣稅，並非稅務建議。",
+      "s2.min": "捐款金額達到或超過 HK$100 可獲得稅收減免。",
       "s2.faq.label": "常見問題",
       "s2.spouse.q": "夫婦的扣稅額可否合併使用？",
       "s2.spouse.a": "可以，但只限未用的部分。您未能用盡的扣稅額（包括超出 35% 上限而未扣除的部分），配偶可在其 BIR60 報稅表內申報；配偶本人的申報同樣以 35% 為上限，上限按其本人的入息或利潤計算，因此未用的扣稅額不能全數轉移。",
@@ -776,7 +782,6 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s3.alipay.sub": "開啟 AlipayHK 完成捐款",
       "s3.card.nm": "信用卡",
       "s3.card.sub": "以信用卡捐款",
-      "s3.monthly": "改為每月捐款",
       "rc.h": "索取扣稅收據",
       "rc.lede": "收據抬頭、電郵、付款參考編號。",
       "rc.threshold": "全年捐款總額滿 HK$100 即發出收據。",
@@ -791,8 +796,8 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "rc.submit": "提交收據申請",
       "rc.keep": "請保留收據六年；稅務局可能要求查閱。",
       "rc.disc.summary": "免責聲明",
-      "rc.disc.body": "僅為估算，並非稅務建議，亦不能取代專業意見。估算依稅務局截至 3 月 31 日止課稅年度的規定，只計入認可慈善捐款的扣稅，並無計及其他扣除、免稅額或稅務寬減；亦不涵蓋利潤稅、個人入息課稅或夫婦合併評稅。實際可扣除金額及應繳稅款以稅務局評定為準。本計算機不收集、不儲存任何資料；您在此提供的姓名、電郵及付款參考編號，只用於核對捐款及發出收據。",
-      "foot.legal": "* 以稅務局評定為準。上限為應評稅入息或利潤的 35%；節省稅款約為可扣除金額 × 適用稅率（最高 17%）。",
+      "rc.disc.body": "根據稅務局相關課稅年度資料估算，僅供一般參考.<br>不會收集、記錄或儲存任何輸入資料.<br>以累進稅率或標準稅率（以較低者為準）估算應繳稅款；最終以稅務局核定為準。<br>不構成專業意見，詳情請參閱香港稅務局網頁或諮詢顧問.<br>護瞳行動（香港）有限公司概不承擔相關法律責任。",
+      "foot.legal": "根據稅務局相關課稅年度資料估算，僅供一般參考.",
       "band.unknown": "不確定",
       "band.r0": "HK$145,000 以下",
       "band.r2": "HK$145,000 – 195,000",
@@ -863,8 +868,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s1.quickamt": "Quick amounts",
       "s1.quickmonths": "Quick month counts",
       "s1.quicklab": "or",
-      "s1.months.label": "Months given this year of assessment",
-      "s1.months.hint": "The year of assessment ends 31 March. The deduction uses your total for that year.",
+      "s1.min": "Donation amount at HK$100 or above will receive tax deduction receipt",
       "s1.band.label": "Your assessable income this year, roughly",
       "s1.band.hint": "Before allowances (HK$145,000 assumed).",
       "s1.band.aria": "Your assessable income this year, roughly",
@@ -907,7 +911,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s2.benefit": "You give HK$1,300, all of it deductible. Every HK$100 costs you about HK$83.",
       "s2.assume.def": "Income assumed HK$345,000 – 2,132,500.",
       "s2.cap.def": "The cap is 35% of assessable income for the year; an ordinary gift does not reach it.",
-      "s2.scope": "One person, salaries tax only. An estimate, not tax advice.",
+      "s2.min": "Donation amount at HK$100 or above will receive tax deduction receipt",
       "s2.faq.label": "Common questions",
       "s2.spouse.q": "Can a couple combine the deduction?",
       "s2.spouse.a": "Partly. What you cannot use — including the part above the 35% cap — your spouse may claim on their own BIR60. Their claim is capped at 35% of their own income or profits, so an unused deduction does not pass across in full.",
@@ -920,7 +924,6 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s3.alipay.sub": "Open AlipayHK and give",
       "s3.card.nm": "Credit card",
       "s3.card.sub": "Pay by card",
-      "s3.monthly": "Give monthly instead",
       "rc.h": "Claim your receipt",
       "rc.lede": "Name, email, and your payment reference.",
       "rc.threshold": "A receipt follows once your gifts for the year reach HK$100.",
@@ -935,8 +938,8 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "rc.submit": "Request my receipt",
       "rc.keep": "Keep the receipt for six years — the IRD may ask to see it.",
       "rc.disc.summary": "Disclaimer",
-      "rc.disc.body": "An estimate only. Not tax advice, and no substitute for professional advice. It follows Inland Revenue Department rules for the year of assessment ending 31 March, covers the deduction for recognised charitable donations only, and allows nothing for other deductions, allowances or tax reductions. It does not cover profits tax, personal assessment or joint assessment. What you may deduct, and what you pay, rest with the Inland Revenue Department. The calculator collects and stores nothing; the name, email and reference you give here are used only to match your donation and issue your receipt.",
-      "foot.legal": "* The IRD decides what you may deduct. Cap 35% of assessable income or profits; tax saved ≈ deductible × your rate, up to 17%.",
+      "rc.disc.body": "Based on IRD tax rates and info for the relevant assessment year; for general reference only.<br>Does not collect, record, or store entered data.<br>Estimates tax using progressive or standard rates (whichever is lower); actual results depend on the IRD.<br>Not formal financial/tax advice; refer to the Hong Kong Inland Revenue Department website or a professional.<br>The Fred Hollows Foundation (HK) Limited assumes no liability for use or reliance.",
+      "foot.legal": "Based on IRD tax rates and info for the relevant assessment year; for general reference only.",
       "band.unknown": "not sure",
       "band.r0": "below HK$145,000",
       "band.r2": "HK$145,000 – 195,000",
@@ -1011,10 +1014,6 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     if (v) for (var p in v) s = s.split("{" + p + "}").join(v[p]);
     return s;
   }
-  function monthWord(n){
-    n = String(n);
-    return t(n === "1" ? "d.months.one" : "d.months.n", {n: n});
-  }
   /* Swap every user-facing string in place. Nothing is re-fetched and the
      frame is never re-loaded — this is the same discipline the height config
      already uses (docs/INTERFACE.md §4). The tax engine is untouched: render()
@@ -1028,9 +1027,6 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     $$("[data-i18n-ph]").forEach(function(e){ e.setAttribute("placeholder", t(e.getAttribute("data-i18n-ph"))); });
     $$("[data-i18n-aria]").forEach(function(e){ e.setAttribute("aria-label", t(e.getAttribute("data-i18n-aria"))); });
     $$("[data-i18n-alt]").forEach(function(e){ e.setAttribute("alt", t(e.getAttribute("data-i18n-alt"))); });
-    /* a month count is a value, not copy: one template, singular kept */
-    $$("#months option").forEach(function(o){ o.textContent = monthWord(o.value); });
-    $$("[data-mo]").forEach(function(b){ b.textContent = monthWord(b.getAttribute("data-mo")); });
     render();
     scheduleHeight();
   }
@@ -1042,7 +1038,6 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
   function fmt(n){ return Math.round(n).toLocaleString("en-US"); }
   function money(n){ return "HK$" + fmt(n); }
   function pct(x){ var v = Math.round(x*1000)/10; return (Math.abs(v - Math.round(v)) < 1e-9 ? Math.round(v) : v) + "%"; }
-  function clampMonths(v){ var n = parseInt(v,10); if (isNaN(n)) return 12; return Math.min(Math.max(n,1),12); }
   function digits(s){ var d = String(s).replace(/[^0-9]/g,""); return d === "" ? 0 : Math.min(parseInt(d,10), 99999999); }
 
   /* ============================================================
@@ -1192,13 +1187,19 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
      No state crosses between parts: the QR is amountless, so the payment part
      needs nothing from the calculator. That is deliberate — it keeps every
      embed stateless and means no donor figure ever crosses a frame boundary. */
-  var part = qs.get("part");
+  /* `all` is the one-link arrangement: calculator -> result -> payment ->
+     receipt in one document, separated exactly as the design already
+     separates them. It is also the DEFAULT, so the link Kevin sends needs no
+     parameter at all. The four single-part embeds still work unchanged and
+     remain the recommended production arrangement (docs/INTERFACE.md §2). */
+  var part = qs.get("part") || "all";
   var PART_SECTIONS = {
     input:   ["calculator"],
     result:  ["result"],
     calc:    ["calculator","result"],
     pay:     ["payment"],
-    receipt: ["receipt"]
+    receipt: ["receipt"],
+    all:     ["calculator","result","payment","receipt"]
   };
   if (part && PART_SECTIONS[part]) {
     document.body.setAttribute("data-part", part);
@@ -1236,7 +1237,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
   function render(){
     var b = BANDS[st.band];
     var once = digits(st.amount);
-    var months = clampMonths(st.months);
+    var months = MONTHS;
     var annual = st.mode === "monthly" ? once * months : once;
     var exactInc = st.exact > 0 ? st.exact : 0;
     var isUnknown = st.band === "unknown";
@@ -1271,6 +1272,13 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       }
       isRange = annual > 0 && savedLow !== savedHigh;
     }
+    /* Below HK$100 there is no deduction to estimate. The figure is NOT
+       clamped: the donor keeps what they typed and reads the client's own
+       sentence instead of a number. */
+    var belowMin = once > 0 && once < 100;
+    $("#result").classList.toggle("is-below-min", belowMin);
+    var mn = $("#min-note"); if (mn) mn.hidden = !belowMin;
+
     var netLow = annual - savedHigh, netHigh = annual - savedLow;
     var rateLow = annual > 0 ? savedLow / annual : 0;
     var rateHigh = annual > 0 ? savedHigh / annual : 0;
@@ -1315,15 +1323,17 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     $("#gift-out").textContent = money(annual);
 
     /* The label may only promise what the figure is. A range is visibly a
-       range ("−X to −Y") and the caption names its source, so the plain label
+       range ("X to Y") and the caption names its source, so the plain label
        is the honest one. A single figure that the 35% cap has already limited
        IS the most this donor can save, so "at most" is true there; otherwise
        the figure is exact and the plain label fits it too. */
     $("#saved-label").textContent = (!isRange && capped && annual > 0)
       ? t("d.saved.most") : t("d.saved.once");
-    $("#saved").textContent = annual <= 0 ? "−HK$0"
-      : isRange ? "−" + money(savedLow) + t("d.range.sep") + "−" + money(savedHigh)
-      : "−" + money(savedHigh);
+    /* the client's fifth note: the saving is money you keep, so it reads
+       positive — HK$182, never −HK$182. */
+    $("#saved").textContent = annual <= 0 ? money(0)
+      : isRange ? money(savedLow) + t("d.range.sep") + money(savedHigh)
+      : money(savedHigh);
     $("#saved").classList.toggle("is-range", isRange);
 
     /* the rate word: marginal only where the saving really is marginal (one
@@ -1389,7 +1399,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     /* announce once, settled */
     clearTimeout(annT);
     annT = setTimeout(function(){
-      $("#announce").textContent =
+      $("#announce").textContent = belowMin ? t("s2.min") :
         (st.mode === "monthly"
           ? t("d.announce.monthly", {a: money(once), n: months, total: money(annual)})
           : t("d.announce.once", {v: money(annual)}))
@@ -1409,9 +1419,6 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     $$("[data-amt]").forEach(function(b){
       b.classList.toggle("is-on", String(st.amount) === String(b.getAttribute("data-amt")));
     });
-    $$("[data-mo]").forEach(function(b){
-      b.classList.toggle("is-on", String(clampMonths(st.months)) === String(b.getAttribute("data-mo")));
-    });
   }
   /* ---------- events ---------- */
   var started = false;
@@ -1424,11 +1431,13 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
   }
   var resultT = 0;
   function resultShown(){
+    /* below the floor no result is shown, so no result event is claimed */
+    if (digits(st.amount) > 0 && digits(st.amount) < 100) return;
     clearTimeout(resultT);
     resultT = setTimeout(function(){
       /* Coarse only. `exact` says whether the donor supplied an income figure —
          never the figure, never a rate, never an amount. */
-      var annual = digits(st.amount) * (st.mode === "monthly" ? clampMonths(st.months) : 1);
+      var annual = digits(st.amount) * (st.mode === "monthly" ? MONTHS : 1);
       var inc = st.exact > 0 ? st.exact : (st.band === "unknown" ? 0 : BANDS[st.band].lo);
       track("calc_result_shown", {
         band: st.band === "unknown" ? "unknown" : "band",
@@ -1463,20 +1472,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     r.addEventListener("change", function () {
       firstTouch(); touched = true;
       st.mode = r.value;
-      $("#months-field").hidden = st.mode !== "monthly";
       render(); resultShown();
-    });
-  });
-  $("#months").addEventListener("change", function (e) {
-    touched = true; st.months = clampMonths(e.target.value);
-    e.target.value = String(st.months);
-    render(); resultShown();
-  });
-  $$("[data-mo]").forEach(function (b) {
-    b.addEventListener("click", function () {
-      st.months = clampMonths(b.dataset.mo);
-      $("#months").value = String(st.months);
-      touched = true; render(); resultShown();
     });
   });
   $$("input[name=band]").forEach(function (r) {
@@ -1648,7 +1644,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       event: "fhf_init",
       host_page: (document.referrer || "").split("#")[0] || "",
       embed_url: location.href,
-      part: part || "full",
+      part: part,
       lang: L
     });
     window.dataLayer.push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
