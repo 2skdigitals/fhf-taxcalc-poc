@@ -100,6 +100,11 @@ h2{
   font-size:var(--t-eyebrow);font-weight:700;line-height:1;
   font-variant-numeric:tabular-nums;
 }
+/* Payment and receipt carry a numeral only inside the combined document, where
+   they are steps 4 and 5 of one journey. Embedded alone they render exactly as
+   they did before ?part=all existed — no renumbering of the split blocks. */
+body:not([data-part="all"]) #payment > .step > .step-n,
+body:not([data-part="all"]) #receipt > .step > .step-n{display:none}
 
 /* ── surfaces: one hairline, generous inside ───────────────── */
 .card{

@@ -31,7 +31,7 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 | 1a | Calculator only | `/embed/?part=input` | **1040px** | **1040px** | 974 (at 820px, monthly) | 974 (at 820px, monthly) |
 | 1b | Result only | `/embed/?part=result` | **890px** | **890px** | 833 (at 900px) | 833 (at 900px) |
 | 2 | Payment | `/embed/?part=pay` | **580px** | **580px** | 523 (at 900px) | 523 (at 900px) |
-| 3 | Receipt | `/embed/?part=receipt` | **810px** | **910px** | 747 (at 390px) | 852 (at 320px) |
+| 3 | Receipt | `/embed/?part=receipt` | **810px** | **910px** | 746 (at 320px) | 852 (at 320px) |
 
 **Quoted at the five widths the client asked for (content height, px) — 20 Nov 2026**
 
@@ -41,8 +41,8 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 | `?part=input` · en | 845 | 808 | 970 | 974 | 974 |
 | `?part=result` · zh | 775 | 751 | 823 | 833 | 833 |
 | `?part=result` · en | 796 | 751 | 823 | 833 | 833 |
-| `?part=pay` · zh/en | 462 | 463 | 501 | 523 | 523 |
-| `?part=receipt` · zh | 746 | 747 | 682 | 687 | 687 |
+| `?part=pay` · zh/en | 462 | 462 | 501 | 523 | 523 |
+| `?part=receipt` · zh | 746 | 746 | 682 | 687 | 687 |
 | `?part=receipt` · en | 852 | 787 | 682 | 687 | 687 |
 | `?part=calc` · zh | 1576 | 1465 | 1708 | 1722 | 1722 |
 | `?part=calc` · en | 1702 | 1547 | 1728 | 1742 | 1742 |

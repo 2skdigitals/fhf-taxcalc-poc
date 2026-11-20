@@ -69,7 +69,7 @@ printed by `qa/sweep_heights.py` on every run.
 | `?part=input` | 1040 / 1040 | 974 @820 / 974 @820 |
 | `?part=result` | 890 / 890 | 833 @900 / 833 @900 |
 | `?part=pay` | 580 / 580 | 523 @900 / 523 @900 |
-| `?part=receipt` | 810 / 910 | 747 @390 / 852 @320 |
+| `?part=receipt` | 810 / 910 | 746 @320 / 852 @320 |
 
 **The combined frame is 2,811px zh / 2,927px en at its tallest reachable state** — inside a sane iframe,
 but a 2.9m-pixel-tall block on a phone is a long scroll inside a frame. Recommendation stands: use
