@@ -53,6 +53,11 @@ check("the live combined URL answers 200", [] if status == 200 else [f"status {s
 MUST = {
     "white ground token": "--ground:#fff;",
     "56rem column": ".wrap{max-width:56rem",
+    "the two-rail desktop grid": "grid-template-columns:repeat(2,minmax(0,1fr))",
+    "the AlipayHK QR tile": "../assets/logos/alipayhk.png",
+    "the credit-card tile": 'data-rail="card"',
+    "the payment lede names both rails that are left":
+        "Scan the AlipayHK code with your phone, or pay by credit card on the Foundation's donation page.",
     "the HK$100 floor line": "Donation amount at HK$100 or above will receive tax deduction receipt",
     "the floor note element": 'id="min-note"',
     "the floor hint on the field": 'id="gift-min"',
@@ -69,6 +74,13 @@ missing = [k for k, v in MUST.items() if v not in body]
 check(f"{len(MUST)} markers of this pass are in the live document", missing)
 
 MUST_NOT = {
+    # 21 Nov: PayMe was dropped. Every trace of it must stay gone from the served bytes.
+    "the dropped rail's name": "PayMe",
+    "its QR asset": "payme.png",
+    "its mobile sub-label key": "s3.payme.sub",
+    "its CSS rule": "r-payme",
+    "its rail value": 'data-rail="payme"',
+    "its alt-text key": "s3.qr.alt.payme",
     "months select": 'id="months"',
     "months field": 'id="months-field"',
     "clampMonths": "clampMonths",

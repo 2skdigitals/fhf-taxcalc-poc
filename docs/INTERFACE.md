@@ -12,7 +12,7 @@ If a line here is wrong, the build is wrong — this document is the boundary be
 | It is | It is not |
 |---|---|
 | The interactive calculator (amount, band, months → estimate) | The page hero, promo banner, FAQ or any editorial copy |
-| The three payment rails + QR display | A payment processor (the money moves inside PayMe / AlipayHK) |
+| The payment rails (AlipayHK QR + credit card) | A payment processor (the money moves inside AlipayHK, or on the Foundation's own card page) |
 | The receipt-request capture form | The receipt generator / CRM (that is the backend, Phase 1) |
 | A postMessage event source for the host's GTM | An analytics implementation of its own |
 
@@ -26,14 +26,14 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 
 | # | Block | URL | Height · zh-HK | Height · en | Content peak zh-HK | Content peak en |
 |---|---|---|---|---|---|---|
-| 0 | **One link (all four)** | `/embed/?part=all` (also the bare `/embed/`) | **2880px** | **2990px** | 2811 (at 900px, monthly) | 2927 (at 320px, monthly) |
+| 0 | **One link (all four)** | `/embed/?part=all` (also the bare `/embed/`) | **2880px** | **2990px** | 2765 (at 900px, monthly) | 2878 (at 320px, monthly) |
 | 1 | Calculator + result | `/embed/?part=calc` | **1800px** | **1800px** | 1722 (at 900px, monthly) | 1742 (at 900px, monthly) |
 | 1a | Calculator only | `/embed/?part=input` | **1040px** | **1040px** | 974 (at 820px, monthly) | 974 (at 820px, monthly) |
 | 1b | Result only | `/embed/?part=result` | **890px** | **890px** | 833 (at 900px) | 833 (at 900px) |
-| 2 | Payment | `/embed/?part=pay` | **580px** | **580px** | 523 (at 900px) | 523 (at 900px) |
+| 2 | Payment | `/embed/?part=pay` | **580px** | **580px** | 477 (at 820px) | 503 (at 820px) |
 | 3 | Receipt | `/embed/?part=receipt` | **810px** | **910px** | 746 (at 320px) | 852 (at 320px) |
 
-**Quoted at the five widths the client asked for (content height, px) — 20 Nov 2026**
+**Quoted at the five widths the client asked for (content height, px) — 21 Nov 2026**
 
 | Block | 320 | 390 | 768 | 1024 | 1440 |
 |---|---|---|---|---|---|
@@ -41,13 +41,23 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 | `?part=input` · en | 845 | 808 | 970 | 974 | 974 |
 | `?part=result` · zh | 775 | 751 | 823 | 833 | 833 |
 | `?part=result` · en | 796 | 751 | 823 | 833 | 833 |
-| `?part=pay` · zh/en | 462 | 462 | 501 | 523 | 523 |
+| `?part=pay` · zh | 388 | 388 | 473 | 477 | 477 |
+| `?part=pay` · en | 414 | 414 | 498 | 503 | 503 |
 | `?part=receipt` · zh | 746 | 746 | 682 | 687 | 687 |
 | `?part=receipt` · en | 852 | 787 | 682 | 687 | 687 |
 | `?part=calc` · zh | 1576 | 1465 | 1708 | 1722 | 1722 |
 | `?part=calc` · en | 1702 | 1547 | 1728 | 1742 | 1742 |
-| `?part=all` · zh | 2695 | 2586 | 2770 | 2811 | 2811 |
-| `?part=all` · en | 2927 | 2708 | 2790 | 2831 | 2831 |
+| `?part=all` · zh | 2621 | 2512 | 2742 | 2765 | 2765 |
+| `?part=all` · en | 2878 | 2660 | 2787 | 2811 | 2811 |
+
+> **Revised 21 Nov 2026 (PayMe dropped, `qa/apply_payme_removal_20261121.py`).** The payment block
+> keeps **AlipayHK and the credit card**; PayMe's QR tile, mobile row, both string-table entries, its
+> CSS rule and its rail value are gone. The desktop grid went from three columns to two equal ones,
+> and the card tile lost the generic `.card` panel it used to sit in, so the QR and the card are now
+> the same 190×148 box plus caption. Content peaks fell: **payment 523 → 477 (zh) / 503 (en)**, and
+> **`?part=all` 2,811 → 2,765 (zh) / 2,927 → 2,878 (en)**. **Declared heights are unchanged** —
+> 580 / 2880 / 2990 still cover the content with 77–112px of slack, so no CMS edit is needed and
+> nothing can clip. The 20 Nov revision note below stays as the record of that pass.
 
 > **Revised 20 Nov 2026 (client comment pass 2, `docs/CLIENT-COMMENTS-2-2026120.md`).** White ground,
 > 56rem desktop column, the HK$100 floor, the months control removed (monthly is now a fixed 12 months),
@@ -229,12 +239,19 @@ Then one GA4 Event tag per event name (or a single tag with `{{Event}}` as the e
 
 | Rail | Mechanism | Iframe behaviour |
 |---|---|---|
-| **PayMe** | static merchant QR, donor scans or saves the image, enters the amount in the app | Works. QR is an `<img>`; long-press save works on iOS/Android inside a frame |
-| **AlipayHK** | same | Works |
+| **AlipayHK** | static merchant QR, donor scans or saves the image, enters the amount in the app | Works. QR is an `<img>`; long-press save works on iOS/Android inside a frame |
 | **Credit card** | `<a href="https://www.hollows.org/zh-Hant-HK/donate/" target="_top">` | **Must leave the frame.** With no `sandbox`, `target="_top"` always works. With `sandbox`, it needs `allow-top-navigation-by-user-activation` |
-| Wallet **app open** (deep link) | `payme://`, `alipays://` | **Unreliable inside any iframe.** iOS Safari blocks custom schemes from a subframe; Chrome needs a user gesture and often a top-level navigation. This is why the QR is the primary path, not the deep link |
+| Wallet **app open** (deep link) | `alipays://` | **Unreliable inside any iframe.** iOS Safari blocks custom schemes from a subframe; Chrome needs a user gesture and often a top-level navigation. This is why the QR is the primary path, not the deep link |
 
-The widget posts a `deeplink` message **before** attempting navigation, because a successful app-open destroys the page that would have reported it. Absence of the follow-up `result` message is the success signal.
+PayMe was **dropped from the page on 21 Nov 2026** on Kevin's instruction; its
+`assets/logos/payme.png` is left on disk, unreferenced, so a revert is one markup block rather than a
+re-crop. The two remaining rails are the QR (desktop) and the tap-through row (phone) — one code, one
+card, the same 190×148 tile.
+
+The widget posts a `deeplink` message **before** attempting navigation (only if a host ever adds a
+`data-deeplink` control — the POC bench that used it is stripped), because a successful app-open
+destroys the page that would have reported it. Absence of the follow-up `result` message is the
+success signal.
 
 ---
 

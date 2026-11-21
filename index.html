@@ -61,14 +61,14 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
     <tbody>
       <tr><td><b>1 · Calculator</b></td><td><code id="p1">/embed/?part=input</code></td><td><b>1040px</b></td><td>775 – 974</td></tr>
       <tr><td><b>2 · Result</b></td><td><code id="p2">/embed/?part=result</code></td><td><b>890px</b></td><td>751 – 833</td></tr>
-      <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>580px</b></td><td>442 – 523</td></tr>
+      <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>580px</b></td><td>367 – 503</td></tr>
       <tr><td><b>4 · Receipt</b></td><td><code id="p4">/embed/?part=receipt</code></td><td><b>810px</b> / 910 en</td><td>661 – 852</td></tr>
       <tr><td><b>1+2 combined</b></td><td><code id="p5">/embed/?part=calc</code></td><td><b>1800px</b></td><td>1547 – 1742</td></tr>
-      <tr><td><b>All four combined</b></td><td><code id="p6">/embed/?part=all</code></td><td><b>2880px</b> / 2990 en</td><td>2528 – 2927</td></tr>
+      <tr><td><b>All four combined</b></td><td><code id="p6">/embed/?part=all</code></td><td><b>2880px</b> / 2990 en</td><td>2454 – 2878</td></tr>
     </tbody>
   </table>
   <p class="lede" style="margin:-6px 0 10px;font-size:13px;color:#68707b">These are the worst cases across every width their page actually produces (iframe 328px on a small phone → 1280px on a wide desktop), plus margin. If the component can take a <b>different height per breakpoint</b>, tell us and we'll hand you a two-number set instead — that removes the remaining vertical slack on desktop.</p>
-  <p class="lede" style="margin:0 0 34px;font-size:13px;color:#68707b">All four also work as <b>one</b> document: <code>/embed/?part=all</code> — and a bare <code>/embed/</code> now defaults to it. It is 2,811px (zh) / 2,927px (en) at its tallest reachable state, so it fits a single frame; it is still a tall frame on a phone, which is why the four-block split stays the recommended arrangement.</p>
+  <p class="lede" style="margin:0 0 34px;font-size:13px;color:#68707b">All four also work as <b>one</b> document: <code>/embed/?part=all</code> — and a bare <code>/embed/</code> now defaults to it. It is 2,765px (zh) / 2,878px (en) at its tallest reachable state, so it fits a single frame; it is still a tall frame on a phone, which is why the four-block split stays the recommended arrangement.</p>
 
   <h2>3 · The test bench + the context preview</h2>
   <div class="cards">
@@ -92,7 +92,7 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
       <h3>Event verification →</h3>
       <p>The four blocks with the GTM bridge running live: every event, its payload, and a check that no amount ever appears. Paste a container ID to see them in GTM Preview.</p>
     </a>
-    <a class="card" href="./scan.html?rail=payme">
+    <a class="card" href="./scan.html?rail=alipay">
       <div class="n">QR proof</div>
       <h3>Scan landing →</h3>
       <p>Where the test QR points. Scan it with a phone to prove the code renders, scans and resolves.</p>
@@ -104,14 +104,14 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
     <li>Paste <b>Block 1</b> at <b>1120px</b>. Confirm it renders and that <b>no internal scrollbar</b> appears (that is the whole point of the height table — the content must fit the box).</li>
     <li>Repeat for Blocks 2–4 at 920 / 600 / 780px. If any block clips, tell us the width and we adjust the block, not the number.</li>
     <li>If the component sets a <b>sandbox</b>, add it in the bench first — then confirm the credit-card tile still leaves the iframe and lands on hollows.org/donate.</li>
-    <li>Press <b>“測試叫起 PayMe”</b> in the bench and read the message: does the browser let the frame open the wallet app, or is the QR the only mobile path?</li>
+    <li>On a phone width, tap the <b>AlipayHK</b> row and read the message: does the browser let the frame open the wallet app, or is the QR the only mobile path?</li>
     <li>Fill the receipt form and submit — <b>Checks</b> must turn <code>email_capture</code> to PASS.</li>
     <li>Paste a GTM container ID, load it, re-run — do the events appear in <b>dataLayer</b>?</li>
     <li>Press <b>Copy test report</b> and send it back.</li>
   </ol>
 
   <div class="note">
-    <b>Scope reminder.</b> This POC carries only the interactive calculator, the three donation rails and the receipt capture. Hero, promo banner, FAQ and page SEO stay with the client's Optimizely build. <b>eye-care.today is decommissioned and not used anywhere in this POC.</b> The QR codes are test codes that resolve to the scan page above — not merchant codes.
+    <b>Scope reminder.</b> This POC carries only the interactive calculator, the two donation rails (AlipayHK QR + credit card) and the receipt capture. Hero, promo banner, FAQ and page SEO stay with the client's Optimizely build. <b>eye-care.today is decommissioned and not used anywhere in this POC.</b> The QR codes are test codes that resolve to the scan page above — not merchant codes.
   </div>
 
   <footer>

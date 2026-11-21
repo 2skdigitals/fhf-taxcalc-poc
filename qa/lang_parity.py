@@ -54,7 +54,12 @@ BAK = ROOT / "embed" / "index.html.bak-pre-en-20261115"
 # Rebases on record: 18 Nov (payment reference, 7 strings) · 20 Nov (client comment pass 2 —
 # white ground, 56rem column, HK$100 floor, months control removed, positive saving, scope
 # line and monthly link removed, the client's own disclaimer; list in
-# docs/CLIENT-COMMENTS-2-2026120.md and qa/apply_client_comments2_2026120.py).
+# docs/CLIENT-COMMENTS-2-2026120.md and qa/apply_client_comments2_2026120.py) · 21 Nov
+# (PayMe dropped: the desktop QR figure, the mobile row, `s3.qr.alt.payme` and `s3.payme.sub`
+# in both tables, and `s3.lede` rewritten to name AlipayHK and the credit card — list in
+# qa/apply_payme_removal_20261121.py). What the gate is for survives each rebase: the ZH
+# build may only change where a change was signed off, and every assertion below still
+# fails on an accidental drift.
 FIXTURE = ROOT / "qa" / "_baseline_zh_pre_ref.html"
 if BAK.exists() and (not FIXTURE.exists() or FIXTURE.stat().st_mtime < BAK.stat().st_mtime):
     FIXTURE.write_bytes(BAK.read_bytes())

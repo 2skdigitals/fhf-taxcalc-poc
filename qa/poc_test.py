@@ -238,22 +238,47 @@ with sync_playwright() as pw:
         tag: el.tagName, rail: el.dataset.rail, href: el.getAttribute('href') || '',
         target: el.getAttribute('target') || '', rel: el.getAttribute('rel') || '',
         text: el.textContent.replace(/\\s+/g, ' ').trim()}))""")
-    check("three payment rails present", [] if len(rails) == 3 else [str(rails)])
+    check("two payment rails present", [] if len(rails) == 2 else [str(rails)])
     bad_tag = [r for r in rails if r["tag"] != "A"]
     check("every rail is a link, not a dead button", [] if not bad_tag else [str(bad_tag)])
     # Two kinds of destination are legitimate now: the charity's own pages, and the
-    # live wallet endpoints decoded from the codes they publish (19 Nov). Anything else
-    # is a rail that goes somewhere nobody agreed to.
-    ALLOWED = ("https://www.hollows.org/", "https://qr.payme.hsbc.com.hk/",
-               "https://render.alipay.hk/")
+    # one live wallet endpoint decoded from the code they publish (19 Nov). PayMe was
+    # dropped on 21 Nov, so its host is no longer an allow-listed destination — if it
+    # ever comes back it comes back through this list, deliberately.
+    ALLOWED = ("https://www.hollows.org/", "https://render.alipay.hk/")
     bad_href = [r for r in rails if not r["href"].startswith(ALLOWED)]
-    check("every rail points at hollows.org or a decoded wallet endpoint",
+    check("every rail points at hollows.org or the decoded wallet endpoint",
           [] if not bad_href else [str(bad_href)])
     pays = {r["rail"]: r["href"] for r in rails}
-    check("the two wallets carry the endpoints decoded from the published QR codes",
-          [] if (pays.get("payme", "").startswith("https://qr.payme.hsbc.com.hk/")
-                 and pays.get("alipay", "").startswith("https://render.alipay.hk/"))
-          else [str(pays)])
+    check("AlipayHK carries the endpoint decoded from the published QR code",
+          [] if pays.get("alipay", "").startswith("https://render.alipay.hk/") else [str(pays)])
+    # The desktop arrangement is the other half of the same block: one QR + one card
+    # tile, equal weight. A stale third tile or a dead PayMe <img> would pass the
+    # mobile-row checks above, so assert the grid itself.
+    grid = f.evaluate("""() => {
+        const g = document.querySelector('.paygrid');
+        const tiles = [...g.children].filter(c => getComputedStyle(c).display !== 'none');
+        return {n: tiles.length,
+                imgs: tiles.filter(t => t.querySelector('img')).length,
+                rails: tiles.map(t => t.dataset.rail || ''),
+                w: tiles.map(t => Math.round(t.getBoundingClientRect().width)),
+                h: tiles.map(t => Math.round(t.getBoundingClientRect().height)),
+                srcs: [...g.querySelectorAll('img')].map(i => i.getAttribute('src'))};
+    }""")
+    check("the desktop grid is one QR and one card tile, the same size",
+          [] if (grid["n"] == 2 and grid["imgs"] == 1 and grid["rails"] == ["", "card"]
+                 and len(set(grid["w"])) == 1 and len(set(grid["h"])) == 1) else [str(grid)])
+    # The whole point of this pass: the rail that was dropped leaves nothing behind.
+    hard = f.evaluate("""() => {
+        const t = document.getElementById('payment').textContent;
+        const srcs = [...document.images].map(i => i.getAttribute('src') || '');
+        return {text: /payme/i.test(t.replace(/payment/gi, '')),
+                imgs: srcs.filter(s => /payme/i.test(s.replace(/payment/gi, ''))),
+                rail: [...document.querySelectorAll('[data-rail]')].map(e => e.dataset.rail)};
+    }""")
+    check("no PayMe copy, image or rail value survives in the payment block",
+          [] if (not hard["text"] and not hard["imgs"]
+                 and not [r for r in hard["rail"] if r.startswith("payme")]) else [str(hard)])
     bad_top = [r for r in rails if r["target"] != "_top"]
     check("every rail escapes the frame (target=_top)", [] if not bad_top else [str(bad_top)])
     body = f.evaluate("() => document.body.innerText")

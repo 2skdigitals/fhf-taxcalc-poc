@@ -406,7 +406,7 @@ Open DevTools → Console. Type an amount. You must see <code>[fhf-taxcalc] calc
 <p><strong>The six Gate-2 KPIs are event ratios by definition</strong>, so nothing in the success model depends on the unreliable rows. But if anyone asks "how many people used the calculator", the honest answer is "we can count the events, not the people" — until the day we host the page itself, when the container becomes first-party and this caveat disappears.</p>
 <p>Two further limits worth saying out loud:</p>
 <ul>
-<li><strong>QR payments never report back.</strong> GA4 sees the QR view and the rail click; it never sees the money. There is no webhook and no redirect from PayMe/AlipayHK. Any "revenue" number is unmeasurable by design.</li>
+<li><strong>QR payments never report back.</strong> GA4 sees the QR view and the rail click; it never sees the money. There is no webhook and no redirect from AlipayHK. Any "revenue" number is unmeasurable by design.</li>
 <li><strong><code>receipt_fulfilled</code> is backend-only.</strong> It fires when ops marks a receipt as issued, not from the browser — it cannot be produced by this setup until Phase 1 ships.</li>
 </ul>
 <hr />

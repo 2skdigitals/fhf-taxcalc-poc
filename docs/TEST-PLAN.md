@@ -39,10 +39,8 @@ Confirm each renders and that **no internal scrollbar** appears. If one clips, r
 
 ### Step 4 — payment
 - Press the **credit-card** tile. It must **leave the iframe** and land on `hollows.org/zh-Hant-HK/donate/`. If the page loads *inside* the frame, `target="_top"` is being sandboxed away — record it.
-- Press **測試叫起 PayMe**. Read the message under the buttons. Either outcome is a finding:
-  - page stays and says the browser did not handle the scheme → deep links are unusable in this configuration, QR is the only mobile path;
-  - the app opens (or the browser asks) → deep link works here.
-- Scan the QR with a phone. It must resolve to the scan page and show which rail it was.
+- On a phone width, tap the **AlipayHK** row. It is an ordinary link to the wallet's own landing page, not a deep-link button: record whether it opens AlipayHK (or asks to), or stays in the browser — that decides whether the QR or the row is the phone path.
+- Scan the AlipayHK QR with a phone. It must resolve to the wallet endpoint and show which rail it was.
 
 ### Step 5 — receipt capture
 Fill name + email, tick consent, submit. The bench's **Checks** panel must turn `email_capture` to PASS.

@@ -236,7 +236,7 @@ The container runs inside a third-party iframe. Browsers partition storage for t
 
 Two further limits worth saying out loud:
 
-- **QR payments never report back.** GA4 sees the QR view and the rail click; it never sees the money. There is no webhook and no redirect from PayMe/AlipayHK. Any "revenue" number is unmeasurable by design.
+- **QR payments never report back.** GA4 sees the QR view and the rail click; it never sees the money. There is no webhook and no redirect from AlipayHK. Any "revenue" number is unmeasurable by design.
 - **`receipt_fulfilled` is backend-only.** It fires when ops marks a receipt as issued, not from the browser — it cannot be produced by this setup until Phase 1 ships.
 
 ---
