@@ -433,6 +433,11 @@ details.q li{margin:3px 0}
   padding:var(--s4);background:var(--white);
   border:1px solid var(--line-2);border-radius:6px;
 }
+/* 23 Nov: Kevin asked for the panel beside the trigger rather than beneath it —
+   it opened low and, on a fixed-height frame, ran past the declared height. */
+@media(min-width:641px){
+  .helppop{left:auto;right:0;top:-10px;max-width:470px;max-height:clamp(240px,calc(100vh - 250px),520px)}
+}
 .helppop h3{margin:0 22px var(--s2) 0;font-size:var(--t-sm);font-weight:700;
             letter-spacing:-.01em;color:var(--navy)}
 .helppop p{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:0;max-width:var(--measure)}
@@ -581,7 +586,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       <div id="exact-wrap" hidden>
         <label class="flabel" for="exact" data-i18n="s1.exact.label">Assessable income for the year</label>
         <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="exact" type="text" inputmode="numeric" autocomplete="off" value="" placeholder="e.g. 500,000" aria-describedby="exact-hint" data-i18n-ph="s1.exact.ph"></div>
-        <p class="hint" id="exact-hint" data-i18n="s1.exact.hint">One figure instead of a range, worked through the bands and the 35% cap. Never sent, never stored.</p>
+        <p class="hint" id="exact-hint" data-i18n="s1.exact.hint">Calculated with exact income, progressive tax rates, and 35% deduction cap. Processed locally; never stored.</p>
       </div>
 
       <button type="button" class="swap" id="exact-toggle" aria-controls="band-wrap exact-wrap" aria-expanded="false">
@@ -622,7 +627,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     <div class="assump-block" id="assumption">
       <p class="assump" id="assume-1">Assumed Net Chargeable Income Range: HK$345,000 – 2,132,500</p>
       <p class="assump" id="cap">2. 35% deduction cap: Your full donation qualifies for deduction</p>
-      <p class="assump" id="assume-3" data-i18n="s2.line3">3. Estimate for personal Salaries Tax only; does not constitute tax advice</p>
+      <p class="assump" id="assume-3">Estimate for personal Salaries Tax only; does not constitute tax advice</p>
     </div>
   </section>
 
@@ -703,13 +708,13 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
         <p class="hint" id="rref-hint" data-i18n="rc.ref.hint">The transaction ID in your payment app, or on your card receipt.</p>
         <p class="msg" id="rref-msg" hidden></p>
 
-        <!-- Where the donor finds the AlipayHK transaction ID. Two of Denise's
-             three screencaps are used, cropped from the same HK$1.00 test gift:
-             the success screen and the receipt record — the second one twice,
-             because the ID sits at the foot of a screen whose header is what
-             identifies the payment. The merchant-console capture (SC2.png) is
-             deliberately not used: it is the ops view, labelled "PayMe for
-             Business app", and it is not a path a donor can follow. -->
+        <!-- Where the donor finds the AlipayHK transaction ID. Both screencaps are
+             crops of Denise's donor-side payment record: the top of it, which
+             identifies the payment, and the foot of it, where the ID sits above
+             the barcode. Two captures were deliberately not used — the success
+             screen, which carries the donor's own avatar and a HK$1.00 test
+             amount under an HK$100 minimum, and the merchant-console view, which
+             is the ops screen and not a path a donor can follow. -->
         <div class="helppop" id="ref-help-panel" role="dialog" aria-labelledby="ref-help-title" hidden>
           <button type="button" class="hclose" data-help-close
                   aria-label="Close" data-i18n-aria="rc.help.close">&#10005;</button>
@@ -717,20 +722,14 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
           <p data-i18n="rc.help.intro">When the payment completes, AlipayHK files it under Transaction History — the transaction ID is the long string of letters and numbers at the foot of that record.</p>
           <ol class="hsteps">
             <li>
-              <span class="n" data-i18n="rc.help.s1t">Step 1</span>
-              <img loading="lazy" src="../assets/help/alipay-step-1.jpg" width="760" height="469"
-                   alt="AlipayHK payment confirmation screen" data-i18n-alt="rc.help.alt1">
-              <p data-i18n="rc.help.s1">The confirmation screen shows the amount and the charity — check it is the donation you just made, then tap Done.</p>
-            </li>
-            <li>
-              <span class="n" data-i18n="rc.help.s2t">Step 2</span>
-              <img loading="lazy" src="../assets/help/alipay-step-2.jpg" width="760" height="605"
+              <span class="n" data-i18n="rc.help.s2t">Step 1</span>
+              <img loading="eager" src="../assets/help/alipay-step-2.jpg" width="760" height="605"
                    alt="AlipayHK transaction detail page" data-i18n-alt="rc.help.alt2">
               <p data-i18n="rc.help.s2">Open the payment again from Transaction History: the detail page repeats the merchant, the amount and the time.</p>
             </li>
             <li>
-              <span class="n" data-i18n="rc.help.s3t">Step 3</span>
-              <img loading="lazy" src="../assets/help/alipay-step-3.jpg" width="760" height="202"
+              <span class="n" data-i18n="rc.help.s3t">Step 2</span>
+              <img loading="eager" src="../assets/help/alipay-step-3.jpg" width="760" height="202"
                    alt="The transaction ID at the foot of the record" data-i18n-alt="rc.help.alt3">
               <p data-i18n="rc.help.s3">At the bottom of that page, the code above the barcode is the transaction ID. Copy the whole string and paste it here.</p>
             </li>
@@ -840,7 +839,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s1.exact.back": "改以入息範圍計算",
       "s1.exact.label": "全年應評稅入息",
       "s1.exact.ph": "例如 500,000",
-      "s1.exact.hint": "由範圍改為單一數字，並計入累進稅級及 35% 上限。只用於本頁計算，不會傳送或儲存。",
+      "s1.exact.hint": "按實際入息、累進稅級及 35% 扣稅上限計算。僅於本機運算，不會上傳或儲存。",
       "s1.goto": "查看計算結果",
       "s1.updated": "結果已更新",
       "s2.h": "捐款扣稅計算結果",
@@ -850,7 +849,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s2.rate": "稅率",
       "s2.benefit": "您的 HK$1,300 捐款可全數扣稅，享約 HK$182 – 221 稅務扣減；只需約 HK$1,079 – 1,118 實際支持，即可成就全額100%救盲力量。",
       "s2.min": "捐款金額達到或超過 HK$100 可獲得稅收減免。",
-      "s2.line3": "3. 以上僅估算個人薪俸稅下的捐款扣稅，並不構成稅務建議",
+      "s2.line3": "以上僅估算個人薪俸稅下的捐款扣稅，並不構成稅務建議",
       "s3.h": "捐款方式",
       "s3.scan": "用手機掃描",
       "s3.qr.alt.alipay": "AlipayHK 捐款二維碼（護瞳行動）",
@@ -870,15 +869,12 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "rc.ref.help.btn": "如何找到 AlipayHK 交易編號",
       "rc.help.title": "如何找到 AlipayHK 交易編號",
       "rc.help.intro": "付款完成後，AlipayHK 會把該筆捐款存入「交易紀錄」；交易編號就是紀錄頁最底部的長串字母與數字。",
-      "rc.help.s1t": "第 1 步",
-      "rc.help.s1": "付款完成的畫面會顯示金額及受惠機構，確認是您剛完成的捐款，然後按「完成」。",
-      "rc.help.s2t": "第 2 步",
+      "rc.help.s2t": "第 1 步",
       "rc.help.s2": "在 AlipayHK 的「交易紀錄」找回這筆付款並開啟詳情頁，頁面會顯示受惠機構、金額及時間。",
-      "rc.help.s3t": "第 3 步",
+      "rc.help.s3t": "第 2 步",
       "rc.help.s3": "在該頁最底部，條碼上方的那串字元就是交易編號；請整段複製並貼到上方的付款參考編號欄。",
       "rc.help.outro": "以上畫面僅供參考；您的交易編號會出現在相同位置。",
       "rc.help.close": "關閉",
-      "rc.help.alt1": "AlipayHK 付款成功畫面",
       "rc.help.alt2": "AlipayHK 交易詳情頁",
       "rc.help.alt3": "交易詳情頁最底部的交易編號",
       "rc.consent": "本人同意護瞳行動使用上述資料核對捐款，並發出扣稅收據。",
@@ -909,16 +905,16 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "d.ratelabel.marginal": "邊際稅率",
       "d.ratelabel.standard": "標準稅率",
       "d.assume.empty": "尚未輸入捐款金額。",
-      "d.assume.exact": "1. 根據您輸入的全年應評稅入息 {inc} 計算",
+      "d.assume.exact": "根據您輸入的全年應評稅入息 {inc} 計算",
       "d.assume.unknown": "未指定入息範圍。",
       "d.assume.band": "假設全年應評稅入息範圍：{band}",
-      "d.capline.empty": "2. 扣稅上限為應評稅入息的 35%（全年合計）。",
-      "d.capline.exact.capped": "2. 35% 捐款扣稅上限：可扣除 {taxed}，其餘不能扣除",
-      "d.capline.exact.ok": "2. 35% 捐款扣稅上限：此捐款額可全數扣除",
-      "d.capline.unknown": "2. 已計 35% 捐款扣稅上限。",
-      "d.capline.zero": "2. 扣稅上限為應評稅入息的 35%（全年合計）；捐款仍可扣除，但沒有應繳稅款可減少。",
-      "d.capline.band.capped": "2. 35% 捐款扣稅上限：範圍下限可扣除 {d}，其餘不能扣除",
-      "d.capline.band.ok": "2. 35% 捐款扣稅上限：此捐款額可全數扣除",
+      "d.capline.empty": "扣稅上限為應評稅入息的 35%（全年合計）。",
+      "d.capline.exact.capped": "35% 捐款扣稅上限：可扣除 {taxed}，其餘不能扣除",
+      "d.capline.exact.ok": "35% 捐款扣稅上限：此捐款額可全數扣除",
+      "d.capline.unknown": "已計 35% 捐款扣稅上限。",
+      "d.capline.zero": "扣稅上限為應評稅入息的 35%（全年合計）；捐款仍可扣除，但沒有應繳稅款可減少。",
+      "d.capline.band.capped": "35% 捐款扣稅上限：範圍下限可扣除 {d}，其餘不能扣除",
+      "d.capline.band.ok": "35% 捐款扣稅上限：此捐款額可全數扣除",
       "d.benefit.empty": "輸入捐款金額後，即顯示實際付出。",
       "d.benefit.ok": "您的 {g} 捐款可全數扣稅，享約 {s} 稅務扣減；只需約 {n} 實際支持，即可成就全額100%救盲力量。",
       "d.benefit.capped": "您的 {g} 捐款的扣稅額受 35% 上限所限，享約 {s} 稅務扣減；只需約 {n} 實際支持，即可成就全額100%救盲力量。",
@@ -972,7 +968,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s1.exact.back": "Use an income range instead",
       "s1.exact.label": "Assessable income for the year",
       "s1.exact.ph": "e.g. 500,000",
-      "s1.exact.hint": "One figure instead of a range, worked through the bands and the 35% cap. Never sent, never stored.",
+      "s1.exact.hint": "Calculated with exact income, progressive tax rates, and 35% deduction cap. Processed locally; never stored.",
       "s1.goto": "Check the calculation result",
       "s1.updated": "Result updated",
       "s2.h": "Tax Deduction Summary",
@@ -982,7 +978,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s2.rate": "Rate",
       "s2.benefit": "Your HK$1,300 gift qualifies for full tax deduction (est. HK$182 \u2013 221 relief), meaning just HK$1,079 \u2013 1,118 net support delivers the full sight-saving impact.",
       "s2.min": "Donation amount at HK$100 or above will receive tax deduction receipt",
-      "s2.line3": "3. Estimate for personal Salaries Tax only; does not constitute tax advice",
+      "s2.line3": "Estimate for personal Salaries Tax only; does not constitute tax advice",
       "s3.h": "How you give",
       "s3.scan": "Scan with your phone",
       "s3.qr.alt.alipay": "AlipayHK donation QR code for The Fred Hollows Foundation",
@@ -1002,15 +998,12 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "rc.ref.help.btn": "How to find your AlipayHK transaction ID",
       "rc.help.title": "Finding your AlipayHK transaction ID",
       "rc.help.intro": "When the payment completes, AlipayHK files it under Transaction History \u2014 the transaction ID is the long string of letters and numbers at the foot of that record.",
-      "rc.help.s1t": "Step 1",
-      "rc.help.s1": "The confirmation screen shows the amount and the charity \u2014 check it is the donation you just made, then tap Done.",
-      "rc.help.s2t": "Step 2",
+      "rc.help.s2t": "Step 1",
       "rc.help.s2": "Open the payment again from Transaction History: the detail page repeats the merchant, the amount and the time.",
-      "rc.help.s3t": "Step 3",
+      "rc.help.s3t": "Step 2",
       "rc.help.s3": "At the bottom of that page, the code above the barcode is the transaction ID. Copy the whole string and paste it here.",
       "rc.help.outro": "The screens above are examples; your transaction ID appears in the same place.",
       "rc.help.close": "Close",
-      "rc.help.alt1": "AlipayHK payment confirmation screen",
       "rc.help.alt2": "AlipayHK transaction detail page",
       "rc.help.alt3": "The transaction ID at the foot of the record",
       "rc.consent": "I agree that the Foundation may use these details to match my gift and issue my tax receipt.",
@@ -1041,16 +1034,16 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "d.ratelabel.marginal": "Marginal rate",
       "d.ratelabel.standard": "Standard rate",
       "d.assume.empty": "No amount entered yet.",
-      "d.assume.exact": "1. Based on your entered Net Chargeable Income of {inc}",
+      "d.assume.exact": "Based on your entered Net Chargeable Income of {inc}",
       "d.assume.unknown": "No income range given.",
       "d.assume.band": "Assumed Net Chargeable Income Range: {band}",
-      "d.capline.empty": "2. The cap is 35% of assessable income for the year",
-      "d.capline.exact.capped": "2. 35% deduction cap: {taxed} is deductible, the rest is not",
-      "d.capline.exact.ok": "2. 35% deduction cap: Your full donation qualifies for deduction",
-      "d.capline.unknown": "2. 35% deduction cap applied",
-      "d.capline.zero": "2. The cap is 35% of assessable income for the year; the gift is still deductible, but there is no tax to reduce",
-      "d.capline.band.capped": "2. 35% deduction cap: {d} is deductible at the low end of your range",
-      "d.capline.band.ok": "2. 35% deduction cap: Your full donation qualifies for deduction",
+      "d.capline.empty": "The cap is 35% of assessable income for the year",
+      "d.capline.exact.capped": "35% deduction cap: {taxed} is deductible, the rest is not",
+      "d.capline.exact.ok": "35% deduction cap: Your full donation qualifies for deduction",
+      "d.capline.unknown": "35% deduction cap applied",
+      "d.capline.zero": "The cap is 35% of assessable income for the year; the gift is still deductible, but there is no tax to reduce",
+      "d.capline.band.capped": "35% deduction cap: {d} is deductible at the low end of your range",
+      "d.capline.band.ok": "35% deduction cap: Your full donation qualifies for deduction",
       "d.benefit.empty": "Enter an amount to see what it costs you.",
       "d.benefit.ok": "Your {g} gift qualifies for full tax deduction (est. {s} relief), meaning just {n} net support delivers the full sight-saving impact.",
       "d.benefit.capped": "Your {g} gift is deductible up to the 35% cap (est. {s} relief), meaning just {n} net support delivers the full sight-saving impact.",
@@ -1389,12 +1382,17 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     /* the numbered assumption. Line 1 is the premise — the band, or the figure
        the donor typed; line 2 the 35% cap, computed so it can never claim the
        gift is fully deductible once the cap bites; line 3 is static copy. */
-    $("#assume-1").textContent = annual <= 0 ? t("d.assume.empty")
+    /* numbering (23 Nov): with an exact income the three lines are 1-2-3; with a
+       band the premise line is unnumbered and the cap carries 1. */
+    var nx = exactInc ? "1. " : "";
+
+    $("#assume-1").textContent = nx + (annual <= 0 ? t("d.assume.empty")
       : exactInc ? t("d.assume.exact", {inc: money(exactInc)})
       : isUnknown ? t("d.assume.unknown")
-      : t("d.assume.band", {band: t("band." + st.band)});
+      : t("d.assume.band", {band: t("band." + st.band)}));
+    $("#assume-3").textContent = (exactInc ? "3. " : "2. ") + t("s2.line3");
 
-    $("#cap").textContent = annual <= 0
+    $("#cap").textContent = (exactInc ? "2. " : "1. ") + (annual <= 0
       ? t("d.capline.empty")
       : exactInc ? (capped
           ? t("d.capline.exact.capped", {taxed: money(taxed)})
@@ -1404,7 +1402,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
           ? t("d.capline.zero")
       : (capped
           ? t("d.capline.band.capped", {d: money(__fhfTax.deductible(annual, lo))})
-          : t("d.capline.band.ok"));
+          : t("d.capline.band.ok")));
 
     /* C6 — "you give this, you get that back". The sentence is the client's
        (23 Nov); every figure in it computes from the donor's own gift. Two

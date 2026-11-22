@@ -552,8 +552,12 @@ with sync_playwright() as pw:
             errs.append(f"panel escapes the frame: right {after['right']} of {after['frame']}")
         if after["h"] > after["vh"] * 0.75:
             errs.append(f"panel is {after['h']}px of a {after['vh']}px frame — a full-screen modal")
-        if len(after["steps"]) != 3 or len(after["imgs"]) != 3:
+        # Two steps since the confirmation-screen capture was withdrawn: it carried
+        # the donor's own avatar and a HK$1.00 test gift under an HK$100 minimum.
+        if len(after["steps"]) != 2 or len(after["imgs"]) != 2:
             errs.append(f"steps {after['steps']} imgs {len(after['imgs'])}")
+        if [t.strip() for t in after["steps"]] not in (["Step 1", "Step 2"], ["\u7b2c 1 \u6b65", "\u7b2c 2 \u6b65"]):
+            errs.append(f"step labels {after['steps']}")
         bad_img = [i for i in after["imgs"] if not i["ok"] or not i["alt"]]
         if bad_img:
             errs.append(f"image not loaded or missing alt: {bad_img}")
