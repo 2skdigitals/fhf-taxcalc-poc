@@ -318,6 +318,10 @@ details.q li{margin:3px 0}
 
 /* ── 3 · how you give ──────────────────────────────────────── */
 .disc-global{border-top:1px solid var(--line);margin-top:var(--s4);padding-top:var(--s3)}
+/* 23 Nov: the disclaimer is the page's fine print, so it takes the fine-print
+   size and the whole column. It was 15px inside a 510px measure — half the
+   column empty, and it read larger than the 13px notes directly above it. */
+details.q.disc-global p,details.q.disc-global ul{font-size:var(--t-cap);line-height:1.6;max-width:none}
 .rails{display:grid;border-top:var(--rule);margin-top:var(--s5)}
 /* ── payment: QR on a desktop, tap-through rows on a phone ──────────────────────
    A donor cannot scan the screen they are reading, so the two arrangements are
