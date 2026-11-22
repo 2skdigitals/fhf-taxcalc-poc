@@ -45,10 +45,53 @@ def fetch(path):
         return r.status, r.read().decode("utf-8"), url
 
 
+def fetch_status(path):
+    """HTTP status of an asset, without decoding it — the screencaps are JPEG."""
+    url = f"{BASE}{path}"
+    req = urllib.request.Request(url, headers={"Cache-Control": "no-cache",
+                                               "User-Agent": "fhf-verify/1.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status, len(r.read())
+    except Exception as e:                                     # noqa: BLE001
+        return f"error {e}", 0
+
+
+def strip_comments(s):
+    """The document with its comments removed, for the MUST_NOT scan.
+
+    Three of the strings this file bans are also its own record of why they are
+    banned: the CSS still says `was color:var(--orange-ink)`, the help-panel
+    comment names the merchant console as "PayMe for Business app", and the
+    removed chips are described as "quick-amount" in prose. A byte scan that
+    cannot tell a comment from a control reports a regression that is a
+    sentence — so comments are stripped before the absence check, and the
+    markers check above still runs against the raw bytes.
+    """
+    s = re.sub(r"/\*.*?\*/", " ", s, flags=re.S)      # CSS and JS block comments
+    s = re.sub(r"<!--.*?-->", " ", s, flags=re.S)     # HTML comments
+    s = re.sub(r"(?m)^\s*//.*$", " ", s)              # JS line comments
+    return s
+
+
 # ── 1 · the shipped document ─────────────────────────────────────────────────
 status, body, url = fetch("/embed/?part=all&lang=en")
 print(f"GET {url} → HTTP {status}, {len(body)} bytes\n")
 check("the live combined URL answers 200", [] if status == 200 else [f"status {status}"])
+
+# ── 1a · the served BYTES are the file in this working tree ──────────────────
+# A 200 and a matching marker only prove *a* build is being served. The hash
+# proves it is this one: GitHub Pages serves the file verbatim, so the two must
+# be identical, not merely similar.
+import hashlib
+import pathlib
+LOCAL = pathlib.Path(__file__).resolve().parent.parent / "embed" / "index.html"
+local_bytes = LOCAL.read_bytes()
+local_sha = hashlib.sha256(local_bytes).hexdigest()
+served_sha = hashlib.sha256(body.encode("utf-8")).hexdigest()
+check("the served document is byte-identical to embed/index.html",
+      [] if served_sha == local_sha else [f"served {served_sha[:16]} != local {local_sha[:16]}"],
+      f"sha256 {local_sha[:16]}…  {len(local_bytes)} bytes")
 
 MUST = {
     "white ground token": "--ground:#fff;",
@@ -69,6 +112,31 @@ MUST = {
     "the client's disclaimer line 5": "The Fred Hollows Foundation (HK) Limited assumes no liability for "
                                       "use or reliance.",
     "the client's Chinese disclaimer": "護瞳行動（香港）有限公司概不承擔相關法律責任。",
+    # 23 Nov: the design review pass. These four strings only exist in the file
+    # that was built — a cached copy of the previous deployment cannot have them.
+    "the 4px spacing scale": "--s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:32px;",
+    "the em measure": "--measure:34em;",
+    "the heading/card separation": ".card + .step{margin-top:var(--s6)}",
+    "the form's single rhythm": ".rform > *{margin-top:0}",
+    # 23 Nov: the client's section-by-section copy sheet.
+    "Section 1 heading (zh)": "請選擇並輸入您的捐款金額",
+    "Section 1 heading (en)": "Please select and input your donation amount",
+    "Section 2 heading (zh)": "請選擇您的收入範圍或輸入您的年薪",
+    "Section 2 heading (en)": "Please select your income range or input your yearly income",
+    "the single-allowance hint (en)": "Estimated based on a single person’s basic allowance of HK$145,000",
+    "the exact-income link": "Enter exact income instead",
+    "the CTA": "Check the calculation result",
+    "Section 3 heading (zh)": "捐款扣稅計算結果",
+    "Section 3 heading (en)": "Tax Deduction Summary",
+    "the donation label": "您的全額捐款",
+    "the brand caption (en)": "gift powers sight-saving work—with a tax deduction in return",
+    "the deduction label": "預計慈善捐款扣稅額",
+    "the 35% line, numbered": "2. 35% 捐款扣稅上限",
+    "the salaries-tax scope line": 'data-i18n="s2.line3"',
+    "the payment-reference help button": 'id="ref-help"',
+    "the help panel is a dialog": 'role="dialog"',
+    "the AlipayHK help screencap": "../assets/help/alipay-step-1.jpg",
+    "the help panel's third step": "../assets/help/alipay-step-3.jpg",
 }
 missing = [k for k, v in MUST.items() if v not in body]
 check(f"{len(MUST)} markers of this pass are in the live document", missing)
@@ -90,9 +158,34 @@ MUST_NOT = {
     "our draft disclaimer": "不能取代專業意見",
     "the monthly reminder link": 'data-i18n="s3.monthly"',
     "the scope reminder": 'data-i18n="s2.scope"',
+    # 23 Nov: the hover state pointed at a colour token that never existed.
+    "the dead hover colour": "var(--orange-ink)",
+    # 23 Nov: the client removed these outright, so their return is a regression.
+    "the quick-amount chips": "data-amt=",
+    "the chips' group label": "quick-amount",
+    "the 'what counts' disclosure": 'id="what-counts"',
+    "its summary (zh)": "哪些捐款才可扣稅",
+    "its summary (en)": "What counts as a deductible gift",
+    "the spouse FAQ": 'id="spouse"',
+    "its question (zh)": "夫婦的扣稅額可否合併使用",
+    "its question (en)": "Can a couple combine the deduction",
+    "the old CTA (zh)": "看實際付出",
+    "the old CTA (en)": "See what it costs you",
+    "the old band hint (zh)": "未扣除免稅額（以 HK$145,000 估算）",
+    "the removed gift ledger row": 'id="gift-out"',
 }
-present = [k for k, v in MUST_NOT.items() if v in body]
+body_code = strip_comments(body)
+present = [k for k, v in MUST_NOT.items() if v in body_code]
 check(f"{len(MUST_NOT)} removed things are absent from the live document", present)
+
+# ── 1b · the three help screencaps are served too ────────────────────────────
+# The widget now depends on assets/help/*.jpg. A deploy that pushes index.html and
+# forgets the images ships a popover with three dead boxes — and the page itself
+# still answers 200, so only fetching them proves it.
+for name in ("alipay-step-1.jpg", "alipay-step-2.jpg", "alipay-step-3.jpg"):
+    s_img, n_img = fetch_status(f"/assets/help/{name}")
+    check(f"the help screencap {name} is served", [] if s_img == 200 and n_img > 5000
+          else [f"status {s_img}, {n_img} bytes"], f"{n_img} bytes")
 
 # ── 2 · the live DOM ─────────────────────────────────────────────────────────
 with sync_playwright() as pw:
@@ -108,6 +201,12 @@ with sync_playwright() as pw:
             sections: [...document.querySelectorAll('section')]
                         .filter(s=>getComputedStyle(s).display!=='none').map(s=>s.id),
             saved: document.getElementById('saved').textContent,
+            net: document.getElementById('net').textContent,
+            nlabel: document.getElementById('net-label').textContent,
+            benefit: document.getElementById('benefit').textContent,
+            whatcounts: !!document.getElementById('what-counts'),
+            spouse: !!document.getElementById('spouse'),
+            help: !!document.getElementById('ref-help'),
             h: document.documentElement.scrollHeight,
             monthly: !!document.getElementById('months'),
             overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
@@ -122,6 +221,16 @@ with sync_playwright() as pw:
             errs.append(f"sections {d['sections']}")
         if "−" in d["saved"] or "HK$" not in d["saved"]:
             errs.append(f"saved {d['saved']!r}")
+        if d["net"] != "HK$1,300":
+            errs.append(f"the hero figure is not the donation: {d['net']!r}")
+        if d["nlabel"] != "Your donation":
+            errs.append(f"hero label {d['nlabel']!r}")
+        if "HK$1,300" not in d["benefit"] or "net support" not in d["benefit"]:
+            errs.append(f"benefit sentence {d['benefit'][:80]!r}")
+        if d["whatcounts"] or d["spouse"]:
+            errs.append(f"a removed block is back: what-counts={d['whatcounts']} spouse={d['spouse']}")
+        if not d["help"]:
+            errs.append("the transaction-ID help button is missing")
         if d["monthly"]:
             errs.append("a months control is still in the DOM")
         if d["overflow"]:

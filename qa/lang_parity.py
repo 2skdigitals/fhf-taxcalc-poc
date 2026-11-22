@@ -57,7 +57,12 @@ BAK = ROOT / "embed" / "index.html.bak-pre-en-20261115"
 # docs/CLIENT-COMMENTS-2-2026120.md and qa/apply_client_comments2_2026120.py) · 21 Nov
 # (PayMe dropped: the desktop QR figure, the mobile row, `s3.qr.alt.payme` and `s3.payme.sub`
 # in both tables, and `s3.lede` rewritten to name AlipayHK and the credit card — list in
-# qa/apply_payme_removal_20261121.py). What the gate is for survives each rebase: the ZH
+# qa/apply_payme_removal_20261121.py) · 23 Nov (the client's section-by-section copy
+# sheet: Section 1/2 headers, the chips and the "what counts" disclosure removed, the band
+# hint and note rewritten, Section 3 restructured around 您的全額捐款 with the gift row
+# removed and the assumption as a numbered block, the spouse FAQ removed, and the
+# transaction-ID popover added — 93 edits, list in qa/apply_client_copy_20261123.py).
+# What the gate is for survives each rebase: the ZH
 # build may only change where a change was signed off, and every assertion below still
 # fails on an accidental drift.
 FIXTURE = ROOT / "qa" / "_baseline_zh_pre_ref.html"
@@ -119,8 +124,8 @@ CAPTURE = """() => {
 }"""
 
 # the money surface: every figure a donor reads. Language may not move a digit here.
-MONEY_IDS = ["net", "net-label", "net-caption", "gift-out", "gift-label", "saved",
-             "saved-label", "rate", "rate-label", "cap", "benefit", "assumption",
+MONEY_IDS = ["net", "net-label", "net-caption", "saved", "saved-label", "rate",
+             "rate-label", "cap", "benefit", "assumption", "assume-1", "assume-3",
              "announce"]
 
 
@@ -196,6 +201,18 @@ def run_state(page, url, js):
         page.evaluate(js)
     page.wait_for_timeout(850)
     return page.evaluate(CAPTURE)
+
+
+def parity_digits(s):
+    """Digits that must match across languages.
+
+    全額100% is COPY, not a figure: the client's Chinese sentence states the
+    sight-saving claim as a percentage, and the authored English states the same
+    claim as "the full … impact". Neither is computed from the donor's input, so
+    it is normalised away here — and asserted as a claim in its own check below,
+    which is the part that can actually fail if one language loses it.
+    """
+    return digits_of((s or "").replace("100%", "FULL"))
 
 
 def digits_of(s):
@@ -299,8 +316,14 @@ with sync_playwright() as pw:
     # "year of assessment" became "the relevant assessment year" when the client's
     # approved disclaimer replaced our draft and their slide-2 note removed the
     # months hint that carried the full phrase — their wording governs.
-    terms = ["recognised charitable donation", "assessable income", "marginal rate",
-             "standard rate", "assessment year"]
+    # 23 Nov: "recognised charitable donation" left the build with the two blocks that
+    # carried it (the "what counts" disclosure and the old benefit sentence); the
+    # client's own sentence says 可全數扣稅 / "qualifies for full tax deduction" instead.
+    # Their sheet also introduced "Net Chargeable Income" and "Salaries Tax", which are
+    # IRD terms, so the list follows the copy that now ships rather than the copy that
+    # did — and it still fails if the English drifts into ad-hoc wording.
+    terms = ["net chargeable income", "assessable income", "salaries tax",
+             "standard rate", "assessment year", "donation"]
     missing = [t for t in terms if t.lower() not in all_en.lower()]
     check("English copy uses the IRD terms (" + ", ".join(terms) + ")", missing)
 
@@ -313,7 +336,7 @@ with sync_playwright() as pw:
         z, e = zh_snaps[key]["ids"], en_snaps[key]["ids"]
         for i in MONEY_IDS:
             if i in z and i in e:
-                if digits_of(z[i]) != digits_of(e[i]):
+                if parity_digits(z[i]) != parity_digits(e[i]):
                     fig_diffs.append(f"{key} · #{i}: {digits_of(z[i])} vs {digits_of(e[i])}")
     check("every figure in the money surface is identical in both languages", fig_diffs)
 
@@ -323,9 +346,18 @@ with sync_playwright() as pw:
         if key.startswith("receipt") or key.startswith("pay"):
             continue
         z, e = zh_snaps[key]["resultText"], en_snaps[key]["resultText"]
-        if digits_of(z) != digits_of(e):
-            fig_diffs.append(f"{key}: {digits_of(z)} vs {digits_of(e)}")
+        if parity_digits(z) != parity_digits(e):
+            fig_diffs.append(f"{key}: {parity_digits(z)} vs {parity_digits(e)}")
     check("the whole result block renders the same digits in both languages", fig_diffs)
+
+    # the one non-numeric figure in the sentence: the client's 全額100% claim
+    claim = []
+    for key in zh_snaps:
+        z = "100%" in (zh_snaps[key]["ids"].get("benefit") or "")
+        e = "the full sight-saving impact" in (en_snaps[key]["ids"].get("benefit") or "")
+        if z != e:
+            claim.append(f"{key}: zh 100%={z} en full={e}")
+    check("the client's “full 100% sight-saving” claim is carried by both languages", claim)
 
     # the client's 5th note: the saving is money kept, so it never carries a minus
     neg = [k for snaps in (zh_snaps, en_snaps) for k, v in snaps.items()
@@ -452,7 +484,7 @@ with sync_playwright() as pw:
         p.goto(f"{BASE}/embed/?part={part}&lang=en", wait_until="load")
         p.wait_for_timeout(380)
         tap += [f"{part} {x}" for x in p.evaluate("""()=>{
-            const sels = ['#calculator .chips button', '.seg label', '#band-mobile',
+            const sels = ['#ref-help', '.seg label', '#band-mobile',
                           '.rform .consent', '#rsubmit', '.rails button', '.rails a',
                           'details.q summary', '.amt'];
             const out = [];

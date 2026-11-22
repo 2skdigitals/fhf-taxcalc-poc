@@ -38,14 +38,14 @@ def check(label, errs):
 
 READ = """() => ({
   net: document.getElementById('net').textContent.trim(),
-  gift: document.getElementById('gift-out').textContent.trim(),
-  giftLabel: document.getElementById('gift-label').textContent.trim(),
+  nlabel: document.getElementById('net-label').textContent.trim(),
   saved: document.getElementById('saved').textContent.trim(),
   savedLabel: document.getElementById('saved-label').textContent.trim(),
   rate: document.getElementById('rate').textContent.trim(),
   rateLabel: document.getElementById('rate-label').textContent.trim(),
   cap: document.getElementById('cap').textContent.trim(),
   caption: document.getElementById('net-caption').textContent.trim(),
+  benefit: document.getElementById('benefit').textContent.trim(),
 })"""
 
 
@@ -81,29 +81,34 @@ with sync_playwright() as pw:
     # the engine produces at each band's ends (qa/test_tax_engine.py proves the
     # engine; this proves the render). The old flat multiplier printed one
     # number here and overstated every gift large enough to cross a band.
+    # 23 Nov: the hero figure is the DONATION, not a net cost — the client's own
+    # label for it is 您的全額捐款 / Your donation, and the ledger row that used to
+    # repeat the gift was removed. The net cost did not vanish: it is the 實際支持
+    # figure inside the benefit sentence, which section K below checks against the
+    # gift. So these cases pin the gift, the saving and the rate-label logic.
     cases = [
-        ("500 in the 17% band -> 70 to 85 / net 415-430", "once", 500, None, "r17",
-         {"gift": "HK$500", "saved": "HK$70 至 HK$85", "net": "HK$415 – 430"}),
-        ("1,800 in the 17% band -> 252 to 306 / net 1,494-1,548", "once", 1800, None, "r17",
-         {"gift": "HK$1,800", "saved": "HK$252 至 HK$306", "net": "HK$1,494 – 1,548"}),
-        ("500 below the allowance -> 0 / 500", "once", 500, None, "r0",
-         {"gift": "HK$500", "saved": "HK$0", "net": "HK$500", "rate": "0%"}),
-        ("10,000 in the 15% band -> 1,500 to 1,700 / net 8,300-8,500", "once", 10000, None, "r15",
-         {"gift": "HK$10,000", "saved": "HK$1,500 至 HK$1,700", "net": "HK$8,300 – 8,500",
+        ("500 in the 17% band -> saved 70 to 85, hero carries the gift", "once", 500, "r17",
+         {"net": "HK$500", "saved": "HK$70 至 HK$85"}),
+        ("1,800 in the 17% band -> saved 252 to 306", "once", 1800, "r17",
+         {"net": "HK$1,800", "saved": "HK$252 至 HK$306"}),
+        ("500 below the allowance -> saves nothing", "once", 500, "r0",
+         {"net": "HK$500", "saved": "HK$0", "rate": "0%"}),
+        ("10,000 in the 15% band -> saved 1,500 to 1,700", "once", 10000, "r15",
+         {"net": "HK$10,000", "saved": "HK$1,500 至 HK$1,700",
           # a band, not a single rate: the crossing of the standard/progressive tie
           # at 2,132,500 means the band's ends save at 15% and 17%, so the row
           # may not be labelled 邊際 or 標準 any more.
           "rateLabel": "採用的稅率"}),
         # Monthly is amount x 12 since the client's slide-2 note removed the months
-        # control: the annual deduction is a full year of gifts, stated in the caption.
-        ("monthly 1,300 x 12 in the 17% band -> 15,600 / 2,184-2,652", "monthly", 1300, None, "r17",
-         {"gift": "HK$15,600", "saved": "HK$2,184 至 HK$2,652", "net": "HK$12,948 – 13,416",
-          "giftLabel": "全年總額（12 個月）"}),
-        ("monthly 1,300 x 12 in the 2% band -> 15,600 / 0-312", "monthly", 1300, None, "r2",
-         {"gift": "HK$15,600", "saved": "HK$0 至 HK$312", "net": "HK$15,288 – 15,600",
-          "rate": "0% – 2%"}),
+        # control. The hero carries the annual total under the client's label; the
+        # arithmetic itself is still announced (checked below), because the caption
+        # is now the client's brand line and no longer carries it.
+        ("monthly 1,300 x 12 in the 17% band -> hero 15,600", "monthly", 1300, "r17",
+         {"net": "HK$15,600", "saved": "HK$2,184 至 HK$2,652", "nlabel": "您的全額捐款"}),
+        ("monthly 1,300 x 12 in the 2% band -> 0 to 312", "monthly", 1300, "r2",
+         {"net": "HK$15,600", "saved": "HK$0 至 HK$312", "rate": "0% – 2%"}),
     ]
-    for label, mode, amt, months, band, exp in cases:
+    for label, mode, amt, band, exp in cases:
         f.click(f'input[name="mode"][value="{mode}"]')
         settle(pg, 90)
         f.fill("#gift", str(amt))
@@ -134,7 +139,7 @@ with sync_playwright() as pw:
     # ends — and 42,500 for a 250,000 gift. Neither may come back.
     check("the 35% ceiling is computed, and a band renders both of its ends",
           [] if (got["saved"] == "HK$13,245 至 HK$29,750"
-                 and got["savedLabel"] == "節省稅款"
+                 and got["savedLabel"] == "預計慈善捐款扣稅額"
                  and "35%" in got["cap"] and "未扣上限" not in got["savedLabel"]
                  and "42,500" not in got["saved"]) else
           [f"saved={got['saved']!r} label={got['savedLabel']!r} cap={got['cap'][:60]!r}"])
@@ -143,9 +148,18 @@ with sync_playwright() as pw:
     f.fill("#gift", "1300")
     settle(pg, 300)
     got = f.evaluate(READ)
-    check("monthly caption shows the arithmetic, with the fixed 12-month year",
-          [] if "每月 HK$1,300 × 12 個月 = 全年 HK$15,600" in got["caption"] else
-          [repr(got["caption"])])
+    check("monthly: the hero carries the annual total under the client's label, "
+          "and the caption is the client's sentence",
+          [] if (got["net"] == "HK$15,600" and got["nlabel"] == "您的全額捐款"
+                 and got["caption"] == "帶來滿滿救盲力量，同時享扣稅回饋") else
+          [f"net={got['net']!r} label={got['nlabel']!r} caption={got['caption']!r}"])
+    # The arithmetic left the caption on 23 Nov (the client replaced that line), so
+    # this asserts the assumption is still STATED — the aria-live region is the one
+    # place that still says "13 x 12 months = 15,600", and it must keep saying it.
+    settle(pg, 900)
+    ann = f.evaluate("()=>document.getElementById('announce').textContent")
+    check("the 12-month assumption is still stated in the live region, not silently assumed",
+          [] if ("12 個月" in ann and "15,600" in ann) else [repr(ann)])
 
     # ---------------------------------------------------------------- C
     pg.wait_for_timeout(1200)
@@ -309,7 +323,7 @@ with sync_playwright() as pw:
     # 320 to 1440, plus 50–73px of slack. `calc` is in here because the client
     # embedded it: at 1,020px its content (1,499px at 320px) produced the second,
     # inner scrollbar they reported on mobile.
-    BUDGET = {"calc": 1800, "input": 1040, "result": 890, "pay": 580, "receipt": 810, "all": 2880}
+    BUDGET = {"calc": 1720, "input": 1000, "result": 890, "pay": 580, "receipt": 810, "all": 2615}
     SECTIONS = {"calc": ["calculator", "result"], "input": ["calculator"],
                 "result": ["result"], "pay": ["payment"], "receipt": ["receipt"],
                 "all": ["calculator", "result", "payment", "receipt"]}
@@ -338,48 +352,67 @@ with sync_playwright() as pw:
     # saving range it quotes, and "每捐 HK$100 實際付出約 HK$N" can never fall
     # below 83, because 17% is the top marginal rate and the 35% cap is never a
     # cash return. Both are pinned per band, so a drift in either fails.
+    # 23 Nov: the sentence is the client's, and EVERY figure in it computes from
+    # the donor's own gift. Three falsifiable properties, checked per band:
+    #   · the relief pair in the sentence is the pair in the ledger,
+    #   · the 實際支持 pair is the gift minus those two, and
+    #   · no relief figure may exceed 17% of the gift (the cap is never cash back).
+    # (saved low, saved high) for a HK$1,300 one-off gift, per band's two ends.
     BAND_EXPECT = {
-        # band: (saved range as rendered, per-100 range as rendered)
-        "r2":  ("HK$0 至 HK$26",   "HK$98 至 HK$100"),
-        "r6":  ("HK$26 至 HK$78",  "HK$94 至 HK$98"),
-        "r10": ("HK$78 至 HK$130", "HK$90 至 HK$94"),
-        "r14": ("HK$130 至 HK$182","HK$86 至 HK$90"),
-        "r17": ("HK$182 至 HK$221","HK$83 至 HK$86"),
-        "r15": ("HK$195 至 HK$221","HK$83 至 HK$85"),
-        "r16": ("HK$195 至 HK$208","HK$84 至 HK$85"),
+        "r2":  (0, 26), "r6": (26, 78), "r10": (78, 130), "r14": (130, 182),
+        "r17": (182, 221), "r15": (195, 221), "r16": (195, 208),
     }
+
+    def hk(n):
+        return "HK$" + format(n, ",")
+
     bench = browser.new_page(viewport={"width": 390, "height": 900}, is_mobile=True, has_touch=True)
-    for band, (want_saved, want_100) in BAND_EXPECT.items():
+    for band, (lo_s, hi_s) in BAND_EXPECT.items():
         # ?part=calc, not ?part=result: the income picker lives in the calculator
         # block, so it is only reachable in a page where that block is visible.
         bench.goto(f"{BASE}/embed/?part=calc")
         bench.wait_for_timeout(350)
+        bench.fill("#gift", "1300")
         bench.select_option("#band-mobile", band)
-        bench.wait_for_timeout(220)
+        bench.wait_for_timeout(260)
         line = bench.evaluate("()=>document.getElementById('benefit').textContent")
         shown = bench.evaluate("()=>document.getElementById('saved').textContent")
+        want_relief = hk(lo_s) + " – " + format(hi_s, ",")
+        want_net = hk(1300 - hi_s) + " – " + format(1300 - lo_s, ",")
         errs = []
-        if "認可慈善捐款扣除" not in line:
-            errs.append("does not name 認可慈善捐款")
-        if want_saved not in shown:
-            errs.append(f"figures strip {shown!r} does not match {want_saved!r}")
-        if f"實際付出約 {want_100}" not in line:
-            errs.append(f"want 實際付出約 HK${want_100} in {line!r}")
-        check(f"benefit line in band {band} matches the figures strip ({want_100} per HK$100)", errs)
+        if hk(1300) not in line:
+            errs.append("does not name the gift figure")
+        if "可全數扣稅" not in line:
+            errs.append("uncapped band must say 可全數扣稅")
+        if want_relief not in line:
+            errs.append(f"want relief {want_relief!r} in {line!r}")
+        if want_net not in line:
+            errs.append(f"want net support {want_net!r} in {line!r}")
+        if format(hi_s, ",") not in shown:
+            errs.append(f"figures strip {shown!r} disagrees with {hi_s}")
+        check(f"benefit sentence in band {band} computes both of its figures", errs)
 
+    # the cap: a gift that DOES reach the 35% ceiling may not claim full deductibility
+    bench.goto(f"{BASE}/embed/?part=calc")
+    bench.wait_for_timeout(320)
     bench.select_option("#band-mobile", "r17")
     bench.fill("#gift", "175,000")
-    bench.wait_for_timeout(250)
+    bench.wait_for_timeout(280)
     line = bench.evaluate("()=>document.getElementById('benefit').textContent")
     strip = bench.evaluate("()=>document.getElementById('saved').textContent")
-    # The line may not promise more than the cap allows, and it may not say
-    # "lower than X" either — with the cap computed, X IS the achievable figure.
-    # The figure itself lives in the figures strip (the sentence states the cap,
-    # it does not repeat the number), so assert it there and keep the ban here.
-    check("benefit line computes the 35% ceiling instead of promising a lower figure",
-          [] if ("35% 上限" in line and "HK$29,750" in strip
-                 and "會低於" not in line and "42,500" not in line
-                 and "42,500" not in strip) else [f"line={line!r} strip={strip!r}"])
+    cap2 = bench.evaluate("()=>document.getElementById('cap').textContent")
+    errs = []
+    if "35% 上限" not in line:
+        errs.append("the capped sentence does not state the cap")
+    if "可全數扣稅" in line:
+        errs.append("the capped sentence still claims full deductibility")
+    if "HK$29,750" not in strip:
+        errs.append(f"figures strip {strip!r} lost the ceiling figure")
+    if "42,500" in line or "42,500" in strip:
+        errs.append("the old flat-multiplier overstatement is back")
+    if "可全數扣除" in cap2:
+        errs.append(f"capline claims full deductibility at the cap: {cap2!r}")
+    check("benefit sentence and cap line follow the arithmetic when the 35% ceiling bites", errs)
 
     # ---------------------------------------------------------------- N · the HK$100 floor
     # The client's slide-1 note: the donation field has a minimum of HK$100.
@@ -431,9 +464,11 @@ with sync_playwright() as pw:
     # docs/CLIENT-COMMENTS-2-2026120.md rather than silently re-added.
     check("the result block no longer repeats the allowance/scope reminder (client instruction)",
           [] if not d["scope"] else [d["scope"][:80]])
-    check("spouse note does not promise the excess is freely transferable",
-          [] if ("BIR60" in d["spouse"] and "35%" in d["spouse"] and "不能全數轉移" in d["spouse"])
-          else [d["spouse"][:120]])
+    # 23 Nov: the client removed the spouse FAQ from the result block. The check is
+    # inverted rather than deleted — a removed block that silently returns is exactly
+    # the regression this line exists to catch.
+    check("the spouse FAQ is absent from the result block (client instruction, 23 Nov)",
+          [] if not d["spouse"].strip() else [d["spouse"][:80]])
     check("disclaimer is the client's approved text, collapsed, reachable from the consent line",
           [] if (d["closed"] and "免責聲明" in d["link"] and "最終以稅務局核定為準" in d["disc"]
                  and "不會收集、記錄或儲存任何輸入資料" in d["disc"]
@@ -449,7 +484,7 @@ with sync_playwright() as pw:
         bench.goto(f"{BASE}/embed/?part={bench_part}")
         bench.wait_for_timeout(320)
         tap += bench.evaluate("""()=>{
-            const sels = ['#calculator .chips button', '.seg label', '#band-mobile',
+            const sels = ['#ref-help', '.seg label', '#band-mobile',
                           '.rform .consent', '#rsubmit', '.rails button', '.rails a',
                           'details.q summary', '.amt'];
             const out = [];
@@ -464,6 +499,103 @@ with sync_playwright() as pw:
           }""")
     check("every thumb target on the phone surface is at least 44px tall", tap)
     bench.close()
+
+    # ---------------------------------------------------------------- O · the transaction-ID popover
+    # The popover is the only overlay in the widget and the only place a real
+    # transaction ID is pictured, so it carries four things worth failing on: the
+    # disclosure contract (aria-expanded, real button), the overlay contract (inside
+    # the frame, never full-screen), the assets (three captioned screenshots that
+    # actually load — a lazy image in a hidden panel would otherwise never be
+    # requested and a dead path would ship silently), and no keyboard trap.
+    # Measured at the height the client actually declares for this block (810px zh,
+    # 910px en) — a generous 900px viewport would have hidden the one failure mode
+    # that matters here, an overlay that scrolls the host's fixed frame.
+    for lang_q, frame_h in (("", 810), ("&lang=en", 910)):
+        pop = browser.new_page(viewport={"width": 390, "height": frame_h},
+                               is_mobile=True, has_touch=True)
+        pop.goto(f"{BASE}/embed/?part=receipt{lang_q}", wait_until="load")
+        pop.wait_for_timeout(420)
+        before = pop.evaluate("""()=>({
+            hidden: document.getElementById('ref-help-panel').hidden,
+            exp: document.getElementById('ref-help').getAttribute('aria-expanded'),
+            tag: document.getElementById('ref-help').tagName,
+            role: document.getElementById('ref-help-panel').getAttribute('role'),
+            label: document.getElementById('ref-help').getAttribute('aria-label') || ''})""")
+        pop.click("#ref-help")
+        pop.wait_for_timeout(500)
+        after = pop.evaluate("""()=>{
+            const pop = document.getElementById('ref-help-panel');
+            const r = pop.getBoundingClientRect(), d = document.documentElement;
+            return {hidden: pop.hidden,
+                    role: pop.getAttribute('role'),
+                    exp: document.getElementById('ref-help').getAttribute('aria-expanded'),
+                    w: Math.round(r.width), right: Math.round(r.right),
+                    vw: d.clientWidth, vh: d.clientHeight, h: Math.round(r.height),
+                    frame: Math.round(d.getBoundingClientRect().width),
+                    scrolls: pop.scrollHeight > pop.clientHeight + 1,
+                    overX: d.scrollWidth > d.clientWidth + 1,
+                    steps: [...pop.querySelectorAll('.n')].map(n => n.textContent),
+                    imgs: [...pop.querySelectorAll('img')].map(i => ({
+                        src: i.getAttribute('src'), ok: i.complete && i.naturalWidth > 0,
+                        alt: i.getAttribute('alt') || ''}))};
+        }""")
+        errs = []
+        if before["tag"] != "BUTTON" or before["exp"] != "false" or not before["hidden"]:
+            errs.append(f"closed state {before}")
+        if not before["label"]:
+            errs.append("the disclosure button has no accessible name")
+        if after["role"] != "dialog":
+            errs.append(f"panel role {after['role']!r}")
+        if after["hidden"] or after["exp"] != "true":
+            errs.append(f"open state {after}")
+        if after["right"] > after["frame"] + 1 or after["overX"]:
+            errs.append(f"panel escapes the frame: right {after['right']} of {after['frame']}")
+        if after["h"] > after["vh"] * 0.75:
+            errs.append(f"panel is {after['h']}px of a {after['vh']}px frame — a full-screen modal")
+        if len(after["steps"]) != 3 or len(after["imgs"]) != 3:
+            errs.append(f"steps {after['steps']} imgs {len(after['imgs'])}")
+        bad_img = [i for i in after["imgs"] if not i["ok"] or not i["alt"]]
+        if bad_img:
+            errs.append(f"image not loaded or missing alt: {bad_img}")
+        if not after["scrolls"]:
+            errs.append("panel neither fits nor scrolls — it must do one")
+        check(f"the reference popover opens as a dialog inside the frame{lang_q or ' (zh)'}", errs)
+        # The panel is absolutely positioned, so opening it must not grow the
+        # document — that is what keeps the client's fixed frame honest in the
+        # open state, where a modal would have blown the declared height apart.
+        pop.click("#ref-help")
+        pop.wait_for_timeout(350)
+        grown = pop.evaluate("""()=>{
+            const pop = document.getElementById('ref-help-panel');
+            const open = document.documentElement.scrollHeight;
+            pop.hidden = true;
+            const closed = document.documentElement.scrollHeight;
+            pop.hidden = false;
+            return {open: open, closed: closed};
+        }""")
+        check(f"opening the popover does not change the block height{lang_q or ' (zh)'}",
+              [] if grown["open"] == grown["closed"] else [str(grown)])
+        # Escape closes it and hands focus back to the button; Tab is NOT trapped.
+        pop.keyboard.press("Escape")
+        pop.wait_for_timeout(200)
+        esc = pop.evaluate("()=>({hidden:document.getElementById('ref-help-panel').hidden,"
+                           "focus:document.activeElement.id||document.activeElement.tagName})")
+        check(f"Escape closes the popover and returns focus to its button{lang_q or ' (zh)'}",
+              [] if (esc["hidden"] and esc["focus"] == "ref-help") else [str(esc)])
+        pop.click("#ref-help")
+        pop.wait_for_timeout(150)
+        for _ in range(5):
+            pop.keyboard.press("Tab")
+        out = pop.evaluate("()=>document.activeElement.id||document.activeElement.tagName")
+        check(f"the popover is not a keyboard trap (5 Tabs leave it){lang_q or ' (zh)'}",
+              [] if out not in ("ref-help-panel", "") and out != "BODY" else [out])
+        # and it must never scroll the host's fixed frame in the open state
+        pop.click("#ref-help")
+        pop.wait_for_timeout(300)
+        openh = pop.evaluate("()=>document.documentElement.scrollHeight")
+        check(f"the open popover stays inside the declared {frame_h}px frame{lang_q or ' (zh)'}",
+              [] if openh <= frame_h else [f"document {openh}px > frame {frame_h}px"])
+        pop.close()
 
     # ---------------------------------------------------------------- I · the event verification page
     pe = browser.new_page(viewport={"width": 1280, "height": 900})

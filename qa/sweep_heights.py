@@ -45,9 +45,12 @@ REPORT_WIDTHS = (320, 390, 768, 1024, 1440)
 # peak + 45..70px of slack, measured not assumed (see the peaks printed below).
 # English peaks are HIGHER than Chinese at every width: 35% more lines at 320px,
 # where the column is ~288px wide and a sentence costs two lines instead of one.
+# Reissued 23 Nov 2026 after the client copy pass: removing the quick-amount chips
+# and the "what counts" disclosure took ~290px off `calc`, so the old 1800 would
+# have handed the client a 287px dead band. Peak + 45..70px, measured.
 DECLARED = {
-    "zh-HK": {"calc": 1800, "input": 1040, "result": 890, "pay": 580, "receipt": 810, "all": 2880},
-    "en":    {"calc": 1800, "input": 1040, "result": 890, "pay": 580, "receipt": 910, "all": 2990},
+    "zh-HK": {"calc": 1720, "input": 1000, "result": 890, "pay": 580, "receipt": 810, "all": 2615},
+    "en":    {"calc": 1720, "input": 1000, "result": 890, "pay": 580, "receipt": 910, "all": 2905},
 }
 
 peaks = {}

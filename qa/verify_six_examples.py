@@ -3,9 +3,17 @@
 """Drive the calculator for real against the six verified worked examples.
 
 The examples are frozen (skill `fred-hollows-tax-calculator` §4, YA2026/27,
-single person). This script types the gift, opens the optional exact-income row,
-types the assessable income, and reads the rendered saving / net back out of the
-DOM — it does not re-implement the maths, so it tests what a donor actually sees.
+single person). This script types the gift, swaps in the exact-income field,
+types the assessable income, and reads the rendered saving and the rendered net
+support back out of the DOM — it does not re-implement the maths, so it tests
+what a donor actually sees.
+
+READING NET AFTER 23 NOV: the hero figure is the DONATION (the client's own
+label, 您的全額捐款 / Your donation) and the ledger row that repeated the gift was
+removed, so the net cost is no longer a field of its own — it is the 實際支持 /
+"net support" figure inside the benefit sentence. That is a stronger place to
+check it from, not a weaker one: the sentence's figures have to compute from the
+gift, and this asserts them against the frozen examples.
 
 It drives the EXACT-INCOME path on purpose. The band picker intentionally shows
 a range (the saving is computed at both ends of the selected band), so a band
@@ -15,15 +23,17 @@ old flat-multiplier engine got wrong by up to 46%.
 
 It runs per language. The figures are figures, not copy: both builds must render
 the same six numbers, and the only thing `?lang=` may change is the words around
-them (including the range separator: 「至」 vs "to").
+them. The one exception is checked explicitly: the client's own HK$1,300 sample
+sentence must render CHARACTER FOR CHARACTER in each language.
 
-Exits non-zero unless 6/6 are exact.
+Exits non-zero unless 6/6 are exact and the sample sentence matches.
 
 Usage:
     python3 qa/verify_six_examples.py                     # zh-HK
     python3 qa/verify_six_examples.py --lang en
     python3 qa/verify_six_examples.py http://127.0.0.1:8765 --lang en
 """
+import re
 import sys
 from playwright.sync_api import sync_playwright
 
@@ -43,6 +53,14 @@ if pos:
 # either side of it are not
 SEP = {"zh-HK": "至", "en": " to "}[LANG]
 
+# the client's sample sentence, for a HK$1,300 gift in the default band
+SAMPLE = {
+    "zh-HK": "您的 HK$1,300 捐款可全數扣稅，享約 HK$182 – 221 稅務扣減；"
+             "只需約 HK$1,079 – 1,118 實際支持，即可成就全額100%救盲力量。",
+    "en": "Your HK$1,300 gift qualifies for full tax deduction (est. HK$182 – 221 relief), "
+          "meaning just HK$1,079 – 1,118 net support delivers the full sight-saving impact.",
+}
+
 # (gift, assessable income, verified saved, verified net paid, note)
 CASES = [
     (500, 400000, 85, 415, "inside the 17% slice"),
@@ -54,9 +72,8 @@ CASES = [
 ]
 
 READ = """() => ({
-  gift:  document.getElementById('gift-out').textContent.trim(),
+  gift:  document.getElementById('net').textContent.trim(),
   saved: document.getElementById('saved').textContent.trim(),
-  net:   document.getElementById('net').textContent.trim(),
   rate:  document.getElementById('rate').textContent.trim(),
   rlabel: document.getElementById('rate-label').textContent.trim(),
   label: document.getElementById('saved-label').textContent.trim(),
@@ -64,14 +81,22 @@ READ = """() => ({
   cap:   document.getElementById('cap').textContent.trim(),
   benefit: document.getElementById('benefit').textContent.trim(),
   exactOpen: !document.getElementById('exact-wrap').hidden,
-  giftLabel: document.getElementById('gift-label').textContent.trim(),
 })"""
 
 
 def num(s):
-    """Pull the integer out of '−HK$42,500' / 'HK$1,079'."""
+    """Pull the integer out of 'HK$42,500' / 'HK$1,079'."""
     d = "".join(ch for ch in s if ch.isdigit())
     return int(d) if d else None
+
+
+def hk_values(s):
+    """Every figure written as a currency amount, in reading order.
+
+    Deliberately HK$-anchored: '35%' and '100%' are rates, not money, and a
+    bare digits-only sweep picks them up and shifts every value one place.
+    """
+    return [int(x.replace(",", "")) for x in re.findall(r"HK\$([\d,]+)", s)]
 
 
 ok = bad = 0
@@ -91,21 +116,51 @@ with sync_playwright() as pw:
         p.fill("#exact", str(income))
         p.wait_for_timeout(250)
         g = p.evaluate(READ)
-        saved, net = num(g["saved"]), num(g["net"])
+        saved, hero = num(g["saved"]), num(g["gift"])
+        vals = hk_values(g["benefit"])
+        # The sentence names the gift, the relief and the net support, in order.
+        # Below the allowance there is no relief to state, so that branch says so in
+        # words instead of quoting a HK$0 relief — there the sentence carries the
+        # gift alone, and net = gift follows by arithmetic.
+        if len(vals) == 3:
+            sent_gift, sent_saved, sent_net = vals
+        elif len(vals) == 1 and v_saved == 0:
+            sent_gift, sent_saved, sent_net = vals[0], 0, gift
+        else:
+            sent_gift = sent_saved = sent_net = None
         single = SEP not in g["saved"]
-        exact = (saved == v_saved and net == v_net and single and g["exactOpen"])
+        exact = (saved == v_saved and hero == gift and single and g["exactOpen"]
+                 and sent_gift == gift and sent_saved == v_saved and sent_net == v_net)
         if exact:
             ok += 1
             verdict = "EXACT"
         else:
             bad += 1
             verdict = "MISMATCH"
-        print(f"{gift:>9,} {income:>9,} {g['saved']:>15} {v_saved:>9,} {g['net']:>14} "
+        shown_net = ("HK$" + format(sent_net, ",")) if sent_net is not None else "-"
+        print(f"{gift:>9,} {income:>9,} {g['saved']:>15} {v_saved:>9,} {shown_net:>14} "
               f"{v_net:>9,}  {verdict:<8} {note}")
-        print(f"{'':20} rate {g['rate']:>6} · {g['rlabel']} · label {g['label']}")
+        print(f"{'':20} hero {g['gift']:>10} · rate {g['rate']:>6} · {g['rlabel']} · label {g['label']}")
         print(f"{'':20} caption: {g['caption']}")
         print(f"{'':20} cap: {g['cap']}")
         print(f"{'':20} benefit: {g['benefit']}")
+
+    # ── the client's own sample sentence, verbatim ───────────────────────────
+    # This is the acceptance string from the copy sheet. It is not a range the
+    # test computes: it is the sentence the client wrote, and it has to render
+    # exactly — the same figures, the same spacing, the same punctuation.
+    p.goto(f"{BASE}/embed/?part=calc&lang={LANG}", wait_until="load")
+    p.wait_for_timeout(450)
+    sample = p.evaluate("()=>document.getElementById('benefit').textContent")
+    if sample == SAMPLE[LANG]:
+        print(f"\nPASS  the HK$1,300 sample sentence matches the copy sheet character for character")
+    else:
+        bad += 1
+        i = next((i for i in range(min(len(sample), len(SAMPLE[LANG])))
+                  if sample[i] != SAMPLE[LANG][i]), min(len(sample), len(SAMPLE[LANG])))
+        print(f"\nFAIL  the HK$1,300 sample sentence drifted at {i}:")
+        print(f"      got  …{sample[max(0,i-30):i+40]!r}")
+        print(f"      want …{SAMPLE[LANG][max(0,i-30):i+40]!r}")
     b.close()
 
 print(f"\n=== ?lang={LANG}: {ok}/{len(CASES)} exact, {bad} mismatched ===")

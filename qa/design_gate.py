@@ -23,8 +23,8 @@ from playwright.sync_api import sync_playwright
 # heights the client pastes into the CMS — must cover the MONTHLY layout too, which is
 # a second, taller shape (that omission shipped a 70px inner scroll at 320px)
 DECLARED = {
-    "zh-HK": {"calc": 1800, "input": 1040, "result": 890, "pay": 580, "receipt": 810, "all": 2880},
-    "en": {"calc": 1800, "input": 1040, "result": 890, "pay": 580, "receipt": 910, "all": 2990},
+    "zh-HK": {"calc": 1720, "input": 1000, "result": 890, "pay": 580, "receipt": 810, "all": 2615},
+    "en": {"calc": 1720, "input": 1000, "result": 890, "pay": 580, "receipt": 910, "all": 2905},
 }
 WIDTHS = (320, 360, 390, 414, 568, 768, 944, 1280, 1440)
 PARTS = ("calc", "input", "result", "pay", "receipt", "all")
@@ -34,6 +34,9 @@ CONTRAST_TARGETS = [
     ("block heading", "h2"),
     ("running text", "p.lede"),
     ("hint / note", "p.hint"),
+    # 23 Nov: the band remark became a NOTE one step under the hint (12px), so the
+    # smallest text on the page is now measured rather than assumed.
+    ("band note (12px)", "p.note"),
     ("figure", "#net"),
     ("figure label", "#saved-label, .figs dt, dt"),
     ("primary action", "button[type=submit], .btn"),

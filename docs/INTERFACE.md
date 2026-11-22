@@ -26,29 +26,63 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 
 | # | Block | URL | Height · zh-HK | Height · en | Content peak zh-HK | Content peak en |
 |---|---|---|---|---|---|---|
-| 0 | **One link (all four)** | `/embed/?part=all` (also the bare `/embed/`) | **2880px** | **2990px** | 2765 (at 900px, monthly) | 2878 (at 320px, monthly) |
-| 1 | Calculator + result | `/embed/?part=calc` | **1800px** | **1800px** | 1722 (at 900px, monthly) | 1742 (at 900px, monthly) |
-| 1a | Calculator only | `/embed/?part=input` | **1040px** | **1040px** | 974 (at 820px, monthly) | 974 (at 820px, monthly) |
-| 1b | Result only | `/embed/?part=result` | **890px** | **890px** | 833 (at 900px) | 833 (at 900px) |
-| 2 | Payment | `/embed/?part=pay` | **580px** | **580px** | 477 (at 820px) | 503 (at 820px) |
+| 0 | **One link (all four)** | `/embed/?part=all` (also the bare `/embed/`) | **2615px** | **2905px** | 2546 (at 900px, monthly) | 2835 (at 320px, monthly) |
+| 1 | Calculator + result | `/embed/?part=calc` | **1720px** | **1720px** | 1513 (at 900px, monthly) | 1652 (at 320px, monthly) |
+| 1a | Calculator only | `/embed/?part=input` | **1000px** | **1000px** | 882 (at 900px, monthly) | 932 (at 820px, monthly) |
+| 1b | Result only | `/embed/?part=result` | **890px** | **890px** | 737 (at 320px) | 820 (at 320px) |
+| 2 | Payment | `/embed/?part=pay` | **580px** | **580px** | 479 (at 820px) | 505 (at 820px) |
 | 3 | Receipt | `/embed/?part=receipt` | **810px** | **910px** | 746 (at 320px) | 852 (at 320px) |
 
-**Quoted at the five widths the client asked for (content height, px) — 21 Nov 2026**
+**Quoted at the five widths the client asked for (content height, px) — 23 Nov 2026**
 
 | Block | 320 | 390 | 768 | 1024 | 1440 |
 |---|---|---|---|---|---|
-| `?part=input` · zh | 799 | 764 | 970 | 974 | 974 |
-| `?part=input` · en | 845 | 808 | 970 | 974 | 974 |
-| `?part=result` · zh | 775 | 751 | 823 | 833 | 833 |
-| `?part=result` · en | 796 | 751 | 823 | 833 | 833 |
-| `?part=pay` · zh | 388 | 388 | 473 | 477 | 477 |
-| `?part=pay` · en | 414 | 414 | 498 | 503 | 503 |
-| `?part=receipt` · zh | 746 | 746 | 682 | 687 | 687 |
-| `?part=receipt` · en | 852 | 787 | 682 | 687 | 687 |
-| `?part=calc` · zh | 1576 | 1465 | 1708 | 1722 | 1722 |
-| `?part=calc` · en | 1702 | 1547 | 1728 | 1742 | 1742 |
-| `?part=all` · zh | 2621 | 2512 | 2742 | 2765 | 2765 |
-| `?part=all` · en | 2878 | 2660 | 2787 | 2811 | 2811 |
+| `?part=input` · zh | 752 | 694 | 877 | 882 | 882 |
+| `?part=input` · en | 836 | 778 | 926 | 901 | 901 |
+| `?part=result` · zh | 737 | 679 | 698 | 709 | 709 |
+| `?part=result` · en | 820 | 778 | 723 | 737 | 737 |
+| `?part=pay` · zh | 398 | 398 | 475 | 479 | 479 |
+| `?part=pay` · en | 424 | 424 | 500 | 505 | 505 |
+| `?part=receipt` · zh | 746 | 746 | 674 | 679 | 679 |
+| `?part=receipt` · en | 852 | 786 | 683 | 687 | 687 |
+| `?part=calc` · zh | 1448 | 1312 | 1499 | 1513 | 1513 |
+| `?part=calc` · en | 1652 | 1515 | 1593 | 1581 | 1581 |
+| `?part=all` · zh | 2499 | 2365 | 2523 | 2546 | 2546 |
+| `?part=all` · en | 2835 | 2634 | 2651 | 2648 | 2648 |
+
+> **Revised 23 Nov 2026 (client copy pass, `qa/apply_client_copy_20261123.py`).** Kevin's
+> section-by-section copy sheet, applied verbatim in both languages: Section 1 and 2 headers
+> replaced, the four quick-amount chips **removed**, the `哪些捐款才可扣稅 / What counts as a
+> deductible gift` disclosure **removed**, the band hint and the band remark rewritten (the remark is
+> now 12px — a note, not body copy), the CTA reworded, and Section 3 restructured around the
+> donation itself (`您的全額捐款 / Your donation` carries the amount, the ledger row that repeated it
+> is gone, `節省稅款` → `預計慈善捐款扣稅額`, the benefit sentence recomputed from the donor's own
+> gift, the assumption now a numbered three-line block that restores the salaries-tax-only scope,
+> and the spouse FAQ removed). Section 5 gained the transaction-ID popover beside the payment
+> reference. **Three declared heights are reissued**, because ~290px left the calculator:
+> **calc 1800 → 1720 · input 1040 → 1000 · all 2880/2990 → 2615/2905**; result 890, pay 580 and
+> receipt 810/910 are unchanged. Peaks: calc 1770 → **1513** zh / 1790 → **1652** en, input
+> 1004 → **882** / 1004 → **932**, result 843 → **737** / 843 → **820**, all 2803 → **2546** /
+> 2936 → **2835**; pay 479/505 and receipt 746/852 did not move at all. **The popover is bounded by the
+> space left below it** (`clamp(240px, 100vh − 512px, 560px)`) so its bottom always lands inside the
+> declared frame — measured fitting at 320/390/414/568/768/1280/1440 in both languages, with the three
+> steps scrolling inside the panel instead of scrolling the host's fixed box.
+>
+> **Revised 23 Nov 2026 (design review pass, `qa/apply_design_review_20261123.py`).** Rhythm and type
+> correction only — no colour, face, shadow, gradient, decoration or copy change. The `2 · your
+> assessable income` heading had been sitting **0px** under the card above it and 16px above its own
+> card; block gaps were 0/2/6/8/10/12/14/16/18/20/22/26/36 and now sit on one 4px scale; `--measure`
+> was a fixed 544px and is now `34em`, which resolves to 68ch at every type size. **Every declared
+> height is unchanged** — 1800 / 1040 / 890 / 580 / 810 / 910 / 2880 / 2990 — and every block still
+> fits at all 22 widths. Content peaks rose by 2–58px to absorb the corrected spacing: `?part=calc`
+> 1722 → 1770 (zh) / 1742 → **1790** (en), `?part=input` 974 → 1004, `?part=result` 833 → 843,
+> `?part=pay` 477 → 479 / 503 → 505, `?part=all` 2765 → 2803 / 2878 → 2936. **`?part=receipt` is
+> unchanged at 746 / 852**: the extra space between form rows was exactly cancelled by removing the
+> per-child margins that were doubling the form's own grid gap. **Watch `?part=calc` in English**: it
+> now sits 10px under its 1800px declaration (it was 58), the slimmest margin in the document. It
+> fits, measured, at every width — but the next copy addition to that block should reissue it to 1830
+> rather than assume the old headroom. Full findings, measurements and open questions:
+> `docs/DESIGN-REVIEW-20261123.md`.
 
 > **Revised 21 Nov 2026 (PayMe dropped, `qa/apply_payme_removal_20261121.py`).** The payment block
 > keeps **AlipayHK and the credit card**; PayMe's QR tile, mobile row, both string-table entries, its

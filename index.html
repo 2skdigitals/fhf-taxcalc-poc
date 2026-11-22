@@ -59,16 +59,16 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
   <table>
     <thead><tr><th style="width:26%">Block</th><th style="width:30%">URL</th><th style="width:20%">Set height</th><th>Content at their widths (328–1280px)</th></tr></thead>
     <tbody>
-      <tr><td><b>1 · Calculator</b></td><td><code id="p1">/embed/?part=input</code></td><td><b>1040px</b></td><td>775 – 974</td></tr>
-      <tr><td><b>2 · Result</b></td><td><code id="p2">/embed/?part=result</code></td><td><b>890px</b></td><td>751 – 833</td></tr>
-      <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>580px</b></td><td>367 – 503</td></tr>
-      <tr><td><b>4 · Receipt</b></td><td><code id="p4">/embed/?part=receipt</code></td><td><b>810px</b> / 910 en</td><td>661 – 852</td></tr>
-      <tr><td><b>1+2 combined</b></td><td><code id="p5">/embed/?part=calc</code></td><td><b>1800px</b></td><td>1547 – 1742</td></tr>
-      <tr><td><b>All four combined</b></td><td><code id="p6">/embed/?part=all</code></td><td><b>2880px</b> / 2990 en</td><td>2454 – 2878</td></tr>
+      <tr><td><b>1 · Calculator</b></td><td><code id="p1">/embed/?part=input</code></td><td><b>1000px</b></td><td>694 – 932</td></tr>
+      <tr><td><b>2 · Result</b></td><td><code id="p2">/embed/?part=result</code></td><td><b>890px</b></td><td>679 – 820</td></tr>
+      <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>580px</b></td><td>398 – 505</td></tr>
+      <tr><td><b>4 · Receipt</b></td><td><code id="p4">/embed/?part=receipt</code></td><td><b>810px</b> / 910 en</td><td>674 – 852</td></tr>
+      <tr><td><b>1+2 combined</b></td><td><code id="p5">/embed/?part=calc</code></td><td><b>1720px</b></td><td>1312 – 1652</td></tr>
+      <tr><td><b>All four combined</b></td><td><code id="p6">/embed/?part=all</code></td><td><b>2615px</b> / 2905 en</td><td>2365 – 2835</td></tr>
     </tbody>
   </table>
   <p class="lede" style="margin:-6px 0 10px;font-size:13px;color:#68707b">These are the worst cases across every width their page actually produces (iframe 328px on a small phone → 1280px on a wide desktop), plus margin. If the component can take a <b>different height per breakpoint</b>, tell us and we'll hand you a two-number set instead — that removes the remaining vertical slack on desktop.</p>
-  <p class="lede" style="margin:0 0 34px;font-size:13px;color:#68707b">All four also work as <b>one</b> document: <code>/embed/?part=all</code> — and a bare <code>/embed/</code> now defaults to it. It is 2,765px (zh) / 2,878px (en) at its tallest reachable state, so it fits a single frame; it is still a tall frame on a phone, which is why the four-block split stays the recommended arrangement.</p>
+  <p class="lede" style="margin:0 0 34px;font-size:13px;color:#68707b">All four also work as <b>one</b> document: <code>/embed/?part=all</code> — and a bare <code>/embed/</code> now defaults to it. It is 2,546px (zh) / 2,835px (en) at its tallest reachable state, so it fits a single frame; it is still a tall frame on a phone, which is why the four-block split stays the recommended arrangement.</p>
 
   <h2>3 · The test bench + the context preview</h2>
   <div class="cards">
