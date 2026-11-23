@@ -347,6 +347,9 @@ details.q li{margin:3px 0}
 .disc-global .disc-list a:hover{text-decoration-thickness:2px}
 .disc-global .disc-list a:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
 .rails{display:grid;border-top:var(--rule);margin-top:var(--s5)}
+/* the payment pair: one source of truth for the grid width, the gap between the
+   two rails, and the width of the receipt line that sits under AlipayHK */
+:root{--pairw:664px;--pairgap:56px}
 /* ── payment: QR on a desktop, tap-through rows on a phone ──────────────────────
    A donor cannot scan the screen they are reading, so the two arrangements are
    mutually exclusive rather than progressive. Breakpoint 720px: below it every
@@ -358,8 +361,8 @@ details.q li{margin:3px 0}
   .rails{display:none}
   /* Two rails, so two equal columns — and the pair is held to a pair-width, or a
      190px code and a 190px card drift 800px apart on a wide desktop. */
-  .paygrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:48px;
-           max-width:min(100%,560px);
+  .paygrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--pairgap);
+           max-width:min(100%,var(--pairw));
            border-top:var(--rule);margin-top:var(--s5);padding-top:var(--s6);align-items:start}
   .qrcard{margin:0;display:block;color:inherit;text-decoration:none}
   .qrcard img{display:block;width:100%;max-width:190px;height:auto;aspect-ratio:450/350;
@@ -521,11 +524,13 @@ details.q li{margin:3px 0}
   /* the receipt line is part of the AlipayHK rail, not a third global item: it sits
      under that card, at that card's width (560 − 48 gap = two 256px columns), and
      keeps the blue rule that ties it to the rail (23 Nov) */
-  .rails .payhelp{border-left:3px solid #1677FF;padding:10px 0 12px 14px;max-width:256px}
+  .rails .payhelp{border-left:3px solid #1677FF;padding:10px 0 12px 14px;
+                  max-width:calc((var(--pairw) - var(--pairgap)) / 2)}
   .payhelp{padding:15px 0 0}
-  .payhelp-line{display:flex;align-items:flex-start;gap:6px;max-width:none}
-  .payhelp-line > span{flex:1 1 auto}
-  .payhelp-line .helpbtn{flex:0 0 auto;margin:-1px 0 0}
+  /* text and button on one row: the text may wrap, the button stays beside it
+     rather than being pushed to the column's right edge */
+  .payhelp-line{display:block;max-width:none}
+  .payhelp-line .helpbtn{display:inline-flex;vertical-align:middle;margin:0 0 0 3px}
   /* the wrapper is now only as wide as the AlipayHK column (256px), so the panel
      needs its own width or it collapses to that column and squeezes the crops */
   #payhelp .helppop{top:auto;bottom:calc(100% + 8px);left:0;right:auto;
