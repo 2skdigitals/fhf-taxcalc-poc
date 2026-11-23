@@ -369,11 +369,11 @@ with sync_playwright() as pw:
     # Their text beats our draft, so this pins it character for character in both
     # languages rather than trusting that the edit landed.
     DISC = {
-        "zh-HK": ("根據稅務局相關課稅年度資料估算，僅供一般參考."
-                  "不會收集、記錄或儲存任何輸入資料."
+        "zh-HK": ("根據稅務局相關課稅年度資料估算，僅供一般參考。"
+                  "不會收集、記錄或儲存任何輸入資料。"
                   "以累進稅率或標準稅率（以較低者為準）估算應繳稅款；最終以稅務局核定為準。"
                   "不構成專業意見，詳情請參閱香港稅務局網頁或諮詢顧問."
-                  "護瞳行動（香港）有限公司概不承擔相關法律責任。"),
+                  "護瞳行動（香港）有限公司概不承擔相關法律責任"),
         "en": ("Based on IRD tax rates and info for the relevant assessment year; for general reference only."
                "Does not collect, record, or store entered data."
                "Estimates tax using progressive or standard rates (whichever is lower); "
