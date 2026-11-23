@@ -37,12 +37,12 @@
   /* type roles — five steps plus the display figure */
   --t-eyebrow:.75rem;                  /* 12 · step numerals */
   --t-cap:.8125rem;                    /* 13 · labels, notes, disclaimers */
-  --t-sm:.9375rem;                     /* 15 · controls, ledger rows */
-  --t-body:1.0625rem;                  /* 17 · running text */
-  --t-num:1.3125rem;                   /* 21 · ledger figures */
-  --t-h:clamp(1.375rem,3.4vw,1.75rem); /* 22→28 · block heading */
-  --t-lede:clamp(1.0625rem,2.2vw,1.1875rem); /* 17→19 · one statement */
-  --t-display:clamp(2.75rem,11vw,4.25rem);   /* 44→68 · the number */
+  --t-sm:1rem;                         /* 16 · controls, ledger rows */
+  --t-body:1.125rem;                   /* 18 · running text */
+  --t-num:1.375rem;                    /* 22 · ledger figures */
+  --t-h:clamp(1.5rem,3.6vw,2rem);      /* 24→32 · block heading */
+  --t-lede:clamp(1.125rem,2.2vw,1.25rem); /* 18→20 · one statement */
+  --t-display:clamp(2.875rem,11vw,4.5rem);   /* 46→72 · the number */
 
   --gut:clamp(18px,4.6vw,32px);
   /* One 4px scale for the gaps BETWEEN blocks. Measured on 23 Nov: the
@@ -62,7 +62,7 @@ html{color-scheme:light;background:var(--ground)}
 html,body{margin:0;padding:0}
 body{
   background:var(--ground);
-  font-family:var(--sans);font-weight:400;font-size:var(--t-body);line-height:1.6;
+  font-family:var(--sans);font-weight:400;font-size:var(--t-body);line-height:1.56;
   color:var(--ink);-webkit-font-smoothing:antialiased;
   overflow-wrap:break-word;word-break:normal;
   font-variant-numeric:tabular-nums;
@@ -75,17 +75,17 @@ button{font:inherit;color:inherit}
 ::selection{background:rgba(1,1,78,.14)}
 
 /* ── the column ────────────────────────────────────────────── */
-.wrap{max-width:56rem;margin:0 auto;padding:clamp(18px,3.4vw,26px) var(--gut) 24px}
+.wrap{max-width:80rem;margin:0 auto;padding:clamp(18px,3.4vw,26px) var(--gut) 24px}
 section.panel{padding:0;border:0}
 /* 32px at the narrow end, where 26px used to equal the 26px inside the FAQ
    cluster — the section boundary was not distinguishable from a sub-gap. */
 section.panel + section.panel{margin-top:clamp(32px,4.4vw,36px)}
 
 h2{
-  font-size:var(--t-h);line-height:1.14;font-weight:700;letter-spacing:-.024em;
+  font-size:var(--t-h);line-height:1.2;font-weight:700;letter-spacing:-.024em;
   margin:0;color:var(--navy);text-wrap:balance;
 }
-.lede{font-size:var(--t-body);line-height:1.5;color:var(--ink-2);margin:var(--s3) 0 0;max-width:var(--measure)}
+.lede{font-size:var(--t-body);line-height:1.56;color:var(--ink-2);margin:var(--s3) 0 0;max-width:var(--measure)}
 .hint{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:var(--s2) 0 0;max-width:var(--measure)}
 .fine{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:var(--s4) 0 0;max-width:var(--measure)}
 /* The legal line closes the document, so it stands off the last block by more
@@ -306,7 +306,7 @@ details.q li{margin:3px 0}
 #rate{color:#fff}
 
 .benefit{
-  font-size:var(--t-lede);line-height:1.48;letter-spacing:-.008em;
+  font-size:var(--t-lede);line-height:1.56;letter-spacing:-.008em;
   color:var(--ink);font-weight:500;margin:20px 0 0;max-width:var(--measure);
 }
 .assump{font-size:var(--t-cap);line-height:1.6;color:var(--muted);margin:0;max-width:var(--measure)}
@@ -321,7 +321,7 @@ details.q li{margin:3px 0}
 /* 23 Nov: the disclaimer is the page's fine print, so it takes the fine-print
    size and the whole column. It was 15px inside a 510px measure — half the
    column empty, and it read larger than the 13px notes directly above it. */
-details.q.disc-global p,details.q.disc-global ul{font-size:var(--t-cap);line-height:1.6;max-width:none}
+details.q.disc-global p,details.q.disc-global ul{font-size:var(--t-cap);line-height:1.6;max-width:var(--measure)}
 .rails{display:grid;border-top:var(--rule);margin-top:var(--s5)}
 /* ── payment: QR on a desktop, tap-through rows on a phone ──────────────────────
    A donor cannot scan the screen they are reading, so the two arrangements are
@@ -546,7 +546,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
 
       <div class="field">
         <label class="flabel" for="gift" data-i18n="s1.gift">Donation amount</label>
-        <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="gift" type="text" inputmode="numeric" autocomplete="off" value="1,300"></div>
+        <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="gift" type="text" inputmode="numeric" autocomplete="off" value="100"></div>
         <p class="hint" id="gift-min" data-i18n="s1.min">捐款金額達到或超過 HK$100 可獲得稅收減免。</p>
       </div>
     </div>
@@ -589,7 +589,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
            it never enters an analytics payload, never leaves the frame. -->
       <div id="exact-wrap" hidden>
         <label class="flabel" for="exact" data-i18n="s1.exact.label">Assessable income for the year</label>
-        <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="exact" type="text" inputmode="numeric" autocomplete="off" value="" placeholder="e.g. 500,000" aria-describedby="exact-hint" data-i18n-ph="s1.exact.ph"></div>
+        <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="exact" type="text" inputmode="numeric" autocomplete="off" value="145,000" placeholder="e.g. 500,000" aria-describedby="exact-hint" data-i18n-ph="s1.exact.ph"></div>
         <p class="hint" id="exact-hint" data-i18n="s1.exact.hint">Calculated with exact income, progressive tax rates, and 35% deduction cap. Processed locally; never stored.</p>
       </div>
 
@@ -610,19 +610,19 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
 
     <div class="result">
       <p class="net-label" id="net-label" data-i18n="s2.netlabel">Your donation</p>
-      <p class="net" id="net"><span class="cur">HK$</span>1,300</p>
+      <p class="net" id="net"><span class="cur">HK$</span>100</p>
       <p class="hint" id="net-caption" data-i18n="s2.caption">gift powers sight-saving work—with a tax deduction in return</p>
       <p class="sr" id="announce" aria-live="polite"></p>
 
       <dl class="figs">
-        <div><dt id="saved-label" data-i18n="s2.saved">Tax saved</dt><dd id="saved">HK$221</dd></div>
-        <div><dt id="rate-label" data-i18n="s2.rate">Rate</dt><dd id="rate">17%</dd></div>
+        <div><dt id="saved-label" data-i18n="s2.saved">Tax saved</dt><dd id="saved">HK$14 至 HK$17</dd></div>
+        <div><dt id="rate-label" data-i18n="s2.rate">Rate</dt><dd id="rate">14% – 17%</dd></div>
       </dl>
     </div>
 
     <p class="min-note" id="min-note" data-i18n="s2.min" hidden>捐款金額達到或超過 HK$100 可獲得稅收減免。</p>
 
-    <p class="benefit" id="benefit" data-i18n="s2.benefit">Your HK$1,300 gift qualifies for full tax deduction (est. HK$182 – 221 relief), meaning just HK$1,079 – 1,118 net support delivers the full sight-saving impact.</p>
+    <p class="benefit" id="benefit" data-i18n="s2.benefit">Your HK$100 gift qualifies for full tax deduction (est. HK$14 – 17 relief), meaning just HK$83 – 86 net support delivers the full sight-saving impact.</p>
 
     <!-- the assumption, as the client numbered it on 23 Nov. Line 1 is the
          premise (the band, or the figure the donor typed), line 2 the 35% cap,
@@ -770,7 +770,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
      FHF HK donation tax calculator — iframe POC widget
      Tax engine: verified YA2026/27 constants (unchanged from spec).
      ============================================================ */
-  var V = "1.1.0";
+  var V = "1.2.0";
   /* lo/hi are the ASSESSABLE-INCOME ends of each band. Band mode brackets the
      saving between them; the picker itself is unchanged. */
   var BANDS = {
@@ -784,7 +784,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     r15: {lo:2132500, hi:5000000},
     r16: {lo:5000000, hi:10000000}
   };
-  var st = {amount:1300, band:"r17", mode:"once", exact:0};
+  var st = {amount:100, band:"r17", mode:"once", exact:0};
   /* Monthly is a full year of gifts. The client slide-2 note removes the
      months control, so the annual deduction is amount x 12 — stated in the
      caption, never silently assumed. */
@@ -851,7 +851,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s2.caption": "帶來滿滿救盲力量，同時享扣稅回饋",
       "s2.saved": "預計慈善捐款扣稅額",
       "s2.rate": "稅率",
-      "s2.benefit": "您的 HK$1,300 捐款可全數扣稅，享約 HK$182 – 221 稅務扣減；只需約 HK$1,079 – 1,118 實際支持，即可成就全額100%救盲力量。",
+      "s2.benefit": "您的 HK$100 捐款可全數扣稅，享約 HK$14 – 17 稅務扣減；只需約 HK$83 – 86 實際支持，即可成就全額100%救盲力量。",
       "s2.min": "捐款金額達到或超過 HK$100 可獲得稅收減免。",
       "s2.line3": "以上僅估算個人薪俸稅下的捐款扣稅，並不構成稅務建議",
       "s3.h": "捐款方式",
@@ -980,7 +980,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s2.caption": "gift powers sight-saving work\u2014with a tax deduction in return",
       "s2.saved": "Estimated charitable tax deduction",
       "s2.rate": "Rate",
-      "s2.benefit": "Your HK$1,300 gift qualifies for full tax deduction (est. HK$182 \u2013 221 relief), meaning just HK$1,079 \u2013 1,118 net support delivers the full sight-saving impact.",
+      "s2.benefit": "Your HK$100 gift qualifies for full tax deduction (est. HK$14 \u2013 17 relief), meaning just HK$83 \u2013 86 net support delivers the full sight-saving impact.",
       "s2.min": "Donation amount at HK$100 or above will receive tax deduction receipt",
       "s2.line3": "Estimate for personal Salaries Tax only; does not constitute tax advice",
       "s3.h": "How you give",
@@ -1518,11 +1518,16 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
   /* optional exact income. Picking a band again clears it, so the two inputs
      never disagree about which one is in force. The value stays in memory only:
      it is never posted, never pushed to dataLayer, never persisted. */
+  /* 23 Nov: the exact-income field has a starting value — the single person's
+     basic allowance (HK$145,000), the bottom of the income input — rather than an
+     empty box. It is a default, never a floor: typing replaces it, nothing clamps,
+     and picking a band puts it back so the two controls cannot disagree. */
+  var EXACT_DEFAULT = 145000;
   function clearExact(){
+    var ex = $("#exact");
+    if (ex) ex.value = fmt(EXACT_DEFAULT);
     if (!st.exact) return;
     st.exact = 0;
-    var ex = $("#exact");
-    if (ex) ex.value = "";
   }
   /* One question, two precisions. The band picker and the exact figure are the same
      answer at different confidence, so only one is on screen: swapping keeps the
@@ -1540,7 +1545,12 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       lab.textContent = t(exactMode ? "s1.exact.back" : "s1.exact.summary");
     }
     if (!exactMode) clearExact();
-    else { var ex0 = $("#exact"); if (ex0) ex0.focus(); }
+    else {
+      /* the field carries a starting value (the basic allowance), so opening
+         it adopts that value rather than leaving the box ahead of the maths */
+      var ex0 = $("#exact");
+      if (ex0) { if (!digits(ex0.value)) ex0.value = fmt(EXACT_DEFAULT); st.exact = digits(ex0.value); ex0.focus(); }
+    }
     render(); scheduleHeight();
   }
   if ($swap) $swap.addEventListener("click", function () { firstTouch(); setExactMode(!exactMode); });

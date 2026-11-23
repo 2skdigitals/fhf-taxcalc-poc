@@ -1,6 +1,6 @@
 # Iframe contract — FHF tax calculator widget
 
-Version **1.1.0** · POC · 2SK Solutions
+Version **1.2.0** · POC · 2SK Solutions
 
 Everything the host page (Optimizely CMS) must do, and everything the widget promises.
 If a line here is wrong, the build is wrong — this document is the boundary between the two teams.
@@ -26,29 +26,49 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 
 | # | Block | URL | Height · zh-HK | Height · en | Content peak zh-HK | Content peak en |
 |---|---|---|---|---|---|---|
-| 0 | **One link (all four)** | `/embed/?part=all` (also the bare `/embed/`) | **2615px** | **2905px** | 2546 (at 900px, monthly) | 2835 (at 320px, monthly) |
-| 1 | Calculator + result | `/embed/?part=calc` | **1720px** | **1720px** | 1513 (at 900px, monthly) | 1652 (at 320px, monthly) |
-| 1a | Calculator only | `/embed/?part=input` | **1000px** | **1000px** | 882 (at 900px, monthly) | 932 (at 820px, monthly) |
-| 1b | Result only | `/embed/?part=result` | **890px** | **890px** | 737 (at 320px) | 820 (at 320px) |
-| 2 | Payment | `/embed/?part=pay` | **580px** | **580px** | 479 (at 820px) | 505 (at 820px) |
-| 3 | Receipt | `/embed/?part=receipt` | **810px** | **910px** | 746 (at 320px) | 852 (at 320px) |
+| 0 | **One link (all four)** | `/embed/?part=all` (also the bare `/embed/`) | **2665px** | **3000px** | 2599 (at 944px, monthly) | 2935 (at 320px, monthly) |
+| 1 | Calculator + result | `/embed/?part=calc` | **1610px** | **1770px** | 1546 (at 944px, monthly) | 1703 (at 320px, monthly) |
+| 1a | Calculator only | `/embed/?part=input` | **950px** | **1020px** | 894 (at 900px, monthly) | 952 (at 900px, monthly) |
+| 1b | Result only | `/embed/?part=result` | **800px** | **935px** | 737 (at 320px) | 869 (at 320px) |
+| 2 | Payment | `/embed/?part=pay` | **545px** | **585px** | 490 (at 900px) | 518 (at 900px) |
+| 3 | Receipt | `/embed/?part=receipt` | **820px** | **925px** | 752 (at 320px) | 860 (at 320px) |
 
 **Quoted at the five widths the client asked for (content height, px) — 23 Nov 2026**
 
 | Block | 320 | 390 | 768 | 1024 | 1440 |
 |---|---|---|---|---|---|
-| `?part=input` · zh | 752 | 694 | 877 | 882 | 882 |
-| `?part=input` · en | 836 | 778 | 926 | 901 | 901 |
-| `?part=result` · zh | 737 | 679 | 698 | 709 | 709 |
-| `?part=result` · en | 820 | 778 | 723 | 737 | 737 |
-| `?part=pay` · zh | 398 | 398 | 475 | 479 | 479 |
-| `?part=pay` · en | 424 | 424 | 500 | 505 | 505 |
-| `?part=receipt` · zh | 746 | 746 | 674 | 679 | 679 |
-| `?part=receipt` · en | 852 | 786 | 683 | 687 | 687 |
-| `?part=calc` · zh | 1448 | 1312 | 1499 | 1513 | 1513 |
-| `?part=calc` · en | 1652 | 1515 | 1593 | 1581 | 1581 |
-| `?part=all` · zh | 2499 | 2365 | 2523 | 2546 | 2546 |
-| `?part=all` · en | 2835 | 2634 | 2651 | 2648 | 2648 |
+| `?part=input` · zh | 766 | 704 | 884 | 894 | 894 |
+| `?part=input` · en | 854 | 821 | 936 | 913 | 913 |
+| `?part=result` · zh | 737 | 668 | 715 | 729 | 729 |
+| `?part=result` · en | 869 | 795 | 715 | 729 | 729 |
+| `?part=pay` · zh | 409 | 409 | 482 | 490 | 490 |
+| `?part=pay` · en | 437 | 437 | 510 | 518 | 518 |
+| `?part=receipt` · zh | 752 | 752 | 680 | 688 | 688 |
+| `?part=receipt` · en | 860 | 792 | 688 | 696 | 696 |
+| `?part=calc` · zh | 1480 | 1339 | 1522 | 1546 | 1546 |
+| `?part=calc` · en | 1703 | 1575 | 1622 | 1617 | 1617 |
+| `?part=all` · zh | 2548 | 2407 | 2560 | 2599 | 2599 |
+| `?part=all` · en | 2935 | 2712 | 2697 | 2706 | 2706 |
+
+> **Revised 23 Nov 2026 (client call, `qa/apply_client_call_20261123.py`) — DEFAULTS, WIDTH and TYPE.**
+> Three changes from Kevin's call with the Foundation, none of them copy: (1) the calculator opens on
+> **HK$100** (the field's floor, was 1,300) and the exact-income field opens on **HK$145,000** (the single
+> person's basic allowance, was empty) — a starting value, never a clamp, and opening the exact swap adopts
+> it so the visible field and the engine cannot disagree; (2) the column goes **896 → 1280px**, the width
+> their own `div.c-dynamic-iframe` gets inside `div.container` at a 1440 viewport, so panels and cards fill
+> the same column their other components fill while running text stays on the 34em measure; (3) type moves
+> to the Foundation's 18px/1.56 — body **17 → 18**, block heading **28 → 32**, lede 19 → 20, sm 15 → 16,
+> ledger 21 → 22, display 68 → 72, with the 13px notes and 12px eyebrow untouched.
+> **Every declared height is reissued** (they are contract numbers, and both the wider column and the larger
+> type move the peak): zh-HK calc **1720 → 1610**, input **1000 → 950**, result **890 → 800**, pay **580 → 545**,
+> receipt **810 → 820**, all **2615 → 2665**; en calc **1720 → 1770**, input **1000 → 1020**, result
+> **890 → 935**, pay **580 → 585**, receipt **910 → 925**, all **2905 → 3000**. Peaks zh-HK 1513 → **1546**,
+> 882 → **894**, 737 → **737**, 479 → **490**, 746 → **752**, 2546 → **2599**; en 1652 → **1703**,
+> 932 → **952**, 820 → **869**, 505 → **518**, 852 → **860**, 2835 → **2935**. Note that `?part=calc` and
+> `?part=all` in Chinese peak at 944px now, not 900px: the wider column shortened the copy faster than the
+> larger type lengthened it, so the desktop is no longer the tall end. The legal block takes the 34em measure
+> again — at 1,216px of content it would have run ~180 characters a line at 13px — while keeping its fine-print
+> size. No horizontal scroll at 390px, measured.
 
 > **Revised 23 Nov 2026 (client copy pass, `qa/apply_client_copy_20261123.py`).** Kevin's
 > section-by-section copy sheet, applied verbatim in both languages: Section 1 and 2 headers
@@ -196,7 +216,7 @@ window.addEventListener("message", function (e) {
 | `deeplink` | `{rail, phase:"attempt"\|"result", blocked, reason?}` | wallet app-open test |
 | `pong` | `{height, lang}` | reply to `fhf-ping` |
 
-Every message carries `source:"fhf-taxcalc"`, `v:"1.1.0"` and `lang:"zh-HK"|"en"`. **Filter on `source` — this is the whole contract.**
+Every message carries `source:"fhf-taxcalc"`, `v:"1.2.0"` and `lang:"zh-HK"|"en"`. **Filter on `source` — this is the whole contract.**
 
 ### Host → widget
 

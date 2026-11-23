@@ -320,10 +320,12 @@ with sync_playwright() as pw:
     # The real acceptance test: open each block at the height the client will set,
     # at the widths their page actually produces (iframe 328px → 1280px).
     # These numbers come from qa/sweep_heights.py — the peak of 22 widths from
-    # 320 to 1440, plus 50–73px of slack. `calc` is in here because the client
+    # 320 to 1440, plus 45–70px of slack. `calc` is in here because the client
     # embedded it: at 1,020px its content (1,499px at 320px) produced the second,
     # inner scrollbar they reported on mobile.
-    BUDGET = {"calc": 1720, "input": 1000, "result": 890, "pay": 580, "receipt": 810, "all": 2615}
+    # Reissued 23 Nov 2026 (client call): 18px body at 1.56, 32px block heading,
+    # 1280px column. zh-HK: 1610 / 950 / 800 / 545 / 820 / 2665.
+    BUDGET = {"calc": 1610, "input": 950, "result": 800, "pay": 545, "receipt": 820, "all": 2665}
     SECTIONS = {"calc": ["calculator", "result"], "input": ["calculator"],
                 "result": ["result"], "pay": ["payment"], "receipt": ["receipt"],
                 "all": ["calculator", "result", "payment", "receipt"]}
@@ -507,10 +509,10 @@ with sync_playwright() as pw:
     # the frame, never full-screen), the assets (three captioned screenshots that
     # actually load — a lazy image in a hidden panel would otherwise never be
     # requested and a dead path would ship silently), and no keyboard trap.
-    # Measured at the height the client actually declares for this block (810px zh,
-    # 910px en) — a generous 900px viewport would have hidden the one failure mode
+    # Measured at the height the client actually declares for this block (820px zh,
+    # 925px en) — a generous 900px viewport would have hidden the one failure mode
     # that matters here, an overlay that scrolls the host's fixed frame.
-    for lang_q, frame_h in (("", 810), ("&lang=en", 910)):
+    for lang_q, frame_h in (("", 820), ("&lang=en", 925)):
         pop = browser.new_page(viewport={"width": 390, "height": frame_h},
                                is_mobile=True, has_touch=True)
         pop.goto(f"{BASE}/embed/?part=receipt{lang_q}", wait_until="load")

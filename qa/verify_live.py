@@ -95,7 +95,13 @@ check("the served document is byte-identical to embed/index.html",
 
 MUST = {
     "white ground token": "--ground:#fff;",
-    "56rem column": ".wrap{max-width:56rem",
+    # 23 Nov (client call): the column is the Foundation's own 1,280px component width.
+    "1280px column": ".wrap{max-width:80rem",
+    "18px body at 1.56": "font-size:var(--t-body);line-height:1.56;",
+    "32px block heading": "--t-h:clamp(1.5rem,3.6vw,2rem)",
+    "the HK$100 default": 'autocomplete="off" value="100"',
+    "the HK$145,000 exact-income default": 'value="145,000"',
+    "the exact swap adopts its starting value": "st.exact = digits(ex0.value)",
     "the two-rail desktop grid": "grid-template-columns:repeat(2,minmax(0,1fr))",
     "the AlipayHK QR tile": "../assets/logos/alipayhk.png",
     "the credit-card tile": 'data-rail="card"',
@@ -106,7 +112,7 @@ MUST = {
     "the floor hint on the field": 'id="gift-min"',
     "?part=all in the part map": 'all:     ["calculator","result","payment","receipt"]',
     "all sections shown": 'body[data-part="all"] #calculator',
-    "positive saving (no minus in markup)": '<dd id="saved">HK$221</dd>',
+    "positive saving (no minus in markup)": '<dd id="saved">HK$14 至 HK$17</dd>',
     "the client's disclaimer line 1": "Based on IRD tax rates and info for the relevant assessment year; "
                                       "for general reference only.",
     "the client's disclaimer line 5": "The Fred Hollows Foundation (HK) Limited assumes no liability for "
@@ -131,11 +137,12 @@ MUST = {
     "the donation label": "您的全額捐款",
     "the brand caption (en)": "gift powers sight-saving work—with a tax deduction in return",
     "the deduction label": "預計慈善捐款扣稅額",
-    "the 35% line, numbered": "2. 35% 捐款扣稅上限",
-    "the salaries-tax scope line": 'data-i18n="s2.line3"',
+    # 23 Nov: the ordinal is prepended at render, so the marker is the cap sentence itself.
+    "the 35% cap line": '"d.capline.band.ok"',
+    "the salaries-tax scope line": "以上僅估算個人薪俸稅下的捐款扣稅，並不構成稅務建議",
     "the payment-reference help button": 'id="ref-help"',
     "the help panel is a dialog": 'role="dialog"',
-    "the AlipayHK help screencap": "../assets/help/alipay-step-1.jpg",
+    "the AlipayHK help screencap": "../assets/help/alipay-step-2.jpg",
     "the help panel's third step": "../assets/help/alipay-step-3.jpg",
 }
 missing = [k for k, v in MUST.items() if v not in body]
@@ -202,6 +209,11 @@ with sync_playwright() as pw:
                         .filter(s=>getComputedStyle(s).display!=='none').map(s=>s.id),
             saved: document.getElementById('saved').textContent,
             net: document.getElementById('net').textContent,
+            gift: document.getElementById('gift').value,
+            exact: document.getElementById('exact').value,
+            bodySize: parseFloat(getComputedStyle(document.body).fontSize),
+            bodyLH: parseFloat(getComputedStyle(document.body).lineHeight),
+            h2Size: parseFloat(getComputedStyle(document.querySelector('h2')).fontSize),
             nlabel: document.getElementById('net-label').textContent,
             benefit: document.getElementById('benefit').textContent,
             whatcounts: !!document.getElementById('what-counts'),
@@ -215,18 +227,28 @@ with sync_playwright() as pw:
         errs = []
         if d["bg"] != "rgb(255, 255, 255)":
             errs.append(f"ground {d['bg']}")
-        if d["wrap"] != (min(896, w)):
+        if d["wrap"] != (min(1280, w)):
             errs.append(f"column {d['wrap']}px")
         if d["sections"] != ["calculator", "result", "payment", "receipt"]:
             errs.append(f"sections {d['sections']}")
         if "−" in d["saved"] or "HK$" not in d["saved"]:
             errs.append(f"saved {d['saved']!r}")
-        if d["net"] != "HK$1,300":
-            errs.append(f"the hero figure is not the donation: {d['net']!r}")
+        if d["net"] != "HK$100":
+            errs.append(f"the hero figure is not the default donation: {d['net']!r}")
         if d["nlabel"] != "Your donation":
             errs.append(f"hero label {d['nlabel']!r}")
-        if "HK$1,300" not in d["benefit"] or "net support" not in d["benefit"]:
+        if "HK$100" not in d["benefit"] or "net support" not in d["benefit"]:
             errs.append(f"benefit sentence {d['benefit'][:80]!r}")
+        if d["gift"] != "100":
+            errs.append(f"the gift field does not read 100 on load: {d['gift']!r}")
+        if d["exact"] != "145,000":
+            errs.append(f"the exact-income field does not read 145,000 on load: {d['exact']!r}")
+        if d["bodySize"] != 18.0:
+            errs.append(f"body font-size {d['bodySize']}px, not 18px")
+        if abs(d["bodyLH"] - 28.08) > 0.2:
+            errs.append(f"body line-height {d['bodyLH']}px, not 1.56 x 18px")
+        if d["h2Size"] < 32.0 and w >= 1280:
+            errs.append(f"block heading {d['h2Size']}px at {w}px, not 32px")
         if d["whatcounts"] or d["spouse"]:
             errs.append(f"a removed block is back: what-counts={d['whatcounts']} spouse={d['spouse']}")
         if not d["help"]:

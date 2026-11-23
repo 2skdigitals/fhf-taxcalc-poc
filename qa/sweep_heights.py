@@ -45,12 +45,14 @@ REPORT_WIDTHS = (320, 390, 768, 1024, 1440)
 # peak + 45..70px of slack, measured not assumed (see the peaks printed below).
 # English peaks are HIGHER than Chinese at every width: 35% more lines at 320px,
 # where the column is ~288px wide and a sentence costs two lines instead of one.
-# Reissued 23 Nov 2026 after the client copy pass: removing the quick-amount chips
-# and the "what counts" disclosure took ~290px off `calc`, so the old 1800 would
-# have handed the client a 287px dead band. Peak + 45..70px, measured.
+# Reissued 23 Nov 2026 (client call, qa/apply_client_call_20261123.py): body copy
+# 17 -> 18px at 1.56, the block heading 28 -> 32, and the column 896 -> 1280px.
+# The wider column shortened most lines and the larger type lengthened them; every
+# block's peak moved, so every number here is reissued. Peaks: calc 1546/1703,
+# input 894/952, result 737/869, pay 490/518, receipt 752/860, all 2599/2935.
 DECLARED = {
-    "zh-HK": {"calc": 1720, "input": 1000, "result": 890, "pay": 580, "receipt": 810, "all": 2615},
-    "en":    {"calc": 1720, "input": 1000, "result": 890, "pay": 580, "receipt": 910, "all": 2905},
+    "zh-HK": {"calc": 1610, "input": 950, "result": 800, "pay": 545, "receipt": 820, "all": 2665},
+    "en":    {"calc": 1770, "input": 1020, "result": 935, "pay": 585, "receipt": 925, "all": 3000},
 }
 
 peaks = {}

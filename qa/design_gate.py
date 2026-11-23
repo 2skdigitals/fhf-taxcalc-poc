@@ -23,8 +23,8 @@ from playwright.sync_api import sync_playwright
 # heights the client pastes into the CMS — must cover the MONTHLY layout too, which is
 # a second, taller shape (that omission shipped a 70px inner scroll at 320px)
 DECLARED = {
-    "zh-HK": {"calc": 1720, "input": 1000, "result": 890, "pay": 580, "receipt": 810, "all": 2615},
-    "en": {"calc": 1720, "input": 1000, "result": 890, "pay": 580, "receipt": 910, "all": 2905},
+    "zh-HK": {"calc": 1610, "input": 950, "result": 800, "pay": 545, "receipt": 820, "all": 2665},
+    "en": {"calc": 1770, "input": 1020, "result": 935, "pay": 585, "receipt": 925, "all": 3000},
 }
 WIDTHS = (320, 360, 390, 414, 568, 768, 944, 1280, 1440)
 PARTS = ("calc", "input", "result", "pay", "receipt", "all")

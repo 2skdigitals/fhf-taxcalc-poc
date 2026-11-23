@@ -149,8 +149,12 @@ with sync_playwright() as pw:
     # This is the acceptance string from the copy sheet. It is not a range the
     # test computes: it is the sentence the client wrote, and it has to render
     # exactly — the same figures, the same spacing, the same punctuation.
+    # 23 Nov: the calculator now opens on HK$100, so the sample is reached the
+    # way a donor reaches it — by typing 1,300 — rather than by being the default.
     p.goto(f"{BASE}/embed/?part=calc&lang={LANG}", wait_until="load")
     p.wait_for_timeout(450)
+    p.fill("#gift", "1300")
+    p.wait_for_timeout(350)
     sample = p.evaluate("()=>document.getElementById('benefit').textContent")
     if sample == SAMPLE[LANG]:
         print(f"\nPASS  the HK$1,300 sample sentence matches the copy sheet character for character")
