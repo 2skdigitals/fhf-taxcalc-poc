@@ -144,6 +144,20 @@ MUST = {
     "the help panel is a dialog": 'role="dialog"',
     "the AlipayHK help screencap": "../assets/help/alipay-step-2.jpg",
     "the help panel's third step": "../assets/help/alipay-step-3.jpg",
+    # 23 Nov · PHASE 1. These strings only exist in the build that hides section 5,
+    # so a cached copy of the previous deployment cannot pass this block.
+    "the phase switch": "var PHASE1 = true;",
+    "the phase attribute it sets": 'document.documentElement.setAttribute("data-phase", "1")',
+    "section 5 hidden while PHASE1": 'html[data-phase="1"] #receipt{display:none!important}',
+    "the empty receipt frame stays empty": 'html[data-phase="1"] body[data-part="receipt"] #disclaimer{display:none!important}',
+    "the AlipayHK receipt line (en)": "Need a receipt? Apply inside AlipayHK.",
+    "the AlipayHK receipt line (zh)": "需要收據？可於 AlipayHK 內申請。",
+    "its trigger": 'id="alipay-help"',
+    "its panel is the same disclosure": 'id="alipay-help-panel"',
+    "one wiring loop for both triggers": '$$("[data-help]").forEach',
+    "five captioned screencaps, step 1": "../assets/help/alipay-receipt-step-1.webp",
+    "…step 5": "../assets/help/alipay-receipt-step-5.webp",
+    "the outro that explains the Chinese UI": "The AlipayHK app is shown in Chinese",
 }
 missing = [k for k, v in MUST.items() if v not in body]
 check(f"{len(MUST)} markers of this pass are in the live document", missing)
@@ -194,6 +208,21 @@ for name in ("alipay-step-1.jpg", "alipay-step-2.jpg", "alipay-step-3.jpg"):
     check(f"the help screencap {name} is served", [] if s_img == 200 and n_img > 5000
           else [f"status {s_img}, {n_img} bytes"], f"{n_img} bytes")
 
+# The phase-1 AlipayHK route adds five WebP crops. A deploy that pushes index.html
+# and forgets assets/help/alipay-receipt-step-*.webp ships a tooltip of dead boxes
+# while /embed/ still answers 200 — so each one is fetched, and the total weight is
+# held to the brief (<100 KB for all five).
+total_kb = 0
+for n in range(1, 6):
+    name = f"alipay-receipt-step-{n}.webp"
+    s_img, n_img = fetch_status(f"/assets/help/{name}")
+    total_kb += n_img / 1024
+    check(f"the AlipayHK receipt screencap {n} is served",
+          [] if s_img == 200 and n_img > 800 else [f"status {s_img}, {n_img} bytes"],
+          f"{n_img / 1024:.1f} KB")
+check(f"the five receipt screencaps weigh under 100 KB together",
+      [] if total_kb < 100 else [f"{total_kb:.1f} KB"], f"{total_kb:.1f} KB")
+
 # ── 2 · the live DOM ─────────────────────────────────────────────────────────
 with sync_playwright() as pw:
     b = pw.chromium.launch(channel="chrome", headless=True)
@@ -205,8 +234,15 @@ with sync_playwright() as pw:
         d = p.evaluate("""()=>({
             bg: getComputedStyle(document.documentElement).backgroundColor,
             wrap: Math.round(document.querySelector('.wrap').getBoundingClientRect().width),
-            sections: [...document.querySelectorAll('section')]
+            sections: [...document.querySelectorAll('section.panel')]
                         .filter(s=>getComputedStyle(s).display!=='none').map(s=>s.id),
+            receipt: !!document.getElementById('receipt').offsetParent,
+            form: !!document.getElementById('rform').offsetParent,
+            disc: (()=>{const d=document.getElementById('disclaimer');
+                        return d ? {h: Math.round(d.getBoundingClientRect().height),
+                                    items: d.querySelectorAll('.disc-list > li').length,
+                                    href: (d.querySelector('a')||{}).getAttribute
+                                          ? d.querySelector('a').getAttribute('href') : ''} : null;})(),
             saved: document.getElementById('saved').textContent,
             net: document.getElementById('net').textContent,
             gift: document.getElementById('gift').value,
@@ -219,6 +255,8 @@ with sync_playwright() as pw:
             whatcounts: !!document.getElementById('what-counts'),
             spouse: !!document.getElementById('spouse'),
             help: !!document.getElementById('ref-help'),
+            alipay_help: (()=>{const e=document.getElementById('alipay-help');
+                               return !!e && e.getBoundingClientRect().height > 0;})(),
             h: document.documentElement.scrollHeight,
             monthly: !!document.getElementById('months'),
             overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
@@ -229,8 +267,17 @@ with sync_playwright() as pw:
             errs.append(f"ground {d['bg']}")
         if d["wrap"] != (min(1280, w)):
             errs.append(f"column {d['wrap']}px")
-        if d["sections"] != ["calculator", "result", "payment", "receipt"]:
+        # PHASE 1: section 5 is hidden, so the one-link arrangement ends at the
+        # payment block — and the receipt form must not be rendering anywhere.
+        if d["sections"] != ["calculator", "result", "payment"]:
             errs.append(f"sections {d['sections']}")
+        if d["receipt"] or d["form"]:
+            errs.append(f"the receipt module is still rendering "
+                        f"(section={d['receipt']} form={d['form']})")
+        if not d["disc"] or d["disc"]["h"] == 0 or d["disc"]["items"] != 5:
+            errs.append(f"the disclaimer is not visible with five items: {d['disc']}")
+        if d["disc"] and d["disc"]["href"] != "https://www.ird.gov.hk/eng/welcome.htm":
+            errs.append(f"the English IRD link is {d['disc']['href']!r}")
         if "−" in d["saved"] or "HK$" not in d["saved"]:
             errs.append(f"saved {d['saved']!r}")
         if d["net"] != "HK$100":
@@ -252,13 +299,108 @@ with sync_playwright() as pw:
         if d["whatcounts"] or d["spouse"]:
             errs.append(f"a removed block is back: what-counts={d['whatcounts']} spouse={d['spouse']}")
         if not d["help"]:
-            errs.append("the transaction-ID help button is missing")
+            errs.append("the transaction-ID help button is missing from the document")
+        if not d["alipay_help"]:
+            errs.append("the AlipayHK receipt trigger is not rendered")
         if d["monthly"]:
             errs.append("a months control is still in the DOM")
         if d["overflow"]:
             errs.append("horizontal overflow")
         check(f"the live combined document renders correctly at {w}px", errs,
               f"{d['h']}px tall")
+        p.close()
+
+    # ── 3 · the AlipayHK tooltip, on the live URL ────────────────────────────
+    # The widget's only overlay, and the only place five real screencaps are
+    # pictured. It is checked on the DEPLOYED bytes because the failure mode is a
+    # deploy that ships the document without assets/help/alipay-receipt-step-*.webp:
+    # the panel opens to five empty boxes and nothing else on the page complains.
+    for lang, q in (("zh", ""), ("en", "&lang=en")):
+        for w, frame in ((390, 690), (1440, 690)):
+            p = b.new_page(viewport={"width": w, "height": frame},
+                           is_mobile=(w < 600), has_touch=(w < 600))
+            p.goto(f"{BASE}/embed/?part=pay{q}&cb={w}{lang}", wait_until="load")
+            p.wait_for_timeout(700)
+            before = p.evaluate("()=>({hidden: document.getElementById('alipay-help-panel').hidden,"
+                                "exp: document.getElementById('alipay-help').getAttribute('aria-expanded')})")
+            p.click("#alipay-help")
+            p.wait_for_timeout(900)
+            r = p.evaluate("""() => {
+              const pop = document.getElementById('alipay-help-panel');
+              const b = pop.getBoundingClientRect(), d = document.documentElement;
+              return {hidden: pop.hidden, role: pop.getAttribute('role'),
+                      exp: document.getElementById('alipay-help').getAttribute('aria-expanded'),
+                      top: Math.round(b.top), bottom: Math.round(b.bottom),
+                      right: Math.round(b.right), vw: d.clientWidth,
+                      steps: [...pop.querySelectorAll('.n')].map(n => n.textContent.trim()),
+                      imgs: [...pop.querySelectorAll('img')].map(i => ({
+                          src: i.getAttribute('src').split('/').pop(),
+                          ok: i.complete && i.naturalWidth > 0,
+                          alt: (i.getAttribute('alt') || '').length})),
+                      line: document.querySelector('.payhelp-line').textContent.trim(),
+                      doc: d.scrollHeight};
+            }""")
+            errs = []
+            if not before["hidden"] or before["exp"] != "false":
+                errs.append(f"closed state {before}")
+            if r["hidden"] or r["exp"] != "true" or r["role"] != "dialog":
+                errs.append(f"open state {r['hidden']}/{r['exp']}/{r['role']}")
+            if len(r["steps"]) != 5 or len(r["imgs"]) != 5:
+                errs.append(f"steps {r['steps']} imgs {len(r['imgs'])}")
+            # NB: `bad` is the module's failure COUNTER — a local of that name would
+            # rebind the global and make every later check crash on `bad += 1`.
+            bad_imgs = [i for i in r["imgs"] if not i["ok"] or not i["alt"]]
+            if bad_imgs:
+                errs.append(f"images not loaded or without alt: {bad_imgs}")
+            if r["bottom"] > frame or r["top"] < 0 or r["right"] > r["vw"] + 1:
+                errs.append(f"panel leaves the frame: {r['top']}–{r['bottom']} of {frame}")
+            if r["doc"] > frame:
+                errs.append(f"the open panel scrolls the frame: doc {r['doc']} > {frame}")
+            check(f"the live AlipayHK tooltip opens with five loaded steps ({lang}, {w}px)",
+                  errs, r["line"])
+            p.close()
+
+    # ── 4 · the IRD link is language-appropriate ─────────────────────────────
+    # Client decision, relayed by Kevin: en → /eng/, zh → /chi/. The two must DIFFER;
+    # an equal pair means one language is being sent to a page it cannot read.
+    hrefs = {}
+    for lang, q in (("zh", ""), ("en", "&lang=en")):
+        p = b.new_page(viewport={"width": 390, "height": 900})
+        p.goto(f"{BASE}/embed/?part=pay{q}&cb=ird{lang}", wait_until="load")
+        p.wait_for_timeout(600)
+        hrefs[lang] = p.evaluate(
+            "()=>{const a=document.querySelector('#disclaimer .disc-list a');"
+            "return a ? {href: a.getAttribute('href'), text: a.textContent, "
+            "rel: a.getAttribute('rel'), target: a.getAttribute('target')} : null;}")
+        p.close()
+    errs = []
+    if not hrefs["zh"] or hrefs["zh"]["href"] != "https://www.ird.gov.hk/chi/welcome.htm":
+        errs.append(f"zh {hrefs['zh']}")
+    if not hrefs["en"] or hrefs["en"]["href"] != "https://www.ird.gov.hk/eng/welcome.htm":
+        errs.append(f"en {hrefs['en']}")
+    if hrefs["zh"] and hrefs["en"] and hrefs["zh"]["href"] == hrefs["en"]["href"]:
+        errs.append("the two languages point at the same URL")
+    for k, v in hrefs.items():
+        if v and ("noopener" not in (v["rel"] or "") or v["target"] != "_blank"):
+            errs.append(f"{k}: target/rel {v['target']}/{v['rel']!r}")
+    check("the live IRD link follows the frame's language (en /eng/, zh /chi/)", errs,
+          f"zh {hrefs['zh']['href'] if hrefs['zh'] else None} · "
+          f"en {hrefs['en']['href'] if hrefs['en'] else None}")
+
+    # ── 5 · ?part=receipt is an empty placeholder ────────────────────────────
+    for lang, q in (("zh", ""), ("en", "&lang=en")):
+        p = b.new_page(viewport={"width": 390, "height": 60})
+        p.goto(f"{BASE}/embed/?part=receipt{q}&cb=ph{lang}", wait_until="load")
+        p.wait_for_timeout(600)
+        r = p.evaluate("""()=>({
+            sh: document.documentElement.scrollHeight,
+            receipt: !!document.getElementById('receipt').offsetParent,
+            form: !!document.getElementById('rform').offsetParent,
+            text: [...document.querySelectorAll('section, p, form, button')]
+                    .filter(e => e.offsetParent && (e.textContent||'').trim().length).length})""")
+        check(f"the live ?part=receipt placeholder is empty ({lang})",
+              [] if (not r["receipt"] and not r["form"] and r["sh"] <= 61 and r["text"] == 0)
+              else [str(r)], f"reports {r['sh']}px")
         p.close()
     b.close()
 
