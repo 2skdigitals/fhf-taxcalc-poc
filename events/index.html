@@ -61,7 +61,7 @@ if (window.top !== window) {
 
 <div class="top"><div class="in">
   <span class="kicker">2SK · event verification</span>
-  <h1>The four blocks + the GTM bridge, running together</h1>
+  <h1>The live blocks + the GTM bridge, running together</h1>
   <div class="spacer"></div>
   <input id="gtm" placeholder="GTM-XXXXXXX (optional)" style="width:180px">
   <button id="load">Load GTM</button>
@@ -69,14 +69,13 @@ if (window.top !== window) {
 </div></div>
 
 <div class="wrap">
-  <p class="note">Scroll through the four blocks and interact with them. Every event the widget posts appears in the panel on the right, with the exact payload that will be pushed into <code>dataLayer</code>. This page runs the same bridge tag you will add to GTM — so you can verify the contract before anything is published. Paste a container ID to also see the events land in a real container (GTM Preview then shows them as fired tags).</p>
+  <p class="note">Scroll through the blocks and interact with them (the receipt block is phase 2 and not embedded here). Every event the widget posts appears in the panel on the right, with the exact payload that will be pushed into <code>dataLayer</code>. This page runs the same bridge tag you will add to GTM — so you can verify the contract before anything is published. Paste a container ID to also see the events land in a real container (GTM Preview then shows them as fired tags).</p>
 
   <div class="cols">
     <div class="frames">
       <iframe src="../embed/?part=input"   title="慈善捐款扣稅計算機" scrolling="no" style="height:1050px"></iframe>
       <iframe src="../embed/?part=result"  title="估算結果" scrolling="no" style="height:980px"></iframe>
-      <iframe src="../embed/?part=pay"     title="捐款方式" scrolling="no" style="height:640px"></iframe>
-      <iframe src="../embed/?part=receipt" title="扣稅收據" scrolling="no" style="height:990px"></iframe>
+      <iframe src="../embed/?part=pay"     title="捐款方式" scrolling="no" style="height:690px"></iframe>
     </div>
 
     <div class="side">

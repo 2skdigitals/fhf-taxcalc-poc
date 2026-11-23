@@ -4,8 +4,9 @@
 calculator, the result, the payment panel and the receipt block in sequence, so there is nothing to assemble on
 their side.
 
-Verified live 23 Nov 2026: `/embed/` → `lang=zh-Hant-HK`, four sections; `/embed/?lang=en` → `lang=en`, four
-sections. Both return 200.
+Verified live 23 Nov 2026: `/embed/` → `lang=zh-Hant-HK`, three content sections (calculator, result, payment);
+`/embed/?lang=en` → `lang=en`, three sections. Both return 200. **Phase 1 has no receipt block** — it returns
+with PayMe, and `?part=receipt` currently renders an empty 60px frame.
 
 ---
 
@@ -17,7 +18,7 @@ Already correct today. No change needed. For reference:
 <iframe
   src="https://2skdigitals.github.io/fhf-taxcalc-poc/embed/"
   title="慈善捐款扣稅計算機"
-  style="border:0;width:100%;height:2790px;display:block"
+  style="border:0;width:100%;height:2225px;display:block"
   loading="lazy"></iframe>
 ```
 
@@ -30,7 +31,7 @@ this **one**:
 <iframe
   src="https://2skdigitals.github.io/fhf-taxcalc-poc/embed/?lang=en"
   title="Tax deduction calculator"
-  style="border:0;width:100%;height:3260px;display:block"
+  style="border:0;width:100%;height:2550px;display:block"
   loading="lazy"></iframe>
 ```
 
@@ -40,13 +41,14 @@ this **one**:
 
 | Frame | Height to set | Measured content |
 |---|---|---|
-| Chinese, all-in-one | **2790** | 2724 |
-| English, all-in-one | **3260** | 3194 |
+| Chinese, calculator → payment | **2225** | 2160 |
+| English, calculator → payment | **2550** | 2482 |
 
 Both sizes carry slack, so nothing clips if a string wraps differently at their column width. **These numbers
-are current as of 23 Nov 2026**, measured by `qa/sweep_heights.py` after the disclaimer became an always-visible
-five-item list — that pass added ~130–190px to every block, so any height issued before it is stale. English is
-~470px taller than Chinese at its peak: set the column for the language you are embedding, never reuse the other.
+are current as of 23 Nov 2026**, measured by `qa/sweep_heights.py` after phase 1 (the receipt block hidden, the
+AlipayHK receipt line added) — that pass REMOVED ~560–710px from the one-link frame and added ~43px to the payment
+block, so any height issued before it is stale. English is still ~260px taller than Chinese at its peak: set the
+column for the language you are embedding, never reuse the other.
 
 ## Why one frame rather than three
 
@@ -56,4 +58,5 @@ five-item list — that pass added ~130–190px to every block, so any height is
 - Two fewer iframes to size, lazy-load and keep in step when a block's copy changes.
 
 The three-part split remains available if they ever want the blocks separated again: `?part=calc`, `?part=pay`,
-`?part=receipt`, with heights 1800 · 580 · 810 (zh) / 910 (en).
+`?part=receipt`, with heights 1720 / 690 / 60 (zh) and 2030 / 800 / 60 (en) — the receipt block is 990 / 1185
+when it returns in phase 2.

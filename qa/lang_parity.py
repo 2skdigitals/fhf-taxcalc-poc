@@ -64,7 +64,11 @@ BAK = ROOT / "embed" / "index.html.bak-pre-en-20261115"
 # transaction-ID popover added — 93 edits, list in qa/apply_client_copy_20261123.py) · 23 Nov
 # (the disclaimer stops being a collapsed <details>: rc.disc.summary + rc.disc.body become
 # rc.disc.head + rc.disc.1-5 — five <li> in an always-visible <ol>, with the IRD link in item 4,
-# zh and en — list in qa/apply_disc_list_20261123.py).
+# zh and en — list in qa/apply_disc_list_20261123.py) · 23 Nov (PHASE 1: section 5 hidden
+# behind the PHASE1 constant, so ?part=receipt is an empty frame and ?part=all ends at
+# "How you give"; plus the AlipayHK receipt line and its five-step tooltip in the payment
+# block — zh and en — list in qa/apply_phase1_alipay_20261123.py. The disclaimer did NOT
+# change: it was already outside the panels, and it still closes every content part).
 # What the gate is for survives each rebase: the ZH
 # build may only change where a change was signed off, and every assertion below still
 # fails on an accidental drift.
@@ -411,7 +415,10 @@ with sync_playwright() as pw:
     got, errs = {}, []
     for lang in ("zh-HK", "en"):
         pd = browser.new_page(viewport={"width": 390, "height": 900})
-        pd.goto(f"{BASE}/embed/?part=receipt&lang={lang}", wait_until="load")
+        # ?part=pay, not ?part=receipt: section 5 is hidden while PHASE1 is true, and
+        # the disclaimer is the one block every CONTENT part still carries. Measuring
+        # it in the empty placeholder would measure nothing.
+        pd.goto(f"{BASE}/embed/?part=pay&lang={lang}", wait_until="load")
         pd.wait_for_timeout(450)
         got[lang] = pd.evaluate(
             "()=>{const d=document.getElementById('disclaimer');if(!d)return null;"
@@ -443,12 +450,21 @@ with sync_playwright() as pw:
             errs.append(f"{lang} link text: {g['link']!r} != {want['link']!r}")
     check("the disclaimer is the client's approved text, verbatim, in both languages", errs)
 
+    # The client's decision (23 Nov 2026, relayed by Kevin): the IRD link is
+    # LANGUAGE-APPROPRIATE — English to /eng/, Chinese to /chi/ — so the two hrefs must
+    # DIFFER. An equal pair is the defect (it means one language is being sent to a page
+    # it cannot read), and so is either side pointing somewhere else.
+    check("the IRD link follows the frame's language: en → /eng/, zh → /chi/",
+          [] if (got.get("zh-HK", {}).get("href") == "https://www.ird.gov.hk/chi/welcome.htm"
+                 and got.get("en", {}).get("href") == "https://www.ird.gov.hk/eng/welcome.htm")
+          else [f"zh={got.get('zh-HK', {}).get('href')!r} en={got.get('en', {}).get('href')!r}"])
+
     # The list must READ as numbered to a screen reader: a real <ol> of five
     # <li>, not five lines starting with a typed digit.
     shape = []
     for lang in ("zh-HK", "en"):
         pd = browser.new_page(viewport={"width": 390, "height": 900})
-        pd.goto(f"{BASE}/embed/?part=receipt&lang={lang}", wait_until="load")
+        pd.goto(f"{BASE}/embed/?part=pay&lang={lang}", wait_until="load")
         pd.wait_for_timeout(400)
         s = pd.evaluate("""()=>{const d=document.getElementById('disclaimer');
           if(!d) return null;
@@ -565,7 +581,7 @@ with sync_playwright() as pw:
         p.goto(f"{BASE}/embed/?part={part}&lang=en", wait_until="load")
         p.wait_for_timeout(380)
         tap += [f"{part} {x}" for x in p.evaluate("""()=>{
-            const sels = ['#ref-help', '.seg label', '#band-mobile',
+            const sels = ['#ref-help', '#alipay-help', '.seg label', '#band-mobile',
                           '.rform .consent', '#rsubmit', '.rails button', '.rails a',
                           'details.q summary', '.amt'];
             const out = [];

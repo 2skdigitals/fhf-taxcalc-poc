@@ -206,6 +206,15 @@ with sync_playwright() as pw:
     check("no horizontal overflow at 1100px", [] if no_overflow else ["scrollWidth > clientWidth"])
 
     # ---------------------------------------------------------------- E · receipt
+    # This is the PHASE 2 module. While PHASE1 is true it is hidden, and a hidden
+    # form cannot be typed into or submitted — so the assertions below force the
+    # section visible first. That is the point of "one flip away from returning":
+    # the code that ships must still work on the day the constant flips. The phase-1
+    # state itself (absent, nothing to submit) is asserted in H2 above.
+    # inline !important, because the phase-1 rule that hides it is itself !important
+    f.evaluate("()=>{document.getElementById('receipt')"
+               ".style.setProperty('display','block','important');}")
+    settle(pg, 120)
     f.click('button[type="submit"]')
     settle(pg, 200)
     s = f.evaluate("() => ({n: document.getElementById('rname-msg').hidden, m: document.getElementById('rmail-msg').hidden, r: document.getElementById('rref-msg').hidden})")
@@ -327,11 +336,19 @@ with sync_playwright() as pw:
     # 1280px column: 1610 / 950 / 800 / 545 / 820 / 2665.
     # Reissued AGAIN 23 Nov 2026 (qa/apply_disc_list_20261123.py): the disclaimer
     # became an always-visible five-item list, +110..260px on every block.
-    # zh-HK: 1720 / 1050 / 980 / 640 / 990 / 2790.
-    BUDGET = {"calc": 1720, "input": 1050, "result": 980, "pay": 640, "receipt": 990, "all": 2790}
+    # Reissued for PHASE 1 23 Nov 2026 (qa/apply_phase1_alipay_20261123.py): section 5
+    # is hidden, so `all` ends at "How you give" and `receipt` is an EMPTY frame.
+    # zh-HK: 1720 / 1050 / 980 / 690 / 60 / 2225.
+    BUDGET = {"calc": 1720, "input": 1050, "result": 980, "pay": 690, "receipt": 60, "all": 2225}
+    # PHASE1 mirrors the constant in embed/index.html. While it is true, section 5
+    # renders nothing: `?part=receipt` is an empty placeholder (a CMS component may
+    # still point at it and a frame must never render a form that cannot submit) and
+    # `?part=all` stops after the payment block. Flip this together with the widget.
+    PHASE1 = True
     SECTIONS = {"calc": ["calculator", "result"], "input": ["calculator"],
-                "result": ["result"], "pay": ["payment"], "receipt": ["receipt"],
-                "all": ["calculator", "result", "payment", "receipt"]}
+                "result": ["result"], "pay": ["payment"],
+                "receipt": [] if PHASE1 else ["receipt"],
+                "all": ["calculator", "result", "payment"] + ([] if PHASE1 else ["receipt"])}
     for w in (328, 568, 944, 1280):
         for part, budget in BUDGET.items():
             pf = browser.new_page(viewport={"width": w, "height": budget}, is_mobile=(w < 600), has_touch=(w < 600))
@@ -352,6 +369,61 @@ with sync_playwright() as pw:
                 errs.append("horizontal overflow")
             check(f"part '{part}' fits {budget}px at {w}px", errs)
             pf.close()
+
+    # ---------------------------------------------------------------- H2 · phase 1
+    # Two things must be true at once while PHASE1 is set, and the second is the one
+    # that would ship silently: the receipt module is ABSENT from every live block
+    # (no half-drawn form, nothing to submit), and the client's legally reviewed
+    # disclaimer is still visible at the foot of each live block. `?part=receipt` is
+    # checked separately: it must render nothing at all, so that a CMS component still
+    # pointed at it shows an empty box rather than a form.
+    for part in ("all", "calc", "pay"):
+        p1 = browser.new_page(viewport={"width": 390, "height": 900}, is_mobile=True, has_touch=True)
+        p1.goto(f"{BASE}/embed/?part={part}", wait_until="load")
+        p1.wait_for_timeout(500)
+        st = p1.evaluate("""() => {
+          const vis = e => !!e && e.getBoundingClientRect().height > 0
+                          && getComputedStyle(e).display !== 'none';
+          const rc = document.getElementById('receipt');
+          const d = document.getElementById('disclaimer');
+          const panels = [...document.querySelectorAll('section.panel')].filter(vis).map(s => s.id);
+          return {rc_vis: vis(rc), form_vis: vis(document.getElementById('rform')),
+                  disc_vis: vis(d),
+                  disc_items: document.querySelectorAll('#disclaimer .disc-list > li').length,
+                  disc_below: panels.length ? Math.round(d.getBoundingClientRect().top) >
+                                               Math.round(document.getElementById(panels[panels.length - 1])
+                                                          .getBoundingClientRect().bottom) : null,
+                  last: panels[panels.length - 1] || null,
+                  heading5: !!document.querySelector('#receipt h2')};
+        }""")
+        errs = []
+        if st["rc_vis"] or st["form_vis"]:
+            errs.append(f"the receipt module is still rendering (rc={st['rc_vis']} form={st['form_vis']})")
+        if not st["disc_vis"]:
+            errs.append("the disclaimer is not visible")
+        if st["disc_items"] != 5:
+            errs.append(f"the disclaimer has {st['disc_items']} items, expected 5")
+        if not st["disc_below"]:
+            errs.append(f"the disclaimer does not close the block (last panel {st['last']})")
+        check(f"[phase 1] ?part={part} has no receipt form and still carries the disclaimer", errs)
+        p1.close()
+
+    p1 = browser.new_page(viewport={"width": 390, "height": 60})
+    p1.goto(f"{BASE}/embed/?part=receipt", wait_until="load")
+    p1.wait_for_timeout(500)
+    ph = p1.evaluate("""() => {
+      const visible = [...document.querySelectorAll('section, p, div, form, input, button')]
+        .filter(e => e.offsetParent && e.getBoundingClientRect().height > 0);
+      const el = document.getElementById('receipt');
+      return {sh: document.documentElement.scrollHeight,
+              receipt_vis: !!el.offsetParent,
+              showing: visible.map(e => e.tagName + (e.id ? '#' + e.id : '')).slice(0, 8)};
+    }""")
+    errs = []
+    if ph["receipt_vis"] or ph["sh"] > 61:
+        errs.append(f"?part=receipt is not an empty frame: {ph}")
+    check("[phase 1] ?part=receipt reports an empty 60px frame, not a dead form", errs)
+    p1.close()
 
     # ---------------------------------------------------------------- K · C6 benefit line
     # The client's "selling point" sentence must follow the same numbers as the
@@ -524,7 +596,7 @@ with sync_playwright() as pw:
         bench.goto(f"{BASE}/embed/?part={bench_part}")
         bench.wait_for_timeout(320)
         tap += bench.evaluate("""()=>{
-            const sels = ['#ref-help', '.seg label', '#band-mobile',
+            const sels = ['#ref-help', '#alipay-help', '.seg label', '#band-mobile',
                           '.rform .consent', '#rsubmit', '.rails button', '.rails a',
                           'details.q summary', '.amt'];
             const out = [];
@@ -540,46 +612,56 @@ with sync_playwright() as pw:
     check("every thumb target on the phone surface is at least 44px tall", tap)
     bench.close()
 
-    # ---------------------------------------------------------------- O · the transaction-ID popover
-    # The popover is the only overlay in the widget and the only place a real
-    # transaction ID is pictured, so it carries four things worth failing on: the
-    # disclosure contract (aria-expanded, real button), the overlay contract (inside
-    # the frame, never full-screen), the assets (three captioned screenshots that
-    # actually load — a lazy image in a hidden panel would otherwise never be
-    # requested and a dead path would ship silently), and no keyboard trap.
-    # Measured at the height the client actually declares for this block (990px zh,
-    # 1185px en after the disclaimer became a list) — a generous 900px viewport
-    # would have hidden the one failure mode that matters here, an overlay that
-    # scrolls the host's fixed frame.
-    for lang_q, frame_h in (("", 990), ("&lang=en", 1185)):
+    # ---------------------------------------------------------------- O · the help popovers
+    # ONE pattern, TWO triggers, and both are exercised — because they are the same
+    # code path and a regression in one is a regression in the other:
+    #   · #alipay-help / #alipay-help-panel — the AlipayHK receipt route, live in
+    #     phase 1 inside the payment block: five client screencaps that walk a donor
+    #     to 申請收據 inside the app;
+    #   · #ref-help / #ref-help-panel — the payment-reference popover inside section 5,
+    #     which is PHASE 2 code. It is measured here with the section forced visible:
+    #     a hidden trigger cannot be clicked, and the module has to work on the day
+    #     PHASE1 flips. Its frame numbers are the phase-2 declarations (990 / 1185).
+    # What is asserted, per popover: the disclosure contract (real <button>,
+    # aria-expanded), the overlay contract (role=dialog, inside the frame, never
+    # full-screen, opening it does not grow the block), the assets (every screenshot
+    # loads and carries alt text — a lazy image in a hidden panel would never be
+    # requested, and a dead path would ship silently), and no keyboard trap.
+    def popover_case(tag, mid, url, btn_id, panel_id, steps, frame_h, lang_q=""):
         pop = browser.new_page(viewport={"width": 390, "height": frame_h},
                                is_mobile=True, has_touch=True)
-        pop.goto(f"{BASE}/embed/?part=receipt{lang_q}", wait_until="load")
+        pop.goto(url, wait_until="load")
         pop.wait_for_timeout(420)
-        before = pop.evaluate("""()=>({
-            hidden: document.getElementById('ref-help-panel').hidden,
-            exp: document.getElementById('ref-help').getAttribute('aria-expanded'),
-            tag: document.getElementById('ref-help').tagName,
-            role: document.getElementById('ref-help-panel').getAttribute('role'),
-            label: document.getElementById('ref-help').getAttribute('aria-label') || ''})""")
-        pop.click("#ref-help")
+        if mid:
+            # phase-2 module inside a phase-1 build: no click target otherwise
+            pop.evaluate(f"()=>{{document.getElementById('{mid}')"
+                         f".style.setProperty('display','block','important');}}")
+            pop.wait_for_timeout(200)
+        before = pop.evaluate(f"""()=>({{
+            hidden: document.getElementById('{panel_id}').hidden,
+            exp: document.getElementById('{btn_id}').getAttribute('aria-expanded'),
+            tag: document.getElementById('{btn_id}').tagName,
+            role: document.getElementById('{panel_id}').getAttribute('role'),
+            label: document.getElementById('{btn_id}').getAttribute('aria-label') || ''}})""")
+        pop.click(f"#{btn_id}")
         pop.wait_for_timeout(500)
-        after = pop.evaluate("""()=>{
-            const pop = document.getElementById('ref-help-panel');
+        after = pop.evaluate(f"""()=>{{
+            const pop = document.getElementById('{panel_id}');
             const r = pop.getBoundingClientRect(), d = document.documentElement;
-            return {hidden: pop.hidden,
+            return {{hidden: pop.hidden,
                     role: pop.getAttribute('role'),
-                    exp: document.getElementById('ref-help').getAttribute('aria-expanded'),
+                    exp: document.getElementById('{btn_id}').getAttribute('aria-expanded'),
                     w: Math.round(r.width), right: Math.round(r.right),
+                    top: Math.round(r.top), bottom: Math.round(r.bottom),
                     vw: d.clientWidth, vh: d.clientHeight, h: Math.round(r.height),
                     frame: Math.round(d.getBoundingClientRect().width),
                     scrolls: pop.scrollHeight > pop.clientHeight + 1,
                     overX: d.scrollWidth > d.clientWidth + 1,
                     steps: [...pop.querySelectorAll('.n')].map(n => n.textContent),
-                    imgs: [...pop.querySelectorAll('img')].map(i => ({
+                    imgs: [...pop.querySelectorAll('img')].map(i => ({{
                         src: i.getAttribute('src'), ok: i.complete && i.naturalWidth > 0,
-                        alt: i.getAttribute('alt') || ''}))};
-        }""")
+                        alt: i.getAttribute('alt') || ''}}))}};
+        }}""")
         errs = []
         if before["tag"] != "BUTTON" or before["exp"] != "false" or not before["hidden"]:
             errs.append(f"closed state {before}")
@@ -593,54 +675,62 @@ with sync_playwright() as pw:
             errs.append(f"panel escapes the frame: right {after['right']} of {after['frame']}")
         if after["h"] > after["vh"] * 0.75:
             errs.append(f"panel is {after['h']}px of a {after['vh']}px frame — a full-screen modal")
-        # Two steps since the confirmation-screen capture was withdrawn: it carried
-        # the donor's own avatar and a HK$1.00 test gift under an HK$100 minimum.
-        if len(after["steps"]) != 2 or len(after["imgs"]) != 2:
-            errs.append(f"steps {after['steps']} imgs {len(after['imgs'])}")
-        if [t.strip() for t in after["steps"]] not in (["Step 1", "Step 2"], ["\u7b2c 1 \u6b65", "\u7b2c 2 \u6b65"]):
-            errs.append(f"step labels {after['steps']}")
+        if after["bottom"] > frame_h or after["top"] < 0:
+            errs.append(f"open panel {after['top']}–{after['bottom']} leaves the {frame_h}px frame")
+        if len(after["steps"]) != steps or len(after["imgs"]) != steps:
+            errs.append(f"steps {after['steps']} imgs {len(after['imgs'])} (want {steps} of each)")
+        want_labels = ([f"Step {i}" for i in range(1, steps + 1)]
+                       if lang_q else [f"\u7b2c {i} \u6b65" for i in range(1, steps + 1)])
+        if [t.strip() for t in after["steps"]] != want_labels:
+            errs.append(f"step labels {after['steps']} want {want_labels}")
         bad_img = [i for i in after["imgs"] if not i["ok"] or not i["alt"]]
         if bad_img:
             errs.append(f"image not loaded or missing alt: {bad_img}")
-        if not after["scrolls"]:
-            errs.append("panel neither fits nor scrolls — it must do one")
-        check(f"the reference popover opens as a dialog inside the frame{lang_q or ' (zh)'}", errs)
+        if not after["scrolls"] and after["h"] < 40:
+            errs.append("panel renders as an empty box")
+        check(f"{tag} opens as a dialog inside the frame{lang_q or ' (zh)'}", errs)
+
         # The panel is absolutely positioned, so opening it must not grow the
         # document — that is what keeps the client's fixed frame honest in the
         # open state, where a modal would have blown the declared height apart.
-        pop.click("#ref-help")
-        pop.wait_for_timeout(350)
-        grown = pop.evaluate("""()=>{
-            const pop = document.getElementById('ref-help-panel');
+        pop.click(f"#{btn_id}")
+        pop.wait_for_timeout(300)
+        grown = pop.evaluate(f"""()=>{{
+            const pop = document.getElementById('{panel_id}');
             const open = document.documentElement.scrollHeight;
             pop.hidden = true;
             const closed = document.documentElement.scrollHeight;
             pop.hidden = false;
-            return {open: open, closed: closed};
-        }""")
-        check(f"opening the popover does not change the block height{lang_q or ' (zh)'}",
+            return {{open: open, closed: closed}};
+        }}""")
+        check(f"opening {tag} does not change the block height{lang_q or ' (zh)'}",
               [] if grown["open"] == grown["closed"] else [str(grown)])
         # Escape closes it and hands focus back to the button; Tab is NOT trapped.
         pop.keyboard.press("Escape")
-        pop.wait_for_timeout(200)
-        esc = pop.evaluate("()=>({hidden:document.getElementById('ref-help-panel').hidden,"
-                           "focus:document.activeElement.id||document.activeElement.tagName})")
-        check(f"Escape closes the popover and returns focus to its button{lang_q or ' (zh)'}",
-              [] if (esc["hidden"] and esc["focus"] == "ref-help") else [str(esc)])
-        pop.click("#ref-help")
+        pop.wait_for_timeout(220)
+        esc = pop.evaluate(f"""()=>({{hidden:document.getElementById('{panel_id}').hidden,
+                           focus:document.activeElement.id||document.activeElement.tagName}})""")
+        check(f"Escape closes {tag} and returns focus to its button{lang_q or ' (zh)'}",
+              [] if (esc["hidden"] and esc["focus"] == btn_id) else [str(esc)])
+        pop.click(f"#{btn_id}")
         pop.wait_for_timeout(150)
         for _ in range(5):
             pop.keyboard.press("Tab")
         out = pop.evaluate("()=>document.activeElement.id||document.activeElement.tagName")
-        check(f"the popover is not a keyboard trap (5 Tabs leave it){lang_q or ' (zh)'}",
-              [] if out not in ("ref-help-panel", "") and out != "BODY" else [out])
-        # and it must never scroll the host's fixed frame in the open state
-        pop.click("#ref-help")
-        pop.wait_for_timeout(300)
-        openh = pop.evaluate("()=>document.documentElement.scrollHeight")
-        check(f"the open popover stays inside the declared {frame_h}px frame{lang_q or ' (zh)'}",
-              [] if openh <= frame_h else [f"document {openh}px > frame {frame_h}px"])
+        check(f"{tag} is not a keyboard trap (5 Tabs leave it){lang_q or ' (zh)'}",
+              [] if out not in (panel_id, "") and out != "BODY" else [out])
         pop.close()
+
+    # phase 1 — the AlipayHK receipt route, in the payment block, at its declared height
+    for lang_q, frame_h in (("", 690), ("&lang=en", 800)):
+        popover_case("the AlipayHK receipt tooltip", None,
+                     f"{BASE}/embed/?part=pay{lang_q}", "alipay-help", "alipay-help-panel",
+                     5, frame_h, lang_q)
+    # phase 2 — the payment-reference popover, forced visible at its own declaration
+    for lang_q, frame_h in (("", 990), ("&lang=en", 1185)):
+        popover_case("the reference popover", "receipt",
+                     f"{BASE}/embed/?part=receipt{lang_q}", "ref-help", "ref-help-panel",
+                     2, frame_h, lang_q)
 
     # ---------------------------------------------------------------- I · the event verification page
     pe = browser.new_page(viewport={"width": 1280, "height": 900})

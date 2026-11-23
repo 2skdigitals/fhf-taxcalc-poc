@@ -1,6 +1,6 @@
 # Iframe contract — FHF tax calculator widget
 
-Version **1.2.0** · POC · 2SK Solutions
+Version **1.3.0** · POC · 2SK Solutions
 
 Everything the host page (Optimizely CMS) must do, and everything the widget promises.
 If a line here is wrong, the build is wrong — this document is the boundary between the two teams.
@@ -13,7 +13,7 @@ If a line here is wrong, the build is wrong — this document is the boundary be
 |---|---|
 | The interactive calculator (amount, band, months → estimate) | The page hero, promo banner, FAQ or any editorial copy |
 | The payment rails (AlipayHK QR + credit card) | A payment processor (the money moves inside AlipayHK, or on the Foundation's own card page) |
-| The receipt-request capture form | The receipt generator / CRM (that is the backend, Phase 1) |
+| The receipt-request capture form — **phase 2, returns with PayMe** | The receipt generator / CRM (that is the backend, Phase 1) |
 | A postMessage event source for the host's GTM | An analytics implementation of its own |
 
 The host page owns: page copy, SEO, schema, GTM container, consent, navigation, footer, and the CMS iframe component itself.
@@ -22,16 +22,19 @@ The host page owns: page copy, SEO, schema, GTM container, consent, navigation, 
 
 ## 2 · The component requires a height — so the page ships as four blocks
 
+> **Phase 1 ships three of them.** Section 5 (the receipt form) is switched off — it returns with PayMe — so
+> `?part=receipt` is a 60px empty placeholder today. The split itself is unchanged; one block is simply empty.
+
 Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per language, taking the peak and adding 45–70px of slack. **Set the number for the language you are embedding** and every block fits at every width, with no internal scrollbar.
 
 | # | Block | URL | Height · zh-HK | Height · en | Content peak zh-HK | Content peak en |
 |---|---|---|---|---|---|---|
-| 0 | **One link (all four)** | `/embed/?part=all` (also the bare `/embed/`) | **2790px** | **3260px** | 2724 (at 320px, monthly) | 3194 (at 320px, monthly) |
+| 0 | **One link (calculator → result → payment)** | `/embed/?part=all` (also the bare `/embed/`) | **2225px** | **2550px** | 2160 (at 944px, monthly) | 2482 (at 320px, monthly) |
 | 1 | Calculator + result | `/embed/?part=calc` | **1720px** | **2030px** | 1656 (at 320px, monthly) | 1962 (at 320px, monthly) |
 | 1a | Calculator only | `/embed/?part=input` | **1050px** | **1180px** | 987 (at 900px, monthly) | 1113 (at 320px, monthly) |
 | 1b | Result only | `/embed/?part=result` | **980px** | **1190px** | 913 (at 320px) | 1129 (at 320px) |
-| 2 | Payment | `/embed/?part=pay` | **640px** | **750px** | 585 (at 320px) | 696 (at 320px) |
-| 3 | Receipt | `/embed/?part=receipt` | **990px** | **1185px** | 928 (at 320px) | 1119 (at 320px) |
+| 2 | Payment | `/embed/?part=pay` | **690px** | **800px** | 628 (at 320px) | 739 (at 320px) |
+| 3 | Receipt — **empty frame in phase 1** | `/embed/?part=receipt` | **60px** | **60px** | renders nothing | renders nothing |
 
 **Quoted at the five widths the client asked for (content height, px) — 23 Nov 2026**
 
@@ -41,14 +44,41 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 | `?part=input` · en | 1113 | 997 | 1029 | 1006 | 1006 |
 | `?part=result` · zh | 913 | 781 | 808 | 822 | 822 |
 | `?part=result` · en | 1129 | 971 | 808 | 822 | 822 |
-| `?part=pay` · zh | 585 | 522 | 575 | 583 | 583 |
-| `?part=pay` · en | 696 | 613 | 603 | 611 | 611 |
-| `?part=receipt` · zh | 928 | 865 | 773 | 780 | 780 |
-| `?part=receipt` · en | 1119 | 968 | 781 | 789 | 789 |
+| `?part=pay` · zh | 628 | 566 | 610 | 618 | 618 |
+| `?part=pay` · en | 739 | 656 | 638 | 646 | 646 |
+| `?part=receipt` · zh | 60 | 60 | 60 | 60 | 60 |
+| `?part=receipt` · en | 60 | 60 | 60 | 60 | 60 |
 | `?part=calc` · zh | 1656 | 1452 | 1615 | 1639 | 1639 |
 | `?part=calc` · en | 1962 | 1751 | 1715 | 1709 | 1709 |
-| `?part=all` · zh | 2724 | 2520 | 2652 | 2691 | 2691 |
-| `?part=all` · en | 3194 | 2887 | 2789 | 2798 | 2798 |
+| `?part=all` · zh | 2121 | 1917 | 2128 | 2160 | 2160 |
+| `?part=all` · en | 2482 | 2244 | 2257 | 2259 | 2259 |
+
+> **Revised 23 Nov 2026 (phase 1 + the AlipayHK receipt route, `qa/apply_phase1_alipay_20261123.py`).**
+> Phase 1 ships **AlipayHK and the credit card only**, so section 5 — the receipt-request form, which exists to
+> claim a **PayMe** receipt — is switched off behind one constant (`PHASE1`) and renders nothing. It is hidden,
+> never deleted: flipping that constant brings the section, its form, its popover and `?part=receipt` back with no
+> other edit. Three consequences for this table:
+> - **`?part=receipt` is now an EMPTY frame.** A CMS component may still point at it, and a frame must never
+>   render a form that cannot submit — so the block renders nothing and reports the viewport, i.e. **60px**.
+>   Delete the component if it is still on the page; the URL stays valid.
+> - **`?part=all` ends after "How you give".** The receipt block leaves the one-link arrangement:
+>   **2790 → 2225px** zh-HK, **3260 → 2550px** en (peaks 2724 → **2160** at 944px monthly / 3194 → **2482**
+>   at 320px monthly).
+> - **The payment block gains the AlipayHK receipt line** — one sentence plus the same disclosure the
+>   payment-reference field uses, carrying five client screencaps (cropped to remove the transaction reference,
+>   resized to 400px, 27 KB for all five). Peak 585 → **628** zh-HK, 696 → **739** en, so **pay 640 → 690px**
+>   and **750 → 800px**. The panel is bounded by the space the payment frame leaves: full width below the
+>   trigger on a phone, opening upward from 720px where the trigger sits low — measured at 12 widths in both
+>   languages, it never leaves the frame, and the steps scroll inside the panel.
+> **The disclaimer is unchanged and still closes every block that carries content.** It was already outside the
+> panels (page level), so hiding section 5 does not touch it; only the empty `?part=receipt` frame suppresses it,
+> because that frame renders nothing at all. Calc / input / result are unchanged (**1720 / 1050 / 980** zh-HK,
+> **2030 / 1180 / 1190** en): same disclaimer, same content.
+> **This is a client-side CMS edit** — the six heights they were given are superseded by these six.
+> **The IRD link is unchanged and stays per language:** disclaimer item 4 is `https://www.ird.gov.hk/eng/welcome.htm`
+> in English and `https://www.ird.gov.hk/chi/welcome.htm` in Chinese (the client supplied both pages). A shared
+> `/chi/` URL was considered for one turn and withdrawn, because the client's English page exists.
+> `qa/lang_parity.py` now asserts the two hrefs **differ** per language, so neither can be "tidied" into one.
 
 > **Revised 23 Nov 2026 (disclaimer as a numbered list, `qa/apply_disc_list_20261123.py`).**
 > The collapsed `<details class="q disc-global">` at the foot of the widget becomes an always-visible
@@ -68,6 +98,9 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 > The link inside item 4 is `https://www.ird.gov.hk/eng/welcome.htm` in English and
 > `/chi/welcome.htm` in Chinese — the client supplied the `/chi/` URL, but sending an English reader to
 > a Chinese page is a defect; say the word and it goes back to one URL.
+> **Confirmed 23 Nov 2026:** the client supplied the English page, so the pairing stays LANGUAGE-APPROPRIATE —
+> English to `/eng/welcome.htm`, Chinese to `/chi/welcome.htm`. (A shared `/chi/` URL was floated for one
+> turn and withdrawn.) `qa/lang_parity.py` asserts the two hrefs differ per language, not just that one exists.
 
 > **Revised 23 Nov 2026 (client call, `qa/apply_client_call_20261123.py`) — DEFAULTS, WIDTH and TYPE.**
 > Three changes from Kevin's call with the Foundation, none of them copy: (1) the calculator opens on
@@ -158,11 +191,13 @@ Each block is **stateless**. The QR is amountless and the payment copy does not 
 
 | Block | Mobile (frame ≤480px) | Tablet/desktop (≥568px) |
 |---|---|---|
-| Calculator + result · zh-HK | 1650 | 1450 |
-| Calculator + result · en | 2000 | 1500 |
-| Payment · zh-HK | 1040 | 900 |
-| Payment · en | 1210 | 900 |
-| Receipt · en | 1030 | 790 |
+| Calculator + result · zh-HK | 1656 | 1639 |
+| Calculator + result · en | 1962 | 1748 |
+| Payment · zh-HK | 628 | 618 |
+| Payment · en | 739 | 675 |
+| All in one · zh-HK | 2121 | 2160 |
+| All in one · en | 2482 | 2317 |
+| Receipt · both | 60 | 60 |
 
 (the English receipt block peaks at 468px above 568px, so a breakpoint pair gives it back 260px of dead space — the largest single win of the two-language build)
 
@@ -235,7 +270,7 @@ window.addEventListener("message", function (e) {
 | `deeplink` | `{rail, phase:"attempt"\|"result", blocked, reason?}` | wallet app-open test |
 | `pong` | `{height, lang}` | reply to `fhf-ping` |
 
-Every message carries `source:"fhf-taxcalc"`, `v:"1.2.0"` and `lang:"zh-HK"|"en"`. **Filter on `source` — this is the whole contract.**
+Every message carries `source:"fhf-taxcalc"`, `v:"1.3.0"` and `lang:"zh-HK"|"en"`. **Filter on `source` — this is the whole contract.**
 
 ### Host → widget
 

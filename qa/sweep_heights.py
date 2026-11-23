@@ -50,11 +50,13 @@ REPORT_WIDTHS = (320, 390, 768, 1024, 1440)
 # Reissued again 23 Nov 2026 (qa/apply_disc_list_20261123.py): the disclaimer went
 # from a collapsed <details> row (~48px) to an always-visible <h3> + five-item <ol>
 # (175px zh / 237px en at 390px), so EVERY block grows by roughly that much.
-# Peaks now: calc 1656/1962, input 987/1113, result 913/1129, pay 585/696,
-# receipt 928/1119, all 2724/3194. Every declared value below is reissued.
+# Reissued AGAIN 23 Nov 2026 (phase 1, qa/apply_phase1_alipay_20261123.py): section 5
+# is hidden (PHASE1) and ?part=receipt is an empty 60px frame, while the payment block
+# gains the AlipayHK receipt line. Peaks now: calc 1656/1962, input 987/1113,
+# result 913/1129, pay 628/739, receipt 0 (empty frame), all 2160/2482.
 DECLARED = {
-    "zh-HK": {"calc": 1720, "input": 1050, "result": 980, "pay": 640, "receipt": 990, "all": 2790},
-    "en":    {"calc": 2030, "input": 1180, "result": 1190, "pay": 750, "receipt": 1185, "all": 3260},
+    "zh-HK": {"calc": 1720, "input": 1050, "result": 980, "pay": 690, "receipt": 60, "all": 2225},
+    "en":    {"calc": 2030, "input": 1180, "result": 1190, "pay": 800, "receipt": 60, "all": 2550},
 }
 
 peaks = {}
@@ -67,8 +69,14 @@ with sync_playwright() as pw:
             rows = []
             for w in WIDTHS:
                 # short viewport: .wrap has min-height:100vh, which would mask
-                # any content shorter than the viewport and hide the real number
-                p = b.new_page(viewport={"width": w, "height": 240},
+                # any content shorter than the viewport and hide the real number.
+                # An EMPTY frame is the exception: with zero content the probe can only
+                # report its own viewport, so a 240px probe read 240 for a block that is
+                # really 60px tall (phase 1's ?part=receipt). Those parts are measured at
+                # the height they will actually be given — where scrollHeight still grows
+                # the moment the content returns, so the check can still fail.
+                vh = DECLARED[lang][part] if part == "receipt" else 240
+                p = b.new_page(viewport={"width": w, "height": vh},
                                is_mobile=(w < 600), has_touch=(w < 600))
                 p.goto(f"{BASE}/embed/?part={part}&lang={lang}", wait_until="load")
                 p.wait_for_timeout(400)

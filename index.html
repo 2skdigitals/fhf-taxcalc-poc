@@ -61,14 +61,14 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
     <tbody>
       <tr><td><b>1 · Calculator</b></td><td><code id="p1">/embed/?part=input</code></td><td><b>1050px</b></td><td>781 – 1113</td></tr>
       <tr><td><b>2 · Result</b></td><td><code id="p2">/embed/?part=result</code></td><td><b>980px</b></td><td>781 – 1129</td></tr>
-      <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>640px</b></td><td>480 – 696</td></tr>
-      <tr><td><b>4 · Receipt</b></td><td><code id="p4">/embed/?part=receipt</code></td><td><b>990px</b> / 1185 en</td><td>757 – 1119</td></tr>
+      <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>690px</b></td><td>523 – 739</td></tr>
+      <tr><td><b>4 · Receipt</b> (phase 2 — returns with PayMe)</td><td><code id="p4">/embed/?part=receipt</code></td><td><b>60px</b> — empty frame, phase 1</td><td>renders nothing</td></tr>
       <tr><td><b>1+2 combined</b></td><td><code id="p5">/embed/?part=calc</code></td><td><b>1720px</b></td><td>1421 – 1962</td></tr>
-      <tr><td><b>All four combined</b></td><td><code id="p6">/embed/?part=all</code></td><td><b>2790px</b> / 3260 en</td><td>2367 – 3194</td></tr>
+      <tr><td><b>Calc → result → payment</b></td><td><code id="p6">/embed/?part=all</code></td><td><b>2225px</b> / 2550 en</td><td>1857 – 2482</td></tr>
     </tbody>
   </table>
   <p class="lede" style="margin:-6px 0 10px;font-size:13px;color:#68707b">These are the worst cases across every width their page actually produces (iframe 328px on a small phone → 1280px on a wide desktop), plus margin. If the component can take a <b>different height per breakpoint</b>, tell us and we'll hand you a two-number set instead — that removes the remaining vertical slack on desktop.</p>
-  <p class="lede" style="margin:0 0 34px;font-size:13px;color:#68707b">All four also work as <b>one</b> document: <code>/embed/?part=all</code> — and a bare <code>/embed/</code> now defaults to it. It is 2,724px (zh) / 3,194px (en) at its tallest reachable state, so it fits a single frame; it is still a tall frame on a phone, which is why the four-block split stays the recommended arrangement.</p>
+  <p class="lede" style="margin:0 0 34px;font-size:13px;color:#68707b">All four also work as <b>one</b> document: <code>/embed/?part=all</code> — and a bare <code>/embed/</code> now defaults to it. It is 2,160px (zh) / 2,482px (en) at its tallest reachable state, so it fits a single frame; it is still a tall frame on a phone, which is why the four-block split stays the recommended arrangement.</p>
 
   <h2>3 · The test bench + the context preview</h2>
   <div class="cards">

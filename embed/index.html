@@ -477,6 +477,50 @@ details.q li{margin:3px 0}
            text-transform:uppercase;color:var(--muted)}
 .hsteps img{width:100%;max-width:400px;height:auto;border:1px solid var(--line);border-radius:4px}
 .hsteps p{font-size:var(--t-cap);line-height:1.55;color:var(--ink-2);margin:0}
+
+/* ── the AlipayHK receipt line ───────────────────────────────────────────
+   Phase 1 has no in-widget receipt form (that is section 5, which returns
+   with PayMe), but a wallet gift still needs a receipt and AlipayHK issues it
+   from inside its own app. So the rail carries the route: one line of copy and
+   the SAME disclosure the payment-reference field uses — .helpbtn + .helppop,
+   aria-expanded, role="dialog", Escape closes, focus returns. One pattern in
+   this widget, never two.
+
+   It sits with the AlipayHK rail in both arrangements: between the two rows on
+   a phone (blue 3px rule and the rail's own 14px inset, so the copy starts on the
+   same left edge as the rail above it), and under
+   the QR tile on a desktop, where only the <a> rows go and this line stays.
+   Fine print only — the 13px token, the muted ink, no new size, colour, face
+   or shadow. */
+.payhelp{position:relative;padding:11px 0 12px 14px}
+.rails .payhelp{border-left:3px solid #1677FF}
+.payhelp-line{display:flex;align-items:center;gap:0;margin:0;
+              font-size:var(--t-cap);line-height:1.55;color:var(--muted)}
+.payhelp .helpbtn{margin:-13px -12px -13px -3px}
+/* The panel is the reference popover's, re-anchored for a SHORT block: the
+   payment block is declared at 640px (750px in English) and this trigger is the
+   last thing in it, so a panel growing downward from a top:-10px anchor ends
+   past the declared height every time — the one failure a fixed-height frame
+   cannot absorb. So: full width below the trigger on a phone, beside it at
+   ≥641px, and opening UPWARD from ≥720px where the trigger sits low and the
+   space above it is the space that exists. Its bottom is pinned to the trigger,
+   so it can never leave the frame at the bottom; the height cap keeps its top
+   inside the frame too, and the steps scroll inside the panel. */
+#payhelp .helppop{max-height:clamp(200px,calc(100vh - 300px),340px)}
+@media(min-width:641px){
+  /* left-anchored, not right: this trigger lives at the left edge of the
+     payment block, so a right-anchored panel would open away from it */
+  #payhelp .helppop{left:0;right:auto}
+}
+@media(min-width:720px){
+  .rails{display:block;border-top:0;margin-top:0}
+  .rails > a{display:none}
+  .rails .payhelp{border-left:0}
+  .payhelp{padding:15px 0 0}
+  .payhelp-line{max-width:340px}
+  #payhelp .helppop{top:auto;bottom:calc(100% + 8px);
+                    max-height:clamp(240px,calc(100vh - 340px),380px)}
+}
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;
   min-height:52px;padding:14px 24px;border:0;border-radius:3px;
@@ -506,6 +550,15 @@ body[data-part="all"] #calculator,
 body[data-part="all"] #result,
 body[data-part="all"] #payment,
 body[data-part="all"] #receipt{display:block}
+/* ── phase 1: section 5 is hidden, never deleted ──────────────────────────
+   Section 5 renders nothing while PHASE1 is true, and a frame still pointed
+   at ?part=receipt must return an EMPTY frame that reports ~60px rather than a
+   half-drawn block — so the disclaimer goes quiet there too, and only there:
+   every part that carries real content still closes with it. #receipt keeps
+   its markup, its form, its popover and its analytics wiring, which is what
+   makes PHASE1 a one-line return for PayMe. */
+html[data-phase="1"] #receipt{display:none!important}
+html[data-phase="1"] body[data-part="receipt"] #disclaimer{display:none!important}
 body[data-part="input"] #goto-row,
 body[data-part="result"] #goto-row,
 body[data-part="calc"] #goto-row{display:none!important}
@@ -692,6 +745,70 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
         <span class="sub" data-i18n="s3.alipay.sub">Open AlipayHK and give</span>
         <span class="go" aria-hidden="true">↗</span>
       </a>
+
+      <!-- Phase 1: the receipt route for an AlipayHK gift. AlipayHK issues the
+           receipt inside its own app, so the rail carries the instruction plus
+           five crops that walk a donor to 申請收據. The copy deliberately stops
+           short of promising an issued receipt: it names where to apply.
+
+           The crops are the client's own donor-side screens, resized to 400px
+           and compressed (27 KB for all five). Two things were cropped OUT: the
+           transaction reference on step 4 and the whole reference/amount block
+           on step 5 (only the button and its link remain). No names, emails or
+           phone numbers were in the source; nothing was added. AlipayHK's UI is
+           Chinese, which is why the outro says so for an English reader. -->
+      <div class="payhelp" id="payhelp">
+        <p class="payhelp-line">
+          <span data-i18n="s3.receipt.line">Need a receipt? Apply inside AlipayHK.</span>
+          <button type="button" class="helpbtn" id="alipay-help" aria-expanded="false"
+                  aria-controls="alipay-help-panel" data-help="alipay-help-panel"
+                  data-i18n-aria="s3.receipt.btn">
+            <span class="i" aria-hidden="true">?</span>
+          </button>
+        </p>
+
+        <div class="helppop" id="alipay-help-panel" role="dialog"
+             aria-labelledby="alipay-help-title" hidden>
+          <button type="button" class="hclose" data-help-close
+                  aria-label="Close" data-i18n-aria="s3.rcpt.close">&#10005;</button>
+          <h3 id="alipay-help-title" data-i18n="s3.rcpt.title">Applying for a receipt in AlipayHK</h3>
+          <p data-i18n="s3.rcpt.intro">A gift made in AlipayHK is receipted inside the same app. Five steps:</p>
+          <ol class="hsteps">
+            <li>
+              <span class="n" data-i18n="s3.rcpt.s1t">Step 1</span>
+              <img loading="eager" src="../assets/help/alipay-receipt-step-1.webp" width="400" height="189"
+                   alt="AlipayHK home screen with the Charity donation icon ringed" data-i18n-alt="s3.rcpt.alt1">
+              <p data-i18n="s3.rcpt.s1">Open AlipayHK and tap Charity donation.</p>
+            </li>
+            <li>
+              <span class="n" data-i18n="s3.rcpt.s2t">Step 2</span>
+              <img loading="eager" src="../assets/help/alipay-receipt-step-2.webp" width="400" height="107"
+                   alt="The My donations tab at the foot of the charity page, ringed" data-i18n-alt="s3.rcpt.alt2">
+              <p data-i18n="s3.rcpt.s2">Tap My donations at the bottom of the charity page.</p>
+            </li>
+            <li>
+              <span class="n" data-i18n="s3.rcpt.s3t">Step 3</span>
+              <img loading="eager" src="../assets/help/alipay-receipt-step-3.webp" width="400" height="344"
+                   alt="The charity menu with Donation records ringed" data-i18n-alt="s3.rcpt.alt3">
+              <p data-i18n="s3.rcpt.s3">Tap Donation records.</p>
+            </li>
+            <li>
+              <span class="n" data-i18n="s3.rcpt.s4t">Step 4</span>
+              <img loading="eager" src="../assets/help/alipay-receipt-step-4.webp" width="400" height="63"
+                   alt="One HK$100 gift to the Foundation in the transaction list" data-i18n-alt="s3.rcpt.alt4">
+              <p data-i18n="s3.rcpt.s4">Find the gift: the charity, the date and the amount identify it.</p>
+            </li>
+            <li>
+              <span class="n" data-i18n="s3.rcpt.s5t">Step 5</span>
+              <img loading="eager" src="../assets/help/alipay-receipt-step-5.webp" width="360" height="93"
+                   alt="The blue Apply for receipt button at the foot of the donation result" data-i18n-alt="s3.rcpt.alt5">
+              <p data-i18n="s3.rcpt.s5">Tap the blue Apply for receipt button at the foot of the donation result.</p>
+            </li>
+          </ol>
+          <p data-i18n="s3.rcpt.outro">The AlipayHK app is shown in Chinese; the buttons sit in the same place on your screen.</p>
+        </div>
+      </div>
+
       <a href="https://www.hollows.org/zh-Hant-HK/donate/" target="_top" rel="noopener" data-rail="card" class="r-card">
         <span class="nm" data-i18n="s3.card.nm">Credit card</span>
         <span class="sub" data-i18n="s3.card.sub">On the Foundation's donation page</span>
@@ -724,7 +841,8 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
         <div class="reflabel">
           <label for="rref" data-i18n="rc.ref">Payment reference</label>
           <button type="button" class="helpbtn" id="ref-help" aria-expanded="false"
-                  aria-controls="ref-help-panel" data-i18n-aria="rc.ref.help.btn">
+                  aria-controls="ref-help-panel" data-help="ref-help-panel"
+                  data-i18n-aria="rc.ref.help.btn">
             <span class="i" aria-hidden="true">?</span>
           </button>
         </div>
@@ -774,6 +892,10 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
 
   </section>
 
+  <!-- The page-level footer. The disclaimer sits here — OUTSIDE every panel —
+       so it is the one block every part carries, and it survives phase 1 with
+       section 5 switched off (PHASE1). Legally reviewed client copy: never let
+       it move inside a panel or behind a disclosure again. -->
   <p class="fine" data-i18n="foot.legal">Based on IRD tax rates and info for the relevant assessment year; for general reference only.</p>
 
       <!-- The legal block: always visible, five numbered sentences (23 Nov).
@@ -800,7 +922,19 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
      FHF HK donation tax calculator — iframe POC widget
      Tax engine: verified YA2026/27 constants (unchanged from spec).
      ============================================================ */
-  var V = "1.2.0";
+  var V = "1.3.0";
+  /* ── CAMPAIGN PHASE ────────────────────────────────────────────────────
+     Phase 1 ships AlipayHK and the credit card, nothing else. PayMe is not in
+     phase 1, and section 5 (the receipt module) exists ONLY to claim a PayMe
+     receipt — the AlipayHK route is inside the AlipayHK app itself, and the
+     card route is handled on the Foundation's own donation page. So section 5
+     is switched OFF here rather than deleted: flip PHASE1 to false when PayMe
+     ships and the section, its form, its popover and ?part=receipt all come
+     back with no other edit. The constant is the whole switch — the CSS that
+     consumes it reads html[data-phase="1"], which is set immediately below,
+     and nothing else in this file knows the phase. */
+  var PHASE1 = true;
+  if (PHASE1) document.documentElement.setAttribute("data-phase", "1");
   /* lo/hi are the ASSESSABLE-INCOME ends of each band. Band mode brackets the
      saving between them; the picker itself is unchanged. */
   var BANDS = {
@@ -891,6 +1025,27 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s3.alipay.sub": "開啟 AlipayHK 完成捐款",
       "s3.card.nm": "信用卡",
       "s3.card.sub": "以信用卡捐款",
+      "s3.receipt.line": "需要收據？可於 AlipayHK 內申請。",
+      "s3.receipt.btn": "如何在 AlipayHK 內申請收據",
+      "s3.rcpt.title": "在 AlipayHK 內申請收據",
+      "s3.rcpt.intro": "在 AlipayHK 完成的捐款，收據同樣在 App 內申請。共五步：",
+      "s3.rcpt.s1t": "第 1 步",
+      "s3.rcpt.s1": "開啟 AlipayHK，點按「慈善捐款」。",
+      "s3.rcpt.s2t": "第 2 步",
+      "s3.rcpt.s2": "在慈善捐款頁底部點按「我的捐款」。",
+      "s3.rcpt.s3t": "第 3 步",
+      "s3.rcpt.s3": "點按「捐款記錄」。",
+      "s3.rcpt.s4t": "第 4 步",
+      "s3.rcpt.s4": "找到該筆捐款：受惠機構、日期與金額足以辨認。",
+      "s3.rcpt.s5t": "第 5 步",
+      "s3.rcpt.s5": "在捐款結果頁底部點按藍色的「申請收據」。",
+      "s3.rcpt.outro": "截圖為 AlipayHK 的中文介面；您手機上的按鈕位置相同。",
+      "s3.rcpt.close": "關閉",
+      "s3.rcpt.alt1": "AlipayHK 首頁，已圈出「慈善捐款」圖示",
+      "s3.rcpt.alt2": "慈善捐款頁底部，已圈出「我的捐款」",
+      "s3.rcpt.alt3": "慈善捐款選單，已圈出「捐款記錄」",
+      "s3.rcpt.alt4": "交易紀錄中一筆 HK$100 護瞳行動捐款",
+      "s3.rcpt.alt5": "捐款結果頁底部的藍色「申請收據」按鈕",
       "rc.h": "索取扣稅收據",
       "rc.lede": "收據抬頭、電郵、付款參考編號。",
       "rc.threshold": "全年捐款總額滿 HK$100 即發出收據。",
@@ -1024,6 +1179,27 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s3.alipay.sub": "Open AlipayHK and give",
       "s3.card.nm": "Credit card",
       "s3.card.sub": "Pay by card",
+      "s3.receipt.line": "Need a receipt? Apply inside AlipayHK.",
+      "s3.receipt.btn": "How to apply for a receipt in AlipayHK",
+      "s3.rcpt.title": "Applying for a receipt in AlipayHK",
+      "s3.rcpt.intro": "A gift made in AlipayHK is receipted inside the same app. Five steps:",
+      "s3.rcpt.s1t": "Step 1",
+      "s3.rcpt.s1": "Open AlipayHK and tap Charity donation.",
+      "s3.rcpt.s2t": "Step 2",
+      "s3.rcpt.s2": "Tap My donations at the bottom of the charity page.",
+      "s3.rcpt.s3t": "Step 3",
+      "s3.rcpt.s3": "Tap Donation records.",
+      "s3.rcpt.s4t": "Step 4",
+      "s3.rcpt.s4": "Find the gift: the charity, the date and the amount identify it.",
+      "s3.rcpt.s5t": "Step 5",
+      "s3.rcpt.s5": "Tap the blue Apply for receipt button at the foot of the donation result.",
+      "s3.rcpt.outro": "The AlipayHK app is shown in Chinese; the buttons sit in the same place on your screen.",
+      "s3.rcpt.close": "Close",
+      "s3.rcpt.alt1": "AlipayHK home screen with the Charity donation icon ringed",
+      "s3.rcpt.alt2": "The My donations tab at the foot of the charity page, ringed",
+      "s3.rcpt.alt3": "The charity menu with Donation records ringed",
+      "s3.rcpt.alt4": "One HK$100 gift to the Foundation in the transaction list",
+      "s3.rcpt.alt5": "The blue Apply for receipt button at the foot of the donation result",
       "rc.h": "Claim your receipt",
       "rc.lede": "Name, email, and your payment reference.",
       "rc.threshold": "A receipt follows once your gifts for the year reach HK$100.",
@@ -1716,33 +1892,45 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
      aria-expanded, a panel with role="dialog" and aria-labelledby, Escape to
      close, focus returned to the button, and NO focus trap — the panel is not
      modal, so Tab must still be able to leave it. */
-  var $helpBtn = $("#ref-help"), $helpPop = $("#ref-help-panel");
-  function helpOpen(on){
-    if (!$helpBtn || !$helpPop) return;
-    $helpPop.hidden = !on;
-    $helpBtn.setAttribute("aria-expanded", on ? "true" : "false");
-    scheduleHeight();
-  }
-  if ($helpBtn && $helpPop) {
-    $helpBtn.addEventListener("click", function () { helpOpen($helpPop.hidden); });
-    $helpPop.addEventListener("click", function (e) {
+  /* ---------- the help popovers (ONE pattern, two triggers) ----------
+     A disclosure that happens to be an overlay: a real <button> with
+     aria-expanded, a panel with role="dialog" and aria-labelledby, Escape to
+     close, focus returned to the button, and NO focus trap — the panel is not
+     modal, so Tab must still be able to leave it.
+
+     Two triggers share it, which is why this is a loop rather than a one-off:
+       #ref-help     the payment-reference field (section 5, back with PayMe)
+       #alipay-help  the receipt route inside the AlipayHK app (phase 1)
+     `data-help` names the panel, so a third one is an attribute, not code. The
+     loop is the same contract the single-instance version had — same events,
+     same order, same focus behaviour — so neither trigger can drift. */
+  $$("[data-help]").forEach(function (btn) {
+    var pop = document.getElementById(btn.getAttribute("data-help"));
+    if (!pop) return;
+    function helpOpen(on){
+      pop.hidden = !on;
+      btn.setAttribute("aria-expanded", on ? "true" : "false");
+      scheduleHeight();
+    }
+    btn.addEventListener("click", function () { helpOpen(pop.hidden); });
+    pop.addEventListener("click", function (e) {
       var el = e.target;
-      while (el && el !== $helpPop) {
+      while (el && el !== pop) {
         if (el.hasAttribute && el.hasAttribute("data-help-close")) {
-          helpOpen(false); $helpBtn.focus(); return;
+          helpOpen(false); btn.focus(); return;
         }
         el = el.parentNode;
       }
     });
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && !$helpPop.hidden) { helpOpen(false); $helpBtn.focus(); }
+      if (e.key === "Escape" && !pop.hidden) { helpOpen(false); btn.focus(); }
     });
     document.addEventListener("click", function (e) {
-      if ($helpPop.hidden) return;
-      if ($helpPop.contains(e.target) || $helpBtn.contains(e.target)) return;
+      if (pop.hidden) return;
+      if (pop.contains(e.target) || btn.contains(e.target)) return;
       helpOpen(false);
     });
-  }
+  });
 
   /* ---------- boot ---------- */
   /* Container inside the frame. The host page is never touched, so GTM runs

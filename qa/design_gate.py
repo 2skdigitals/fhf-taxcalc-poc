@@ -23,11 +23,17 @@ from playwright.sync_api import sync_playwright
 # heights the client pastes into the CMS — must cover the MONTHLY layout too, which is
 # a second, taller shape (that omission shipped a 70px inner scroll at 320px)
 DECLARED = {
-    "zh-HK": {"calc": 1720, "input": 1050, "result": 980, "pay": 640, "receipt": 990, "all": 2790},
-    "en": {"calc": 2030, "input": 1180, "result": 1190, "pay": 750, "receipt": 1185, "all": 3260},
+    "zh-HK": {"calc": 1720, "input": 1050, "result": 980, "pay": 690, "receipt": 60, "all": 2225},
+    "en": {"calc": 2030, "input": 1180, "result": 1190, "pay": 800, "receipt": 60, "all": 2550},
 }
 WIDTHS = (320, 360, 390, 414, 568, 768, 944, 1280, 1440)
 PARTS = ("calc", "input", "result", "pay", "receipt", "all")
+
+# Mirrors PHASE1 in embed/index.html. While it is true, section 5 is hidden and
+# `?part=receipt` is a placeholder that renders NOTHING — so the disclaimer checks
+# below apply to every part that carries content, and the placeholder is asserted
+# to be empty instead. Flip this with the widget when PayMe ships.
+PHASE1 = True
 
 # the strings a text pair is checked on: the roles a designer actually restyles
 CONTRAST_TARGETS = [
@@ -192,9 +198,25 @@ def main():
         # must carry its heading and exactly five <li>. Checking only "it exists"
         # would pass on the old accordion.
         for part in PARTS:
-            pg = browser.new_page(viewport={"width": 390, "height": 900})
+            pg = browser.new_page(viewport={"width": 390, "height": 60 if (PHASE1 and part == "receipt") else 900})
             pg.goto(f"{args.base}/embed/?part={part}", wait_until="load")
             pg.wait_for_timeout(400)
+            if PHASE1 and part == "receipt":
+                # phase 1: this block is a placeholder. It must render nothing at all —
+                # a half-drawn receipt form is the failure, and a form that cannot
+                # submit inside a frame a CMS may still point at is the worse one.
+                e = pg.evaluate("""() => {
+                  const vis = [...document.querySelectorAll('section, form, input, button, p')]
+                      .filter(x => x.offsetParent && x.getBoundingClientRect().height > 0
+                                   && (x.textContent || '').trim().length);
+                  return {sh: document.documentElement.scrollHeight,
+                          receipt: !!document.getElementById('receipt').offsetParent,
+                          visible: vis.map(x => x.tagName + (x.id ? '#' + x.id : '')).slice(0, 5)};
+                }""")
+                if e["receipt"] or e["sh"] > 61:
+                    fails.append(f"FAIL ?part=receipt is not an empty placeholder in phase 1: {e}")
+                pg.close()
+                continue
             d = pg.evaluate("""() => { const el = document.getElementById('disclaimer');
               if (!el) return null;
               const h = el.querySelector('h3'), ol = el.querySelector('ol');
