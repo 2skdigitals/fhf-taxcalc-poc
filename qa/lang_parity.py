@@ -61,7 +61,10 @@ BAK = ROOT / "embed" / "index.html.bak-pre-en-20261115"
 # sheet: Section 1/2 headers, the chips and the "what counts" disclosure removed, the band
 # hint and note rewritten, Section 3 restructured around 您的全額捐款 with the gift row
 # removed and the assumption as a numbered block, the spouse FAQ removed, and the
-# transaction-ID popover added — 93 edits, list in qa/apply_client_copy_20261123.py).
+# transaction-ID popover added — 93 edits, list in qa/apply_client_copy_20261123.py) · 23 Nov
+# (the disclaimer stops being a collapsed <details>: rc.disc.summary + rc.disc.body become
+# rc.disc.head + rc.disc.1-5 — five <li> in an always-visible <ol>, with the IRD link in item 4,
+# zh and en — list in qa/apply_disc_list_20261123.py).
 # What the gate is for survives each rebase: the ZH
 # build may only change where a change was signed off, and every assertion below still
 # fails on an accidental drift.
@@ -179,7 +182,9 @@ STATES = {
     ],
     "receipt": [
         ("default", None),
-        ("disclaimer open", "()=>{document.getElementById('disclaimer').open=true;}"),
+        # the disclaimer is permanently open now; the state that still needs
+        # covering is the consent-line jump, which is what a donor reaches it by
+        ("disclaimer link", "()=>{document.getElementById('disc-link').click();}"),
         ("empty submit", "()=>{document.getElementById('rform').requestSubmit();}"),
         ("bad email", "(function(){document.getElementById('rname').value='陳大文';"
                       "document.getElementById('rmail').value='nope';"
@@ -368,19 +373,40 @@ with sync_playwright() as pw:
     # Downloads/Tax Calculator.docx carries the wording the client has approved.
     # Their text beats our draft, so this pins it character for character in both
     # languages rather than trusting that the edit landed.
+    #
+    # 23 Nov 2026: the accordion became an always-visible numbered list, so the
+    # pin moves from one <br>-joined paragraph to five <ol>/<li>. One string per
+    # item is the point — a single joined string would pass while an item boundary
+    # moved, and the list is now the delivered structure. The Chinese punctuation
+    # is the client's, not normalised: items 1, 2 and 4 end with an ASCII ".", 3
+    # and 5 with "。". Changing one character still fails.
     DISC = {
-        "zh-HK": ("根據稅務局相關課稅年度資料估算，僅供一般參考。"
-                  "不會收集、記錄或儲存任何輸入資料。"
-                  "以累進稅率或標準稅率（以較低者為準）估算應繳稅款；最終以稅務局核定為準。"
-                  "不構成專業意見，詳情請參閱香港稅務局網頁或諮詢顧問."
-                  "護瞳行動（香港）有限公司概不承擔相關法律責任"),
-        "en": ("Based on IRD tax rates and info for the relevant assessment year; for general reference only."
-               "Does not collect, record, or store entered data."
-               "Estimates tax using progressive or standard rates (whichever is lower); "
-               "actual results depend on the IRD."
-               "Not formal financial/tax advice; refer to the Hong Kong Inland Revenue Department "
-               "website or a professional."
-               "The Fred Hollows Foundation (HK) Limited assumes no liability for use or reliance."),
+        "zh-HK": {
+            "head": "免責聲明:",
+            "items": [
+                "根據稅務局相關課稅年度資料估算，僅供一般參考.",
+                "不會收集、記錄或儲存任何輸入資料.",
+                "以累進稅率或標準稅率（以較低者為準）估算應繳稅款；最終以稅務局核定為準。",
+                "不構成專業意見，詳情請參閱香港稅務局網頁或諮詢顧問.",
+                "護瞳行動（香港）有限公司概不承擔相關法律責任。",
+            ],
+            "href": "https://www.ird.gov.hk/chi/welcome.htm",
+            "link": "香港稅務局網頁",
+        },
+        "en": {
+            "head": "Disclaimer:",
+            "items": [
+                "Based on IRD tax rates and info for the relevant assessment year; for general reference only.",
+                "Does not collect, record, or store entered data.",
+                "Estimates tax using progressive or standard rates (whichever is lower); "
+                "actual results depend on the IRD.",
+                "Not formal financial/tax advice; refer to the Hong Kong Inland Revenue "
+                "Department website or a professional.",
+                "The Fred Hollows Foundation (HK) Limited assumes no liability for use or reliance.",
+            ],
+            "href": "https://www.ird.gov.hk/eng/welcome.htm",
+            "link": "Hong Kong Inland Revenue Department website",
+        },
     }
     got, errs = {}, []
     for lang in ("zh-HK", "en"):
@@ -388,14 +414,69 @@ with sync_playwright() as pw:
         pd.goto(f"{BASE}/embed/?part=receipt&lang={lang}", wait_until="load")
         pd.wait_for_timeout(450)
         got[lang] = pd.evaluate(
-            "()=>{const d=document.getElementById('disclaimer');"
-            "return d ? d.querySelector('p').textContent : '';}")
+            "()=>{const d=document.getElementById('disclaimer');if(!d)return null;"
+            "const h=d.querySelector('h3'), ol=d.querySelector('ol'), a=d.querySelector('a');"
+            "return {head:h?h.textContent:'', "
+            "items:ol?[...ol.children].map(li=>li.textContent):[], "
+            "href:a?a.getAttribute('href'):'', link:a?a.textContent:''};}")
         pd.close()
-        if got[lang] != DISC[lang]:
-            i = next((i for i in range(min(len(got[lang]), len(DISC[lang])))
-                      if got[lang][i] != DISC[lang][i]), min(len(got[lang]), len(DISC[lang])))
-            errs.append(f"{lang} @{i}: {got[lang][max(0,i-25):i+35]!r} != {DISC[lang][max(0,i-25):i+35]!r}")
+        want = DISC[lang]
+        if not got[lang]:
+            errs.append(f"{lang}: #disclaimer is missing")
+            continue
+        g = got[lang]
+        if g["head"] != want["head"]:
+            errs.append(f"{lang} heading: {g['head']!r} != {want['head']!r}")
+        if len(g["items"]) != 5:
+            errs.append(f"{lang}: {len(g['items'])} list items, expected 5")
+        for n, (a, b) in enumerate(zip(g["items"], want["items"]), 1):
+            if a != b:
+                i = next((i for i in range(min(len(a), len(b))) if a[i] != b[i]),
+                         min(len(a), len(b)))
+                errs.append(f"{lang} item {n} @{i}: {a[max(0,i-25):i+35]!r} != "
+                            f"{b[max(0,i-25):i+35]!r}")
+        # the link is not decoration: sent to the wrong locale it is a defect an
+        # English reader cannot recover from, and a missing rel hands the referrer over
+        if g["href"] != want["href"]:
+            errs.append(f"{lang} link href: {g['href']!r} != {want['href']!r}")
+        if g["link"] != want["link"]:
+            errs.append(f"{lang} link text: {g['link']!r} != {want['link']!r}")
     check("the disclaimer is the client's approved text, verbatim, in both languages", errs)
+
+    # The list must READ as numbered to a screen reader: a real <ol> of five
+    # <li>, not five lines starting with a typed digit.
+    shape = []
+    for lang in ("zh-HK", "en"):
+        pd = browser.new_page(viewport={"width": 390, "height": 900})
+        pd.goto(f"{BASE}/embed/?part=receipt&lang={lang}", wait_until="load")
+        pd.wait_for_timeout(400)
+        s = pd.evaluate("""()=>{const d=document.getElementById('disclaimer');
+          if(!d) return null;
+          const ol=d.querySelector('ol'), a=d.querySelector('a');
+          const cs=ol?getComputedStyle(ol):null;
+          return {ol:!!ol, lis:ol?ol.children.length:0,
+                  marker:cs?cs.listStyleType:'',
+                  visible:d.getBoundingClientRect().height>0 &&
+                          getComputedStyle(d).display!=='none',
+                  digits:/^\\s*[1-5][.)]/.test(ol&&ol.children[0]?ol.children[0].textContent:''),
+                  blank:(a?a.getAttribute('target'):null)==='_blank',
+                  rel:(a?a.getAttribute('rel'):'')||''};}""")
+        pd.close()
+        if not s:
+            shape.append(f"{lang}: no #disclaimer")
+            continue
+        if not s["ol"] or s["lis"] != 5:
+            shape.append(f"{lang}: ol={s['ol']} items={s['lis']}")
+        if s["marker"] not in ("decimal", "decimal-leading-zero"):
+            shape.append(f"{lang}: list-style {s['marker']!r} is not a decimal list")
+        if not s["visible"]:
+            shape.append(f"{lang}: the disclaimer is not visible without a click")
+        if s["digits"]:
+            shape.append(f"{lang}: item 1 carries a typed ordinal — the <ol> owns the numbers")
+        if not s["blank"] or "noopener" not in s["rel"] or "noreferrer" not in s["rel"]:
+            shape.append(f"{lang}: target/rel {s['blank']}/{s['rel']!r}")
+    check("the disclaimer is an always-visible <ol> of five, linked with rel=noopener noreferrer",
+          shape)
 
     # ---------------------------------------------------------------- F
     # language switch by postMessage inside a live frame, through the real host

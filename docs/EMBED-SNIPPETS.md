@@ -17,7 +17,7 @@ Already correct today. No change needed. For reference:
 <iframe
   src="https://2skdigitals.github.io/fhf-taxcalc-poc/embed/"
   title="慈善捐款扣稅計算機"
-  style="border:0;width:100%;height:2665px;display:block"
+  style="border:0;width:100%;height:2790px;display:block"
   loading="lazy"></iframe>
 ```
 
@@ -30,7 +30,7 @@ this **one**:
 <iframe
   src="https://2skdigitals.github.io/fhf-taxcalc-poc/embed/?lang=en"
   title="Tax deduction calculator"
-  style="border:0;width:100%;height:3000px;display:block"
+  style="border:0;width:100%;height:3260px;display:block"
   loading="lazy"></iframe>
 ```
 
@@ -40,13 +40,13 @@ this **one**:
 
 | Frame | Height to set | Measured content |
 |---|---|---|
-| Chinese, all-in-one | **2665** | 2599 |
-| English, all-in-one | **3000** | 2935 |
+| Chinese, all-in-one | **2790** | 2724 |
+| English, all-in-one | **3260** | 3194 |
 
 Both sizes carry slack, so nothing clips if a string wraps differently at their column width. **These numbers
-are current as of 23 Nov and will be re-confirmed after the copy pass lands** — the copy changes remove the
-amount chips and one accordion and add a help popup, so the content height moves and the declared value will be
-reissued with it.
+are current as of 23 Nov 2026**, measured by `qa/sweep_heights.py` after the disclaimer became an always-visible
+five-item list — that pass added ~130–190px to every block, so any height issued before it is stale. English is
+~470px taller than Chinese at its peak: set the column for the language you are embedding, never reuse the other.
 
 ## Why one frame rather than three
 

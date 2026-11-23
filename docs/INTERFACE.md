@@ -26,29 +26,48 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 
 | # | Block | URL | Height · zh-HK | Height · en | Content peak zh-HK | Content peak en |
 |---|---|---|---|---|---|---|
-| 0 | **One link (all four)** | `/embed/?part=all` (also the bare `/embed/`) | **2665px** | **3000px** | 2599 (at 944px, monthly) | 2935 (at 320px, monthly) |
-| 1 | Calculator + result | `/embed/?part=calc` | **1610px** | **1770px** | 1546 (at 944px, monthly) | 1703 (at 320px, monthly) |
-| 1a | Calculator only | `/embed/?part=input` | **950px** | **1020px** | 894 (at 900px, monthly) | 952 (at 900px, monthly) |
-| 1b | Result only | `/embed/?part=result` | **800px** | **935px** | 737 (at 320px) | 869 (at 320px) |
-| 2 | Payment | `/embed/?part=pay` | **545px** | **585px** | 490 (at 900px) | 518 (at 900px) |
-| 3 | Receipt | `/embed/?part=receipt` | **820px** | **925px** | 752 (at 320px) | 860 (at 320px) |
+| 0 | **One link (all four)** | `/embed/?part=all` (also the bare `/embed/`) | **2790px** | **3260px** | 2724 (at 320px, monthly) | 3194 (at 320px, monthly) |
+| 1 | Calculator + result | `/embed/?part=calc` | **1720px** | **2030px** | 1656 (at 320px, monthly) | 1962 (at 320px, monthly) |
+| 1a | Calculator only | `/embed/?part=input` | **1050px** | **1180px** | 987 (at 900px, monthly) | 1113 (at 320px, monthly) |
+| 1b | Result only | `/embed/?part=result` | **980px** | **1190px** | 913 (at 320px) | 1129 (at 320px) |
+| 2 | Payment | `/embed/?part=pay` | **640px** | **750px** | 585 (at 320px) | 696 (at 320px) |
+| 3 | Receipt | `/embed/?part=receipt` | **990px** | **1185px** | 928 (at 320px) | 1119 (at 320px) |
 
 **Quoted at the five widths the client asked for (content height, px) — 23 Nov 2026**
 
 | Block | 320 | 390 | 768 | 1024 | 1440 |
 |---|---|---|---|---|---|
-| `?part=input` · zh | 766 | 704 | 884 | 894 | 894 |
-| `?part=input` · en | 854 | 821 | 936 | 913 | 913 |
-| `?part=result` · zh | 737 | 668 | 715 | 729 | 729 |
-| `?part=result` · en | 869 | 795 | 715 | 729 | 729 |
-| `?part=pay` · zh | 409 | 409 | 482 | 490 | 490 |
-| `?part=pay` · en | 437 | 437 | 510 | 518 | 518 |
-| `?part=receipt` · zh | 752 | 752 | 680 | 688 | 688 |
-| `?part=receipt` · en | 860 | 792 | 688 | 696 | 696 |
-| `?part=calc` · zh | 1480 | 1339 | 1522 | 1546 | 1546 |
-| `?part=calc` · en | 1703 | 1575 | 1622 | 1617 | 1617 |
-| `?part=all` · zh | 2548 | 2407 | 2560 | 2599 | 2599 |
-| `?part=all` · en | 2935 | 2712 | 2697 | 2706 | 2706 |
+| `?part=input` · zh | 942 | 818 | 976 | 987 | 987 |
+| `?part=input` · en | 1113 | 997 | 1029 | 1006 | 1006 |
+| `?part=result` · zh | 913 | 781 | 808 | 822 | 822 |
+| `?part=result` · en | 1129 | 971 | 808 | 822 | 822 |
+| `?part=pay` · zh | 585 | 522 | 575 | 583 | 583 |
+| `?part=pay` · en | 696 | 613 | 603 | 611 | 611 |
+| `?part=receipt` · zh | 928 | 865 | 773 | 780 | 780 |
+| `?part=receipt` · en | 1119 | 968 | 781 | 789 | 789 |
+| `?part=calc` · zh | 1656 | 1452 | 1615 | 1639 | 1639 |
+| `?part=calc` · en | 1962 | 1751 | 1715 | 1709 | 1709 |
+| `?part=all` · zh | 2724 | 2520 | 2652 | 2691 | 2691 |
+| `?part=all` · en | 3194 | 2887 | 2789 | 2798 | 2798 |
+
+> **Revised 23 Nov 2026 (disclaimer as a numbered list, `qa/apply_disc_list_20261123.py`).**
+> The collapsed `<details class="q disc-global">` at the foot of the widget becomes an always-visible
+> `<h3>` + `<ol>` of five `<li>`, in both languages, with the IRD website linked from item 4. The block
+> is fine print (13px, full column) and it now always occupies ~130–190px more than the 48px summary
+> row did, so **every block that carries it grew and every declared height is reissued**:
+> calc 1610 → **1720** zh / 1770 → **2030** en, input 950 → **1050** / 1020 → **1180**,
+> result 800 → **980** / 935 → **1190**, pay 545 → **640** / 585 → **750**,
+> receipt 820 → **990** / 925 → **1185**, all 2665 → **2790** / 3000 → **3260**.
+> Peaks moved with them: calc 1546 → **1656** / 1703 → **1962**, input 894 → **987** / 952 → **1113**,
+> result 737 → **913** / 869 → **1129**, pay 490 → **585** / 518 → **696**,
+> receipt 752 → **928** / 860 → **1119**, all 2599 → **2724** / 2935 → **3194**.
+> English grew more than Chinese (1962 vs 1656 on `?part=calc`) because the English list wraps to more
+> lines at phone widths; **the two columns are not interchangeable.** The peak also moved to 320px in
+> almost every block, so a desktop-only sweep no longer finds it.
+> **This is a client-side CMS edit**: the six heights they have already been given are superseded.
+> The link inside item 4 is `https://www.ird.gov.hk/eng/welcome.htm` in English and
+> `/chi/welcome.htm` in Chinese — the client supplied the `/chi/` URL, but sending an English reader to
+> a Chinese page is a defect; say the word and it goes back to one URL.
 
 > **Revised 23 Nov 2026 (client call, `qa/apply_client_call_20261123.py`) — DEFAULTS, WIDTH and TYPE.**
 > Three changes from Kevin's call with the Foundation, none of them copy: (1) the calculator opens on

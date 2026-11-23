@@ -324,8 +324,11 @@ with sync_playwright() as pw:
     # embedded it: at 1,020px its content (1,499px at 320px) produced the second,
     # inner scrollbar they reported on mobile.
     # Reissued 23 Nov 2026 (client call): 18px body at 1.56, 32px block heading,
-    # 1280px column. zh-HK: 1610 / 950 / 800 / 545 / 820 / 2665.
-    BUDGET = {"calc": 1610, "input": 950, "result": 800, "pay": 545, "receipt": 820, "all": 2665}
+    # 1280px column: 1610 / 950 / 800 / 545 / 820 / 2665.
+    # Reissued AGAIN 23 Nov 2026 (qa/apply_disc_list_20261123.py): the disclaimer
+    # became an always-visible five-item list, +110..260px on every block.
+    # zh-HK: 1720 / 1050 / 980 / 640 / 990 / 2790.
+    BUDGET = {"calc": 1720, "input": 1050, "result": 980, "pay": 640, "receipt": 990, "all": 2790}
     SECTIONS = {"calc": ["calculator", "result"], "input": ["calculator"],
                 "result": ["result"], "pay": ["payment"], "receipt": ["receipt"],
                 "all": ["calculator", "result", "payment", "receipt"]}
@@ -335,7 +338,10 @@ with sync_playwright() as pw:
             pf.goto(f"{BASE}/embed/?part={part}", wait_until="load")
             pf.wait_for_timeout(450)
             ov = pf.evaluate("()=>({sh:document.documentElement.scrollHeight, ch:document.documentElement.clientHeight})")
-            vis = pf.evaluate("()=>[...document.querySelectorAll('section')].filter(s=>getComputedStyle(s).display!=='none').map(s=>s.id)")
+            # section.panel: the part-switched blocks. #disclaimer is a <section>
+            # too and is deliberately visible in every part, so a bare 'section'
+            # selector would report it as an unexpected panel.
+            vis = pf.evaluate("()=>[...document.querySelectorAll('section.panel')].filter(s=>getComputedStyle(s).display!=='none').map(s=>s.id)")
             want = SECTIONS[part]
             errs = []
             if ov["sh"] > budget + 1:
@@ -448,15 +454,35 @@ with sync_playwright() as pw:
                  and fl2["saved"] == "HK$14 至 HK$17") else [str(fl2)])
 
     # ---------------------------------------------------------------- L · C2 declarations
-    d = bench.evaluate("""()=>({
-        scope: (document.querySelector('.scope')||{}).textContent || '',
-        spouse: (document.getElementById('spouse')||{}).textContent || '',
-        disc: (document.getElementById('disclaimer')||{}).textContent || '',
-        closed: !(document.getElementById('disclaimer')||{hasAttribute:()=>false}).hasAttribute('open'),
-        link: (document.querySelector('#receipt a[href="#disclaimer"]')||{}).textContent || '',
-        foot: (document.querySelector('.wrap > p.fine')||{}).textContent || '',
-        floorline: (document.getElementById('gift-min')||{}).textContent || ''
-    })""")
+    d = bench.evaluate("""()=>{
+        const el=document.getElementById('disclaimer');
+        const h=document.querySelector('#disclaimer h3');
+        const li=document.querySelectorAll('#disclaimer .disc-list > li');
+        const a=document.querySelector('#disclaimer .disc-list a');
+        const out={scope:(document.querySelector('.scope')||{}).textContent||'',
+                   spouse:(document.getElementById('spouse')||{}).textContent||'',
+                   link:(document.querySelector('#receipt a[href="#disclaimer"]')||{}).textContent||'',
+                   foot:(document.querySelector('.wrap > p.fine')||{}).textContent||'',
+                   floorline:(document.getElementById('gift-min')||{}).textContent||'',
+                   disc: el?el.textContent:'', visible:false, head:'', size:0,
+                   ratio:0, items:0, listLink:''};
+        if(!el || !h) return out;
+        const rgb = s => (s.match(/[\\d.]+/g)||[]).slice(0,3).map(Number);
+        const lum = c => { const f = v => { v/=255;
+            return v<=.03928 ? v/12.92 : Math.pow((v+.055)/1.055,2.4); };
+            return .2126*f(c[0])+.7152*f(c[1])+.0722*f(c[2]); };
+        // the widget is transparent on purpose, so white is the honest ground
+        let bg=[255,255,255], n=h;
+        while(n){ const b=getComputedStyle(n).backgroundColor;
+                  if(b && !/rgba\\(0, 0, 0, 0\\)|transparent/.test(b)){ bg=rgb(b); break; }
+                  n=n.parentElement; }
+        const cs=getComputedStyle(h), L1=lum(rgb(cs.color)), L2=lum(bg);
+        out.head=h.textContent; out.size=parseFloat(cs.fontSize);
+        out.ratio=Math.round((Math.max(L1,L2)+.05)/(Math.min(L1,L2)+.05)*100)/100;
+        out.items=li.length; out.listLink=a?a.textContent:'';
+        out.visible=el.getBoundingClientRect().height>0 && cs.display!=='none';
+        return out;
+    }""")
     # The client's slide-7 note removes the scope reminder beside the figures: the
     # single-person allowance is already stated once, where the income is chosen.
     # The check therefore asserts the REMOVAL and that the client's own disclaimer —
@@ -471,10 +497,22 @@ with sync_playwright() as pw:
     # the regression this line exists to catch.
     check("the spouse FAQ is absent from the result block (client instruction, 23 Nov)",
           [] if not d["spouse"].strip() else [d["spouse"][:80]])
-    check("disclaimer is the client's approved text, collapsed, reachable from the consent line",
-          [] if (d["closed"] and "免責聲明" in d["link"] and "最終以稅務局核定為準" in d["disc"]
-                 and "不會收集、記錄或儲存任何輸入資料" in d["disc"]
-                 and "不能取代專業意見" not in d["disc"]) else [str(d)[:220]])
+    # 23 Nov: the disclaimer is no longer an accordion. The check moved from "is the
+    # <summary> collapsed" to "is the title present, visible without a click, and
+    # legible": the same intent (the legal block is there, readable, and names itself)
+    # against the structure that now ships. Collapsed was the old contract; removing
+    # the assertion instead would have left the heading and the fine print unmeasured.
+    check("the disclaimer's title is present, visible and meets AA contrast", []
+          if (d["visible"] and d["head"].strip() == "免責聲明:"
+              and d["ratio"] >= 4.5 and d["size"] >= 12)
+          else [f"visible={d['visible']} head={d['head']!r} "
+                f"ratio={d['ratio']} size={d['size']}"])
+    check("the disclaimer is a five-item list, and the consent line reaches it", []
+          if (d["items"] == 5 and "免責聲明" in d["link"]
+              and "最終以稅務局核定為準" in d["disc"]
+              and "不會收集、記錄或儲存任何輸入資料" in d["disc"]
+              and "不能取代專業意見" not in d["disc"])
+          else [f"items={d['items']} link={d['link']!r} text={d['disc'][:120]!r}"])
     check("the HK$100 floor line is on the donation field, in the client's words",
           [] if "捐款金額達到或超過 HK$100 可獲得稅收減免。" in d["floorline"] else [d["floorline"][:80]])
 
@@ -509,10 +547,11 @@ with sync_playwright() as pw:
     # the frame, never full-screen), the assets (three captioned screenshots that
     # actually load — a lazy image in a hidden panel would otherwise never be
     # requested and a dead path would ship silently), and no keyboard trap.
-    # Measured at the height the client actually declares for this block (820px zh,
-    # 925px en) — a generous 900px viewport would have hidden the one failure mode
-    # that matters here, an overlay that scrolls the host's fixed frame.
-    for lang_q, frame_h in (("", 820), ("&lang=en", 925)):
+    # Measured at the height the client actually declares for this block (990px zh,
+    # 1185px en after the disclaimer became a list) — a generous 900px viewport
+    # would have hidden the one failure mode that matters here, an overlay that
+    # scrolls the host's fixed frame.
+    for lang_q, frame_h in (("", 990), ("&lang=en", 1185)):
         pop = browser.new_page(viewport={"width": 390, "height": frame_h},
                                is_mobile=True, has_touch=True)
         pop.goto(f"{BASE}/embed/?part=receipt{lang_q}", wait_until="load")

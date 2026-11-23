@@ -43,16 +43,18 @@ WIDTHS = [320, 328, 360, 390, 414, 430, 480, 540, 568, 600, 640, 700, 721, 768,
 REPORT_WIDTHS = (320, 390, 768, 1024, 1440)
 
 # peak + 45..70px of slack, measured not assumed (see the peaks printed below).
-# English peaks are HIGHER than Chinese at every width: 35% more lines at 320px,
-# where the column is ~288px wide and a sentence costs two lines instead of one.
+# English peaks are HIGHER than Chinese at every width: at 320px the column is
+# ~288px wide and one Chinese sentence is two English ones.
 # Reissued 23 Nov 2026 (client call, qa/apply_client_call_20261123.py): body copy
 # 17 -> 18px at 1.56, the block heading 28 -> 32, and the column 896 -> 1280px.
-# The wider column shortened most lines and the larger type lengthened them; every
-# block's peak moved, so every number here is reissued. Peaks: calc 1546/1703,
-# input 894/952, result 737/869, pay 490/518, receipt 752/860, all 2599/2935.
+# Reissued again 23 Nov 2026 (qa/apply_disc_list_20261123.py): the disclaimer went
+# from a collapsed <details> row (~48px) to an always-visible <h3> + five-item <ol>
+# (175px zh / 237px en at 390px), so EVERY block grows by roughly that much.
+# Peaks now: calc 1656/1962, input 987/1113, result 913/1129, pay 585/696,
+# receipt 928/1119, all 2724/3194. Every declared value below is reissued.
 DECLARED = {
-    "zh-HK": {"calc": 1610, "input": 950, "result": 800, "pay": 545, "receipt": 820, "all": 2665},
-    "en":    {"calc": 1770, "input": 1020, "result": 935, "pay": 585, "receipt": 925, "all": 3000},
+    "zh-HK": {"calc": 1720, "input": 1050, "result": 980, "pay": 640, "receipt": 990, "all": 2790},
+    "en":    {"calc": 2030, "input": 1180, "result": 1190, "pay": 750, "receipt": 1185, "all": 3260},
 }
 
 peaks = {}

@@ -23,8 +23,8 @@ from playwright.sync_api import sync_playwright
 # heights the client pastes into the CMS — must cover the MONTHLY layout too, which is
 # a second, taller shape (that omission shipped a 70px inner scroll at 320px)
 DECLARED = {
-    "zh-HK": {"calc": 1610, "input": 950, "result": 800, "pay": 545, "receipt": 820, "all": 2665},
-    "en": {"calc": 1770, "input": 1020, "result": 935, "pay": 585, "receipt": 925, "all": 3000},
+    "zh-HK": {"calc": 1720, "input": 1050, "result": 980, "pay": 640, "receipt": 990, "all": 2790},
+    "en": {"calc": 2030, "input": 1180, "result": 1190, "pay": 750, "receipt": 1185, "all": 3260},
 }
 WIDTHS = (320, 360, 390, 414, 568, 768, 944, 1280, 1440)
 PARTS = ("calc", "input", "result", "pay", "receipt", "all")
@@ -40,7 +40,10 @@ CONTRAST_TARGETS = [
     ("figure", "#net"),
     ("figure label", "#saved-label, .figs dt, dt"),
     ("primary action", "button[type=submit], .btn"),
-    ("disclaimer summary", "#disclaimer summary"),
+    # 23 Nov: the disclaimer's accordion became an h3 + <ol>. The title is what a
+    # reader scans for, so it is the pair that is measured — at the same 13px
+    # fine-print size as the list under it.
+    ("disclaimer heading", "#disclaimer .disc-h"),
 ]
 
 MEASURE_JS = """(sel) => {
@@ -182,17 +185,36 @@ def main():
         for src in broken:
             fails.append(f"FAIL image did not load: {src}")
 
-        # ── D · the disclaimer still closes every block, collapsed
+        # ── D · the disclaimer is ALWAYS visible, in every block, with five items
+        # 23 Nov: it was a collapsed <details> and this check asserted the collapse.
+        # The client wanted a permanent numbered list, so the assertion inverts: the
+        # block must have height on first paint, must not be inside a disclosure, and
+        # must carry its heading and exactly five <li>. Checking only "it exists"
+        # would pass on the old accordion.
         for part in PARTS:
             pg = browser.new_page(viewport={"width": 390, "height": 900})
             pg.goto(f"{args.base}/embed/?part={part}", wait_until="load")
             pg.wait_for_timeout(400)
             d = pg.evaluate("""() => { const el = document.getElementById('disclaimer');
-              return el ? {open: el.hasAttribute('open'), h: Math.round(el.getBoundingClientRect().height)} : null; }""")
+              if (!el) return null;
+              const h = el.querySelector('h3'), ol = el.querySelector('ol');
+              const cs = getComputedStyle(el);
+              return {tag: el.tagName, h: Math.round(el.getBoundingClientRect().height),
+                      head: h ? h.textContent.trim() : '',
+                      items: ol ? ol.children.length : 0,
+                      inDetails: !!el.closest('details'),
+                      hidden: cs.display === 'none' || cs.visibility === 'hidden'}; }""")
             if not d:
                 fails.append(f"FAIL disclaimer missing in ?part={part}")
-            elif d["open"] or d["h"] == 0:
-                fails.append(f"FAIL disclaimer not a collapsed visible row in ?part={part}: {d}")
+            else:
+                if d["hidden"] or d["h"] == 0:
+                    fails.append(f"FAIL disclaimer not visible on first paint in ?part={part}: {d}")
+                if d["inDetails"]:
+                    fails.append(f"FAIL disclaimer is still inside a disclosure in ?part={part}")
+                if d["head"] != "免責聲明:":
+                    fails.append(f"FAIL disclaimer heading {d['head']!r} in ?part={part}")
+                if d["items"] != 5:
+                    fails.append(f"FAIL disclaimer has {d['items']} items in ?part={part}")
             pg.close()
 
         browser.close()

@@ -317,11 +317,32 @@ details.q li{margin:3px 0}
 .scope{font-size:var(--t-cap);line-height:1.55;color:var(--ink-2);margin:var(--s4) 0 0;max-width:var(--measure)}
 
 /* ── 3 · how you give ──────────────────────────────────────── */
+/* 23 Nov: the disclaimer is the page's fine print and it is ALWAYS OPEN — the
+   client wanted five numbered sentences, not an accordion. It keeps the 13px
+   fine-print token and the whole column: at 15px inside a 510px measure it read
+   larger than the 13px notes directly above it and left half the column empty.
+   The heading is an h3 at the same fine-print size — a document heading, not a
+   display heading, because this block sits under a 32px block heading. */
 .disc-global{border-top:1px solid var(--line);margin-top:var(--s4);padding-top:var(--s3)}
-/* 23 Nov: the disclaimer is the page's fine print, so it takes the fine-print
-   size and the whole column. It was 15px inside a 510px measure — half the
-   column empty, and it read larger than the 13px notes directly above it. */
-details.q.disc-global p,details.q.disc-global ul{font-size:var(--t-cap);line-height:1.6;max-width:none}
+/* #disc-link jumps here; the block takes focus so a keyboard or screen-reader
+   user lands inside the text instead of at the top of the document. */
+.disc-global:focus{outline:none}
+.disc-global:focus-visible{outline:2px solid var(--navy);outline-offset:4px}
+.disc-global .disc-h{margin:0 0 var(--s2);font-size:var(--t-cap);line-height:1.6;
+                     font-weight:700;letter-spacing:.01em;color:var(--ink)}
+/* a real <ol>, so the numbers are the list's, not typed digits — they follow the
+   language and a screen reader announces "list of 5 items". */
+.disc-global .disc-list{margin:0;padding-left:1.5em;font-size:var(--t-cap);
+                        line-height:1.6;color:var(--ink-2);max-width:none}
+.disc-global .disc-list li{margin:0 0 2px}
+.disc-global .disc-list li:last-child{margin-bottom:0}
+/* The IRD link sits inside a paragraph of small print, so it reads as a link
+   (navy, underlined — the same treatment as the widget's other inline links),
+   never as a button. #E97824 fails AA as text at any size (2.93:1 on white). */
+.disc-global .disc-list a{color:var(--navy);text-decoration:underline;
+                          text-underline-offset:2px;text-decoration-thickness:1px}
+.disc-global .disc-list a:hover{text-decoration-thickness:2px}
+.disc-global .disc-list a:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
 .rails{display:grid;border-top:var(--rule);margin-top:var(--s5)}
 /* ── payment: QR on a desktop, tap-through rows on a phone ──────────────────────
    A donor cannot scan the screen they are reading, so the two arrangements are
@@ -755,10 +776,19 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
 
   <p class="fine" data-i18n="foot.legal">Based on IRD tax rates and info for the relevant assessment year; for general reference only.</p>
 
-      <details class="q disc-global" id="disclaimer">
-      <summary data-i18n="rc.disc.summary">Disclaimer</summary>
-      <p data-i18n-html="rc.disc.body">Based on IRD tax rates and info for the relevant assessment year; for general reference only.<br>Does not collect, record, or store entered data.<br>Estimates tax using progressive or standard rates (whichever is lower); actual results depend on the IRD.<br>Not formal financial/tax advice; refer to the Hong Kong Inland Revenue Department website or a professional.<br>The Fred Hollows Foundation (HK) Limited assumes no liability for use or reliance.</p>
-    </details>
+      <!-- The legal block: always visible, five numbered sentences (23 Nov).
+           It is NOT a disclosure any more — #disc-link still points at this id,
+           so the consent line keeps working; the block takes focus on arrival. -->
+      <section class="disc-global" id="disclaimer" tabindex="-1" aria-labelledby="disc-h">
+        <h3 class="disc-h" id="disc-h" data-i18n="rc.disc.head">Disclaimer:</h3>
+        <ol class="disc-list">
+          <li data-i18n-html="rc.disc.1">Based on IRD tax rates and info for the relevant assessment year; for general reference only.</li>
+          <li data-i18n-html="rc.disc.2">Does not collect, record, or store entered data.</li>
+          <li data-i18n-html="rc.disc.3">Estimates tax using progressive or standard rates (whichever is lower); actual results depend on the IRD.</li>
+          <li data-i18n-html="rc.disc.4">Not formal financial/tax advice; refer to the <a href="https://www.ird.gov.hk/eng/welcome.htm" target="_blank" rel="noopener noreferrer">Hong Kong Inland Revenue Department website</a> or a professional.</li>
+          <li data-i18n-html="rc.disc.5">The Fred Hollows Foundation (HK) Limited assumes no liability for use or reliance.</li>
+        </ol>
+      </section>
 
   <div id="dbg" aria-hidden="true"></div>
 </div>
@@ -885,8 +915,12 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "rc.disclink": "提交前請先閱讀<a href=\"#disclaimer\" id=\"disc-link\">免責聲明</a>。",
       "rc.submit": "提交收據申請",
       "rc.keep": "請保留收據六年；稅務局可能要求查閱。",
-      "rc.disc.summary": "免責聲明",
-      "rc.disc.body": "根據稅務局相關課稅年度資料估算，僅供一般參考。<br>不會收集、記錄或儲存任何輸入資料。<br>以累進稅率或標準稅率（以較低者為準）估算應繳稅款；最終以稅務局核定為準。<br>不構成專業意見，詳情請參閱香港稅務局網頁或諮詢顧問.<br>護瞳行動（香港）有限公司概不承擔相關法律責任",
+      "rc.disc.head": "免責聲明:",
+      "rc.disc.1": "根據稅務局相關課稅年度資料估算，僅供一般參考.",
+      "rc.disc.2": "不會收集、記錄或儲存任何輸入資料.",
+      "rc.disc.3": "以累進稅率或標準稅率（以較低者為準）估算應繳稅款；最終以稅務局核定為準。",
+      "rc.disc.4": "不構成專業意見，詳情請參閱<a href=\"https://www.ird.gov.hk/chi/welcome.htm\" target=\"_blank\" rel=\"noopener noreferrer\">香港稅務局網頁</a>或諮詢顧問.",
+      "rc.disc.5": "護瞳行動（香港）有限公司概不承擔相關法律責任。",
       "foot.legal": "根據稅務局相關課稅年度資料估算，僅供一般參考。",
       "band.unknown": "不確定",
       "band.r0": "HK$145,000 以下",
@@ -1014,8 +1048,12 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "rc.disclink": "Read the <a href=\"#disclaimer\" id=\"disc-link\">disclaimer</a> before you send anything.",
       "rc.submit": "Request my receipt",
       "rc.keep": "Keep the receipt for six years — the IRD may ask to see it.",
-      "rc.disc.summary": "Disclaimer",
-      "rc.disc.body": "Based on IRD tax rates and info for the relevant assessment year; for general reference only.<br>Does not collect, record, or store entered data.<br>Estimates tax using progressive or standard rates (whichever is lower); actual results depend on the IRD.<br>Not formal financial/tax advice; refer to the Hong Kong Inland Revenue Department website or a professional.<br>The Fred Hollows Foundation (HK) Limited assumes no liability for use or reliance.",
+      "rc.disc.head": "Disclaimer:",
+      "rc.disc.1": "Based on IRD tax rates and info for the relevant assessment year; for general reference only.",
+      "rc.disc.2": "Does not collect, record, or store entered data.",
+      "rc.disc.3": "Estimates tax using progressive or standard rates (whichever is lower); actual results depend on the IRD.",
+      "rc.disc.4": "Not formal financial/tax advice; refer to the <a href=\"https://www.ird.gov.hk/eng/welcome.htm\" target=\"_blank\" rel=\"noopener noreferrer\">Hong Kong Inland Revenue Department website</a> or a professional.",
+      "rc.disc.5": "The Fred Hollows Foundation (HK) Limited assumes no liability for use or reliance.",
       "foot.legal": "Based on IRD tax rates and info for the relevant assessment year; for general reference only.",
       "band.unknown": "not sure",
       "band.r0": "below HK$145,000",
@@ -1657,14 +1695,17 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
   $$("details.q").forEach(function(d){
     d.addEventListener("toggle", function(){ scheduleHeight(); });
   });
-  /* The consent-line link must OPEN the collapsed text, not just jump to it.
-     Bound on the document because applyLang() re-creates that paragraph when
-     the language changes — a listener on the old node would be orphaned. */
+  /* The consent-line link used to OPEN a collapsed accordion. The block is
+     always visible now, so the link's job is the jump plus focus: without it a
+     keyboard or screen-reader user is moved on screen but left at the top of the
+     document. preventScroll keeps the browser's own anchor jump. Bound on the
+     document because applyLang() re-creates that paragraph when the language
+     changes — a listener on the old node would be orphaned. */
   document.addEventListener("click", function (e) {
     var el = e.target;
     while (el && el !== document) {
       if (el.id === "disc-link") {
-        var d = $("#disclaimer"); if (d) { d.open = true; scheduleHeight(); }
+        var d = $("#disclaimer"); if (d) { d.focus({preventScroll: true}); }
         return;
       }
       el = el.parentNode;

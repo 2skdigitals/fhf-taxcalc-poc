@@ -44,6 +44,11 @@ pos = []
 for i, a in enumerate(ARGS):
     if a == "--lang" and i + 1 < len(ARGS):
         LANG = ARGS[i + 1]
+    # `--lang=en` was silently ignored: it fell through to nothing, the run stayed
+    # in Chinese, and the summary still printed a green "6/6" — an English check
+    # that never loaded English. Accept both spellings.
+    elif a.startswith("--lang="):
+        LANG = a.split("=", 1)[1]
     elif not a.startswith("--") and (i == 0 or ARGS[i - 1] != "--lang"):
         pos.append(a)
 if pos:
