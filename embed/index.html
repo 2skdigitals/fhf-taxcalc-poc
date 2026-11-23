@@ -88,6 +88,9 @@ h2{
 .lede{font-size:var(--t-body);line-height:1.56;color:var(--ink-2);margin:var(--s3) 0 0;max-width:var(--measure)}
 .hint{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:var(--s2) 0 0;max-width:var(--measure)}
 .fine{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:var(--s4) 0 0;max-width:var(--measure)}
+/* the closing legal sentence is one line on the client's page, and it was wrapping
+   to two because it inherited the reading measure (23 Nov) */
+p.fine[data-i18n="foot.legal"]{max-width:none}
 /* The legal line closes the document, so it stands off the last block by more
    than the 8px that separates a paragraph from its own caption. At 14px it
    read as the last line of the receipt form. */
@@ -355,8 +358,8 @@ details.q li{margin:3px 0}
   .rails{display:none}
   /* Two rails, so two equal columns — and the pair is held to a pair-width, or a
      190px code and a 190px card drift 800px apart on a wide desktop. */
-  .paygrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gut);
-           max-width:min(100%,520px);
+  .paygrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:48px;
+           max-width:min(100%,560px);
            border-top:var(--rule);margin-top:var(--s5);padding-top:var(--s6);align-items:start}
   .qrcard{margin:0;display:block;color:inherit;text-decoration:none}
   .qrcard img{display:block;width:100%;max-width:190px;height:auto;aspect-ratio:450/350;
@@ -515,9 +518,14 @@ details.q li{margin:3px 0}
 @media(min-width:720px){
   .rails{display:block;border-top:0;margin-top:0}
   .rails > a{display:none}
-  .rails .payhelp{border-left:0}
+  /* the receipt line is part of the AlipayHK rail, not a third global item: it sits
+     under that card, at that card's width (560 − 48 gap = two 256px columns), and
+     keeps the blue rule that ties it to the rail (23 Nov) */
+  .rails .payhelp{border-left:3px solid #1677FF;padding:10px 0 12px 14px;max-width:256px}
   .payhelp{padding:15px 0 0}
-  .payhelp-line{max-width:340px}
+  .payhelp-line{display:flex;align-items:flex-start;gap:6px;max-width:none}
+  .payhelp-line > span{flex:1 1 auto}
+  .payhelp-line .helpbtn{flex:0 0 auto;margin:-1px 0 0}
   #payhelp .helppop{top:auto;bottom:calc(100% + 8px);
                     max-height:clamp(240px,calc(100vh - 340px),380px)}
 }
