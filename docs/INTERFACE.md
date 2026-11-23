@@ -261,7 +261,7 @@ One file, one engine, two authored string tables. The language is chosen by `?la
 - **Switching language must not re-load the frame.** Send `{type:"fhf-config", config:{lang:"en"}}`; the widget swaps every string in place, sets `<html lang>`, re-renders and re-posts its height. **Never change `iframe.src` to switch language** — `ready → apply() → src → ready` is the infinite-reload loop (see §10 of the project skill).
 - **`<html lang>` follows the language** (`zh-Hant-HK` / `en`). A host that hard-codes a `lang` on the frame does not break it, but a screen reader inside the frame reads the widget's own value.
 - **Alt text, `aria-label`, `<option>` text and placeholders are translated too** — not just the visible paragraphs. `qa/lang_parity.py` fails on any CJK character left anywhere in the English DOM.
-- **The receipt and disclaimer text is legally reviewed per language.** The Chinese and English versions are structurally identical (same elements, same placement, same collapsed `<details>`) so one legal review covers both shapes; the wording is `docs/disclaimer-draft.md`.
+- **The receipt and disclaimer text is legally reviewed per language.** The Chinese and English versions are structurally identical (same elements, same placement, same always-visible `<ol>` of five — the disclaimer is no longer a collapsed disclosure) so one legal review covers both shapes; the client's approved wording is pinned by `qa/lang_parity.py` and the earlier draft lives at `docs/disclaimer-draft.md`.
 
 ---
 

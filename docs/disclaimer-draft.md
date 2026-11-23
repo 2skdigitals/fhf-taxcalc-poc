@@ -43,7 +43,12 @@ The second point matters commercially as well as legally: the widget answers 「
 
 ---
 
-## 方案 B — 收據區底部折疊，同意書下一條連結（collapsed）✅ **目前實作**
+## 方案 B — 收據區底部折疊，同意書下一條連結（collapsed）⚠️ **已被取代（superseded）**
+
+> **Superseded 23 Nov 2026.** The client's legal wording replaced both drafts below, and the block
+> is no longer collapsed: it ships as an always-visible `<h3>` + five-item `<ol>` with the IRD
+> website linked from item 4. What is live is pinned by `qa/lang_parity.py` and described in
+> `docs/INTERFACE.md` §2. This file is kept as the record of the placement question, not as a spec.
 
 **Placement:** a single link under the consent line — 「使用本計算機及提交資料前，請先閱讀免責聲明。」 — pointing at a collapsed `<details>` block at the foot of the receipt block. Clicking the link opens the block as well as jumping to it.
 
