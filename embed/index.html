@@ -967,8 +967,8 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "d.rv.mail": "請輸入有效電郵。",
       "d.rv.ref": "請輸入付款參考編號。",
       "d.rv.consent": "請先勾選同意。",
-      "d.rv.ok": "多謝您。我們會先核對付款，核對後發出扣稅收據。",
-      "d.rv.done": "已收到"
+      "d.rv.ok": "此原型尚未接上收據系統，您輸入的資料沒有送出，亦沒有儲存。",
+      "d.rv.done": "尚未送出"
     },
     "en": {
       "title": "Donation tax calculator",
@@ -1100,8 +1100,8 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "d.rv.mail": "Please enter a valid email address.",
       "d.rv.ref": "Please enter the payment reference from your app or receipt.",
       "d.rv.consent": "Please tick the consent box first.",
-      "d.rv.ok": "Thank you. We will match your payment first, then issue the tax receipt.",
-      "d.rv.done": "Received"
+      "d.rv.ok": "This prototype has no receipt system connected: nothing you entered has been sent or stored.",
+      "d.rv.done": "Not sent"
     }
   };
 
@@ -1227,7 +1227,6 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     p.lang = L;
     post({type:"event", name:name, params:p});
     if (cfg.debug) console.log("[fhf-taxcalc]", name, p);
-    if (window.dataLayer && cfg.gtm === "in") window.dataLayer.push(Object.assign({event:name}, p));
     dbg("event: " + name + " " + JSON.stringify(p));
     if (name === "calc_result_shown") sent.result = true;
     if (typeof window.__pocEventLog !== "undefined") { /* test hook */ }
@@ -1266,17 +1265,17 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
   var cfg = {
     height: qs.get("h") || "auto",   // "auto" | number (fixed host height, px)
     theme: qs.get("theme") || "light",
-    gtm: qs.get("gtm") || "parent",  // "parent" | "in" | "off" | "GTM-XXXXXXX"
     locale: qs.get("locale") || "zh-Hant-HK",
     lang: normLang(qs.get("lang")),
     debug: qs.get("debug") === "1"
   };
   L = cfg.lang;   /* fhf_init below must report the language, not the default */
-  /* We cannot modify the host page, so the postMessage bridge is not available
-     for measurement. Passing a container ID loads GTM *inside* this frame
-     instead: standard GTM/GA4, zero client-side change. */
-  var GTM_LOAD_ID = /^GTM-[A-Z0-9]{5,}$/i.test(cfg.gtm) ? cfg.gtm.toUpperCase() : "";
-  if (GTM_LOAD_ID) cfg.gtm = "in";
+  /* The ?gtm= parameter was removed (23 Nov). It accepted any GTM-XXXX id, shape-
+     checked only, and loaded it as a script in THIS origin — and a GTM container
+     can run Custom HTML, i.e. arbitrary JS with access to the donor's form and to
+     the engine state. A crafted link was a working PII harvester. Measurement is
+     the host's job: the widget posts events, the host pushes them into the
+     container it already loads. Nothing here may load third-party script. */
   if (cfg.height !== "auto") document.documentElement.setAttribute("data-fit","fixed");
   if (qs.get("debug") === "1") $("#dbg").classList.add("on");
 
@@ -1749,28 +1748,10 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
   /* Container inside the frame. The host page is never touched, so GTM runs
      here; document.referrer is the embedding page, which is what reports need
      in order to group by page rather than by embed URL. */
-  if (GTM_LOAD_ID) {
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
-      event: "fhf_init",
-      host_page: (document.referrer || "").split("#")[0] || "",
-      embed_url: location.href,
-      part: part,
-      lang: L
-    });
-    window.dataLayer.push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
-    var gs = document.createElement("script");
-    gs.async = true;
-    gs.src = "https://www.googletagmanager.com/gtm.js?id=" + encodeURIComponent(GTM_LOAD_ID);
-    document.head.appendChild(gs);
-  }
-
   applyLang(cfg.lang);   /* applies every string, then renders */
   post({type:"ready", height: measure(), contract: 1});
   setTimeout(function(){ pushHeight(true); }, 60);
   setTimeout(function(){ pushHeight(true); }, 600);
-  window.__fhfPoc = {version:V, state:function(){return st;}, measure:measure, post:post, track:track,
-                     lang:function(){return L;}, setLang:setLang};
   /* the engine, exported for the headless test (qa/test_tax_engine.py) and for
      anyone reading the numbers; harmless inside an iframe */
   window.__fhfTax = __fhfTax;

@@ -656,16 +656,29 @@ with sync_playwright() as pw:
           [] if (int(ev["n"]) >= 2 and ev["hon"].strip() == "clean" and ev["rows"] >= 2) else [str(ev)])
     pe.close()
 
-    # ---------------------------------------------------------------- J · container inside the frame
+    # ---------------------------------------------------------------- J · no third-party script, ever
+    # The ?gtm= parameter used to load any GTM-XXXX id inside this origin; a GTM
+    # container can run Custom HTML, so a crafted link became a PII harvester with
+    # access to the donor's fields and the engine state. It is gone, and this test
+    # fails the build if it comes back.
     pc = browser.new_page(viewport={"width": 390, "height": 900})
-    pc.goto(f"{BASE}/embed/?part=input&gtm=GTM-XXXXXXX", wait_until="load")
+    pc.goto(f"{BASE}/embed/?part=input&gtm=GTM-ATTACK1", wait_until="load")
     pc.wait_for_timeout(900)
     g = pc.evaluate("""() => ({
-        init: (window.dataLayer || []).find(x => x && x.event === 'fhf_init') || null,
-        script: !!document.querySelector('script[src*="googletagmanager.com/gtm.js"]')
+        gtm: performance.getEntriesByType('resource')
+               .map(r => r.name).filter(u => /googletagmanager|google-analytics/.test(u)),
+        external: performance.getEntriesByType('resource')
+               .map(r => r.name).filter(u => !u.startsWith(location.origin)),
+        dbg: typeof window.__fhfPoc
       })""")
-    check("a container ID loads GTM inside the frame and seeds dataLayer with the host page",
-          [] if (g["script"] and g["init"] and "host_page" in g["init"]) else [str(g)])
+    errs = []
+    if g["gtm"]:
+        errs.append(f"third-party script loaded: {g['gtm']}")
+    if g["external"]:
+        errs.append(f"external requests: {g['external']}")
+    if g["dbg"] != "undefined":
+        errs.append(f"window.__fhfPoc is still exposed ({g['dbg']})")
+    check("no ?gtm= escape hatch: no third-party script, no external request, no debug global", errs)
     pc.close()
 
     # ---------------------------------------------------------------- G · the bench
