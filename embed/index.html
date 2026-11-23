@@ -526,7 +526,10 @@ details.q li{margin:3px 0}
   .payhelp-line{display:flex;align-items:flex-start;gap:6px;max-width:none}
   .payhelp-line > span{flex:1 1 auto}
   .payhelp-line .helpbtn{flex:0 0 auto;margin:-1px 0 0}
-  #payhelp .helppop{top:auto;bottom:calc(100% + 8px);
+  /* the wrapper is now only as wide as the AlipayHK column (256px), so the panel
+     needs its own width or it collapses to that column and squeezes the crops */
+  #payhelp .helppop{top:auto;bottom:calc(100% + 8px);left:0;right:auto;
+                    width:min(420px,calc(100vw - 32px));max-width:420px;
                     max-height:clamp(240px,calc(100vh - 340px),380px)}
 }
 .btn{
