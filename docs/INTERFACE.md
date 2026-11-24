@@ -38,7 +38,7 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 | 2 | Payment | `/embed/?part=pay` | **690px** | **800px** | 628 (at 320px) | 739 (at 320px) |
 | 3 | Receipt — **empty frame in phase 1** | `/embed/?part=receipt` | **60px** | **60px** | renders nothing | renders nothing |
 
-**Quoted at the five widths the client asked for (content height, px) — 23 Nov 2026**
+**Quoted at the five widths the client asked for (content height, px) — re-measured 24 Nov 2026**
 
 | Block | 320 | 390 | 768 | 1024 | 1440 |
 |---|---|---|---|---|---|
@@ -46,14 +46,21 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 | `?part=input` · en | 1113 | 997 | 1029 | 1006 | 1006 |
 | `?part=result` · zh | 913 | 781 | 808 | 822 | 822 |
 | `?part=result` · en | 1129 | 971 | 808 | 822 | 822 |
-| `?part=pay` · zh | 628 | 566 | 610 | 618 | 618 |
-| `?part=pay` · en | 739 | 656 | 638 | 646 | 646 |
+| `?part=pay` · zh | 628 | 566 | 641 | 649 | 649 |
+| `?part=pay` · en | 739 | 656 | 669 | 677 | 677 |
 | `?part=receipt` · zh | 60 | 60 | 60 | 60 | 60 |
 | `?part=receipt` · en | 60 | 60 | 60 | 60 | 60 |
 | `?part=calc` · zh | 1656 | 1452 | 1615 | 1639 | 1639 |
-| `?part=calc` · en | 1962 | 1751 | 1715 | 1709 | 1709 |
-| `?part=all` · zh | 2121 | 1917 | 2128 | 2160 | 2160 |
-| `?part=all` · en | 2482 | 2244 | 2257 | 2259 | 2259 |
+| `?part=calc` · en | 1962 | 1751 | 1695 | 1689 | 1689 |
+| `?part=all` · zh | 2121 | 1917 | 2159 | 2191 | 2191 |
+| `?part=all` · en | 2482 | 2244 | 2268 | 2269 | 2269 |
+
+> **Re-measured 24 Nov 2026** alongside the two-flow AlipayHK tooltip. The tooltip changes nothing here — it is
+> absolutely positioned and starts `hidden`, and an A/B against the pre-change file reports **0px** difference at
+> every width — but the re-measure exposed two rows that were already stale: `?part=pay` at ≥768px is **649 / 677**,
+> not 618 / 646, because the 23 Nov "payment pair wider" pass (`5eff3b8`) widened the QR pair without reissuing the
+> quotes, and `?part=all` carries the same +31px. **Every declared height still covers its real peak** (pay 690/800,
+> all 2225/2550), so nothing the client pastes into the CMS changes.
 
 > **Revised 23 Nov 2026 (phase 1 + the AlipayHK receipt route, `qa/apply_phase1_alipay_20261123.py`).**
 > Phase 1 ships **AlipayHK and the credit card only**, so section 5 — the receipt-request form, which exists to
@@ -81,6 +88,17 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 > in English and `https://www.ird.gov.hk/chi/welcome.htm` in Chinese (the client supplied both pages). A shared
 > `/chi/` URL was considered for one turn and withdrawn, because the client's English page exists.
 > `qa/lang_parity.py` now asserts the two hrefs **differ** per language, so neither can be "tidied" into one.
+
+> **Revised 24 Nov 2026 (the AlipayHK tooltip now teaches both flows, `qa/apply_alipay_two_options_20261124.py`).**
+> The client reviewed the receipt tooltip and sent **two** routes, so the panel leads with the one it was missing:
+> **Option 1 — tick 「需要收據」 while giving** (2 steps, the form opens under the amount) and **Option 2 — claim it
+> afterwards from the donation records** (4 steps). Six 320×529 crops (67 KB) replace the five 400px ones. It is
+> still ONE dialog with the same `.helpbtn`/`.helppop` contract, 420px width, its own max-height and its upward
+> opening from 720px; no tabs, no second popover, no new event, colour, type size or shadow.
+> **Nothing in the height table moves**: the panel is absolutely positioned and starts `hidden`, so opening it
+> never grows the block (asserted by `qa/poc_test.py`) and the measured peaks are identical to the 23 Nov issue —
+> `pay` stays **690 / 800** and every other block is untouched. The 23 Nov note above describes the five-crop,
+> single-flow version it supersedes.
 
 > **Revised 23 Nov 2026 (disclaimer as a numbered list, `qa/apply_disc_list_20261123.py`).**
 > The collapsed `<details class="q disc-global">` at the foot of the widget becomes an always-visible

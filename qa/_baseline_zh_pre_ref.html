@@ -88,6 +88,9 @@ h2{
 .lede{font-size:var(--t-body);line-height:1.56;color:var(--ink-2);margin:var(--s3) 0 0;max-width:var(--measure)}
 .hint{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:var(--s2) 0 0;max-width:var(--measure)}
 .fine{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:var(--s4) 0 0;max-width:var(--measure)}
+/* the closing legal sentence is one line on the client's page, and it was wrapping
+   to two because it inherited the reading measure (23 Nov) */
+p.fine[data-i18n="foot.legal"]{max-width:none}
 /* The legal line closes the document, so it stands off the last block by more
    than the 8px that separates a paragraph from its own caption. At 14px it
    read as the last line of the receipt form. */
@@ -344,6 +347,9 @@ details.q li{margin:3px 0}
 .disc-global .disc-list a:hover{text-decoration-thickness:2px}
 .disc-global .disc-list a:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
 .rails{display:grid;border-top:var(--rule);margin-top:var(--s5)}
+/* the payment pair: one source of truth for the grid width, the gap between the
+   two rails, and the width of the receipt line that sits under AlipayHK */
+:root{--pairw:664px;--pairgap:56px}
 /* ── payment: QR on a desktop, tap-through rows on a phone ──────────────────────
    A donor cannot scan the screen they are reading, so the two arrangements are
    mutually exclusive rather than progressive. Breakpoint 720px: below it every
@@ -355,8 +361,8 @@ details.q li{margin:3px 0}
   .rails{display:none}
   /* Two rails, so two equal columns — and the pair is held to a pair-width, or a
      190px code and a 190px card drift 800px apart on a wide desktop. */
-  .paygrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gut);
-           max-width:min(100%,520px);
+  .paygrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--pairgap);
+           max-width:min(100%,var(--pairw));
            border-top:var(--rule);margin-top:var(--s5);padding-top:var(--s6);align-items:start}
   .qrcard{margin:0;display:block;color:inherit;text-decoration:none}
   .qrcard img{display:block;width:100%;max-width:190px;height:auto;aspect-ratio:450/350;
@@ -475,8 +481,22 @@ details.q li{margin:3px 0}
 .hsteps li{display:grid;gap:6px}
 .hsteps .n{font-size:var(--t-eyebrow);font-weight:700;letter-spacing:.06em;
            text-transform:uppercase;color:var(--muted)}
-.hsteps img{width:100%;max-width:400px;height:auto;border:1px solid var(--line);border-radius:4px}
+.hsteps img{width:100%;height:auto;border:1px solid var(--line);border-radius:4px}
 .hsteps p{font-size:var(--t-cap);line-height:1.55;color:var(--ink-2);margin:0}
+/* Two flows, one panel (24 Nov 2026). The client sent both routes a donor can
+   take — ticking the receipt box while giving, or claiming it afterwards — and
+   the tooltip only taught the second. Two headed sections, still ONE dialog: no
+   tabs and no second popover, because Option 1 must be read first and the panel
+   already scrolls inside its own max-height.
+
+   The heading is the 13px --t-cap step in bold navy; the step labels under it
+   stay 12px uppercase letterspaced muted (--t-eyebrow). Two roles, no new size,
+   colour, face or shadow. The hairline is the same --line the panel border
+   uses, so the sections separate without a card. */
+.hsec{margin:var(--s4) 0 0;padding-top:var(--s3);border-top:1px solid var(--line)}
+.hsec-h{margin:0;font-size:var(--t-cap);line-height:1.5;font-weight:700;color:var(--navy)}
+.hsec-sub{margin:6px 0 0;font-size:var(--t-cap);line-height:1.55;color:var(--muted)}
+.houtro{margin:var(--s4) 0 0;font-size:var(--t-cap);line-height:1.55;color:var(--muted)}
 
 /* ── the AlipayHK receipt line ───────────────────────────────────────────
    Phase 1 has no in-widget receipt form (that is section 5, which returns
@@ -515,10 +535,20 @@ details.q li{margin:3px 0}
 @media(min-width:720px){
   .rails{display:block;border-top:0;margin-top:0}
   .rails > a{display:none}
-  .rails .payhelp{border-left:0}
+  /* the receipt line is part of the AlipayHK rail, not a third global item: it sits
+     under that card, at that card's width (560 − 48 gap = two 256px columns), and
+     keeps the blue rule that ties it to the rail (23 Nov) */
+  .rails .payhelp{border-left:3px solid #1677FF;padding:10px 0 12px 14px;
+                  max-width:calc((var(--pairw) - var(--pairgap)) / 2)}
   .payhelp{padding:15px 0 0}
-  .payhelp-line{max-width:340px}
-  #payhelp .helppop{top:auto;bottom:calc(100% + 8px);
+  /* text and button on one row: the text may wrap, the button stays beside it
+     rather than being pushed to the column's right edge */
+  .payhelp-line{display:block;max-width:none}
+  .payhelp-line .helpbtn{display:inline-flex;vertical-align:middle;margin:0 0 0 3px}
+  /* the wrapper is now only as wide as the AlipayHK column (256px), so the panel
+     needs its own width or it collapses to that column and squeezes the crops */
+  #payhelp .helppop{top:auto;bottom:calc(100% + 8px);left:0;right:auto;
+                    width:min(420px,calc(100vw - 32px));max-width:420px;
                     max-height:clamp(240px,calc(100vh - 340px),380px)}
 }
 .btn{
@@ -748,15 +778,16 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
 
       <!-- Phase 1: the receipt route for an AlipayHK gift. AlipayHK issues the
            receipt inside its own app, so the rail carries the instruction plus
-           five crops that walk a donor to 申請收據. The copy deliberately stops
-           short of promising an issued receipt: it names where to apply.
+           six crops that walk a donor through BOTH routes Denise sent (24 Nov):
+           ticking 「需要收據」 while giving (two steps, led first — it is the
+           easier path), or claiming afterwards from the donation records (four
+           steps). The copy deliberately stops short of promising an issued
+           receipt: it names where to apply.
 
-           The crops are the client's own donor-side screens, resized to 400px
-           and compressed (27 KB for all five). Two things were cropped OUT: the
-           transaction reference on step 4 and the whole reference/amount block
-           on step 5 (only the button and its link remain). No names, emails or
-           phone numbers were in the source; nothing was added. AlipayHK's UI is
-           Chinese, which is why the outro says so for an English reader. -->
+           The crops are the client's own donor-side screens at 320x529 (67 KB
+           for all six). AlipayHK's UI is Chinese, which is why the app labels
+           stay in Chinese inside the English sentences — a donor matches what
+           they see — and why the outro says the interface is Chinese. -->
       <div class="payhelp" id="payhelp">
         <p class="payhelp-line">
           <span data-i18n="s3.receipt.line">Need a receipt? Apply inside AlipayHK.</span>
@@ -771,41 +802,66 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
              aria-labelledby="alipay-help-title" hidden>
           <button type="button" class="hclose" data-help-close
                   aria-label="Close" data-i18n-aria="s3.rcpt.close">&#10005;</button>
-          <h3 id="alipay-help-title" data-i18n="s3.rcpt.title">Applying for a receipt in AlipayHK</h3>
-          <p data-i18n="s3.rcpt.intro">A gift made in AlipayHK is receipted inside the same app. Five steps:</p>
-          <ol class="hsteps">
-            <li>
-              <span class="n" data-i18n="s3.rcpt.s1t">Step 1</span>
-              <img loading="eager" src="../assets/help/alipay-receipt-step-1.webp" width="400" height="189"
-                   alt="AlipayHK home screen with the Charity donation icon ringed" data-i18n-alt="s3.rcpt.alt1">
-              <p data-i18n="s3.rcpt.s1">Open AlipayHK and tap Charity donation.</p>
-            </li>
-            <li>
-              <span class="n" data-i18n="s3.rcpt.s2t">Step 2</span>
-              <img loading="eager" src="../assets/help/alipay-receipt-step-2.webp" width="400" height="107"
-                   alt="The My donations tab at the foot of the charity page, ringed" data-i18n-alt="s3.rcpt.alt2">
-              <p data-i18n="s3.rcpt.s2">Tap My donations at the bottom of the charity page.</p>
-            </li>
-            <li>
-              <span class="n" data-i18n="s3.rcpt.s3t">Step 3</span>
-              <img loading="eager" src="../assets/help/alipay-receipt-step-3.webp" width="400" height="344"
-                   alt="The charity menu with Donation records ringed" data-i18n-alt="s3.rcpt.alt3">
-              <p data-i18n="s3.rcpt.s3">Tap Donation records.</p>
-            </li>
-            <li>
-              <span class="n" data-i18n="s3.rcpt.s4t">Step 4</span>
-              <img loading="eager" src="../assets/help/alipay-receipt-step-4.webp" width="400" height="63"
-                   alt="One HK$100 gift to the Foundation in the transaction list" data-i18n-alt="s3.rcpt.alt4">
-              <p data-i18n="s3.rcpt.s4">Find the gift: the charity, the date and the amount identify it.</p>
-            </li>
-            <li>
-              <span class="n" data-i18n="s3.rcpt.s5t">Step 5</span>
-              <img loading="eager" src="../assets/help/alipay-receipt-step-5.webp" width="360" height="93"
-                   alt="The blue Apply for receipt button at the foot of the donation result" data-i18n-alt="s3.rcpt.alt5">
-              <p data-i18n="s3.rcpt.s5">Tap the blue Apply for receipt button at the foot of the donation result.</p>
-            </li>
-          </ol>
-          <p data-i18n="s3.rcpt.outro">The AlipayHK app is shown in Chinese; the buttons sit in the same place on your screen.</p>
+          <h3 id="alipay-help-title" data-i18n="s3.rcpt.title">Getting a receipt from AlipayHK</h3>
+          <p data-i18n="s3.rcpt.intro">Two ways. The first is easiest: tick the box while you give.</p>
+
+          <div class="hsec" data-opt="1" role="group" aria-labelledby="alipay-o1-h">
+            <h4 class="hsec-h" id="alipay-o1-h" data-i18n="s3.rcpt.o1head">Option 1 — when you donate</h4>
+            <p class="hsec-sub" data-i18n="s3.rcpt.o1sub">Request a donation receipt and enter your personal details when donating.</p>
+            <ol class="hsteps">
+              <li>
+                <span class="n" data-i18n="s3.rcpt.o1.s1t">Step 1</span>
+                <img loading="eager" src="../assets/help/alipay-receipt-o1-step-1.webp" width="320" height="529"
+                     alt="AlipayHK donation detail screen: the charity, the suggested amounts and, at the foot, the unticked 「需要收據」 box" data-i18n-alt="s3.rcpt.o1.alt1">
+                <p data-i18n="s3.rcpt.o1.s1">Tick 「需要收據」 (need a receipt) under the amount.</p>
+              </li>
+
+              <li>
+                <span class="n" data-i18n="s3.rcpt.o1.s2t">Step 2</span>
+                <img loading="lazy" src="../assets/help/alipay-receipt-o1-step-2.webp" width="320" height="529"
+                     alt="The same screen with 「需要收據」 ticked and the 「捐款人資料」 form open below it: name in English, email, phone and address" data-i18n-alt="s3.rcpt.o1.alt2">
+                <p data-i18n="s3.rcpt.o1.s2">The donor form appears — name in English, email, phone. Fill it in, then confirm the gift.</p>
+              </li>
+
+            </ol>
+          </div>
+
+          <div class="hsec" data-opt="2" role="group" aria-labelledby="alipay-o2-h">
+            <h4 class="hsec-h" id="alipay-o2-h" data-i18n="s3.rcpt.o2head">Option 2 — after you give</h4>
+            <p class="hsec-sub" data-i18n="s3.rcpt.o2sub">If you forgot to tick the box, you can still claim it from your donation records.</p>
+            <ol class="hsteps">
+              <li>
+                <span class="n" data-i18n="s3.rcpt.o2.s1t">Step 1</span>
+                <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-1.webp" width="320" height="529"
+                     alt="AlipayHK home screen with 慈善捐款 in the shortcut grid, fourth in the first row" data-i18n-alt="s3.rcpt.o2.alt1">
+                <p data-i18n="s3.rcpt.o2.s1">Open AlipayHK and go to 慈善捐款.</p>
+              </li>
+
+              <li>
+                <span class="n" data-i18n="s3.rcpt.o2.s2t">Step 2</span>
+                <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-2.webp" width="320" height="529"
+                     alt="The 慈善捐款 page with its menu of donation options, including the 捐款記錄 row" data-i18n-alt="s3.rcpt.o2.alt2">
+                <p data-i18n="s3.rcpt.o2.s2">Tap 我的捐款 at the bottom, then 捐款記錄.</p>
+              </li>
+
+              <li>
+                <span class="n" data-i18n="s3.rcpt.o2.s3t">Step 3</span>
+                <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-3.webp" width="320" height="529"
+                     alt="The 交易記錄 list showing one gift to 護瞳行動 with its date and amount" data-i18n-alt="s3.rcpt.o2.alt3">
+                <p data-i18n="s3.rcpt.o2.s3">Find the gift: the charity, the date and the amount identify it.</p>
+              </li>
+
+              <li>
+                <span class="n" data-i18n="s3.rcpt.o2.s4t">Step 4</span>
+                <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-4.webp" width="320" height="529"
+                     alt="The 捐款結果 screen with the blue 申請收據 button at the foot, above the return link" data-i18n-alt="s3.rcpt.o2.alt4">
+                <p data-i18n="s3.rcpt.o2.s4">Tap 申請收據 and submit your details.</p>
+              </li>
+
+            </ol>
+          </div>
+
+          <p class="houtro" data-i18n="s3.rcpt.outro">The app is shown in Chinese; the buttons sit in the same place on your screen.</p>
         </div>
       </div>
 
@@ -1027,25 +1083,32 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s3.card.sub": "以信用卡捐款",
       "s3.receipt.line": "需要收據？可於 AlipayHK 內申請。",
       "s3.receipt.btn": "如何在 AlipayHK 內申請收據",
-      "s3.rcpt.title": "在 AlipayHK 內申請收據",
-      "s3.rcpt.intro": "在 AlipayHK 完成的捐款，收據同樣在 App 內申請。共五步：",
-      "s3.rcpt.s1t": "第 1 步",
-      "s3.rcpt.s1": "開啟 AlipayHK，點按「慈善捐款」。",
-      "s3.rcpt.s2t": "第 2 步",
-      "s3.rcpt.s2": "在慈善捐款頁底部點按「我的捐款」。",
-      "s3.rcpt.s3t": "第 3 步",
-      "s3.rcpt.s3": "點按「捐款記錄」。",
-      "s3.rcpt.s4t": "第 4 步",
-      "s3.rcpt.s4": "找到該筆捐款：受惠機構、日期與金額足以辨認。",
-      "s3.rcpt.s5t": "第 5 步",
-      "s3.rcpt.s5": "在捐款結果頁底部點按藍色的「申請收據」。",
+      "s3.rcpt.title": "在 AlipayHK 索取捐款收據",
+      "s3.rcpt.intro": "兩種方法。最簡單是第一種：捐款時直接勾選。",
+      "s3.rcpt.o1head": "方法一：捐款時",
+      "s3.rcpt.o1sub": "捐款時直接選擇需要捐款收據並填寫您的個人資料。",
+      "s3.rcpt.o1.s1t": "第 1 步",
+      "s3.rcpt.o1.s1": "在金額下方勾選「需要收據」。",
+      "s3.rcpt.o1.s2t": "第 2 步",
+      "s3.rcpt.o1.s2": "畫面展開「捐款人資料」：英文姓名、電郵、電話。填妥後確認捐款。",
+      "s3.rcpt.o1.alt1": "AlipayHK 捐款詳情畫面：受惠機構護瞳行動、建議捐款金額，以及畫面底部尚未勾選的「需要收據」方格",
+      "s3.rcpt.o1.alt2": "同一畫面已勾選「需要收據」，下方展開「捐款人資料」表格：英文姓名、電郵、電話及郵寄地址",
+      "s3.rcpt.o2head": "方法二：捐款後補領",
+      "s3.rcpt.o2sub": "如捐款時忘記勾選，仍可在捐款記錄中補領。",
+      "s3.rcpt.o2.s1t": "第 1 步",
+      "s3.rcpt.o2.s1": "開啟 AlipayHK，進入「慈善捐款」。",
+      "s3.rcpt.o2.s2t": "第 2 步",
+      "s3.rcpt.o2.s2": "點按底部「我的捐款」，再點按「捐款記錄」。",
+      "s3.rcpt.o2.s3t": "第 3 步",
+      "s3.rcpt.o2.s3": "找到該筆捐款：受惠機構、日期與金額足以辨認。",
+      "s3.rcpt.o2.s4t": "第 4 步",
+      "s3.rcpt.o2.s4": "點按「申請收據」，填寫個人資料並提交。",
+      "s3.rcpt.o2.alt1": "AlipayHK 首頁，捷徑列第一行第四個為「慈善捐款」圖示",
+      "s3.rcpt.o2.alt2": "「慈善捐款」頁面及其捐款選項清單，當中包括「捐款記錄」一列",
+      "s3.rcpt.o2.alt3": "「交易記錄」清單顯示一筆護瞳行動的捐款，附日期與金額",
+      "s3.rcpt.o2.alt4": "「捐款結果」畫面，底部為藍色的「申請收據」按鈕，下方有返回機構頁的連結",
       "s3.rcpt.outro": "截圖為 AlipayHK 的中文介面；您手機上的按鈕位置相同。",
       "s3.rcpt.close": "關閉",
-      "s3.rcpt.alt1": "AlipayHK 首頁，已圈出「慈善捐款」圖示",
-      "s3.rcpt.alt2": "慈善捐款頁底部，已圈出「我的捐款」",
-      "s3.rcpt.alt3": "慈善捐款選單，已圈出「捐款記錄」",
-      "s3.rcpt.alt4": "交易紀錄中一筆 HK$100 護瞳行動捐款",
-      "s3.rcpt.alt5": "捐款結果頁底部的藍色「申請收據」按鈕",
       "rc.h": "索取扣稅收據",
       "rc.lede": "收據抬頭、電郵、付款參考編號。",
       "rc.threshold": "全年捐款總額滿 HK$100 即發出收據。",
@@ -1181,25 +1244,32 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "s3.card.sub": "Pay by card",
       "s3.receipt.line": "Need a receipt? Apply inside AlipayHK.",
       "s3.receipt.btn": "How to apply for a receipt in AlipayHK",
-      "s3.rcpt.title": "Applying for a receipt in AlipayHK",
-      "s3.rcpt.intro": "A gift made in AlipayHK is receipted inside the same app. Five steps:",
-      "s3.rcpt.s1t": "Step 1",
-      "s3.rcpt.s1": "Open AlipayHK and tap Charity donation.",
-      "s3.rcpt.s2t": "Step 2",
-      "s3.rcpt.s2": "Tap My donations at the bottom of the charity page.",
-      "s3.rcpt.s3t": "Step 3",
-      "s3.rcpt.s3": "Tap Donation records.",
-      "s3.rcpt.s4t": "Step 4",
-      "s3.rcpt.s4": "Find the gift: the charity, the date and the amount identify it.",
-      "s3.rcpt.s5t": "Step 5",
-      "s3.rcpt.s5": "Tap the blue Apply for receipt button at the foot of the donation result.",
-      "s3.rcpt.outro": "The AlipayHK app is shown in Chinese; the buttons sit in the same place on your screen.",
+      "s3.rcpt.title": "Getting a receipt from AlipayHK",
+      "s3.rcpt.intro": "Two ways. The first is easiest: tick the box while you give.",
+      "s3.rcpt.o1head": "Option 1 — when you donate",
+      "s3.rcpt.o1sub": "Request a donation receipt and enter your personal details when donating.",
+      "s3.rcpt.o1.s1t": "Step 1",
+      "s3.rcpt.o1.s1": "Tick 「需要收據」 (need a receipt) under the amount.",
+      "s3.rcpt.o1.s2t": "Step 2",
+      "s3.rcpt.o1.s2": "The donor form appears — name in English, email, phone. Fill it in, then confirm the gift.",
+      "s3.rcpt.o1.alt1": "AlipayHK donation detail screen: the charity, the suggested amounts and, at the foot, the unticked 「需要收據」 box",
+      "s3.rcpt.o1.alt2": "The same screen with 「需要收據」 ticked and the 「捐款人資料」 form open below it: name in English, email, phone and address",
+      "s3.rcpt.o2head": "Option 2 — after you give",
+      "s3.rcpt.o2sub": "If you forgot to tick the box, you can still claim it from your donation records.",
+      "s3.rcpt.o2.s1t": "Step 1",
+      "s3.rcpt.o2.s1": "Open AlipayHK and go to 慈善捐款.",
+      "s3.rcpt.o2.s2t": "Step 2",
+      "s3.rcpt.o2.s2": "Tap 我的捐款 at the bottom, then 捐款記錄.",
+      "s3.rcpt.o2.s3t": "Step 3",
+      "s3.rcpt.o2.s3": "Find the gift: the charity, the date and the amount identify it.",
+      "s3.rcpt.o2.s4t": "Step 4",
+      "s3.rcpt.o2.s4": "Tap 申請收據 and submit your details.",
+      "s3.rcpt.o2.alt1": "AlipayHK home screen with 慈善捐款 in the shortcut grid, fourth in the first row",
+      "s3.rcpt.o2.alt2": "The 慈善捐款 page with its menu of donation options, including the 捐款記錄 row",
+      "s3.rcpt.o2.alt3": "The 交易記錄 list showing one gift to 護瞳行動 with its date and amount",
+      "s3.rcpt.o2.alt4": "The 捐款結果 screen with the blue 申請收據 button at the foot, above the return link",
+      "s3.rcpt.outro": "The app is shown in Chinese; the buttons sit in the same place on your screen.",
       "s3.rcpt.close": "Close",
-      "s3.rcpt.alt1": "AlipayHK home screen with the Charity donation icon ringed",
-      "s3.rcpt.alt2": "The My donations tab at the foot of the charity page, ringed",
-      "s3.rcpt.alt3": "The charity menu with Donation records ringed",
-      "s3.rcpt.alt4": "One HK$100 gift to the Foundation in the transaction list",
-      "s3.rcpt.alt5": "The blue Apply for receipt button at the foot of the donation result",
       "rc.h": "Claim your receipt",
       "rc.lede": "Name, email, and your payment reference.",
       "rc.threshold": "A receipt follows once your gifts for the year reach HK$100.",
@@ -1907,9 +1977,22 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
   $$("[data-help]").forEach(function (btn) {
     var pop = document.getElementById(btn.getAttribute("data-help"));
     if (!pop) return;
+    /* A lazy image inside a hidden panel starts its request at open time, so the
+       first paint can be an empty box — it reads as a missing asset. Four of the
+       six crops are lazy on purpose (a donor who never opens the panel never pays
+       for them), so start their fetches the moment the panel is revealed. */
+    var warmed = false;
+    function warmCrops(){
+      if (warmed) return;
+      warmed = true;
+      $$("img[loading=lazy]", pop).forEach(function (im) {
+        var preload = new Image(); preload.src = im.getAttribute("src");
+      });
+    }
     function helpOpen(on){
       pop.hidden = !on;
       btn.setAttribute("aria-expanded", on ? "true" : "false");
+      if (on) warmCrops();
       scheduleHeight();
     }
     btn.addEventListener("click", function () { helpOpen(pop.hidden); });

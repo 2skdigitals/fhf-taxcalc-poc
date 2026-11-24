@@ -16,7 +16,8 @@ What it asserts
   B. `?lang=zh-HK` explicit equals the default — the parameter cannot change
      the Chinese build.
   C. The English build is really English: zero CJK characters anywhere in the
-     DOM (including hidden blocks, attributes and <option> text), and the four
+     DOM (including hidden blocks, attributes and <option> text), apart from the
+     AlipayHK button labels the receipt tooltip quotes on purpose — and the four
      IRD terms are present.
   D. The figures do not move with the language: the digit runs inside the money
      surface (net, saved, figures strip, caption, cap, benefit, assumption,
@@ -68,7 +69,12 @@ BAK = ROOT / "embed" / "index.html.bak-pre-en-20261115"
 # behind the PHASE1 constant, so ?part=receipt is an empty frame and ?part=all ends at
 # "How you give"; plus the AlipayHK receipt line and its five-step tooltip in the payment
 # block — zh and en — list in qa/apply_phase1_alipay_20261123.py. The disclaimer did NOT
-# change: it was already outside the panels, and it still closes every content part).
+# change: it was already outside the panels, and it still closes every content part) ·
+# 24 Nov (the client reviewed the AlipayHK tooltip and sent TWO flows: tick 「需要收據」
+# while giving — 2 steps, led first — or claim it afterwards from the donation records —
+# 4 steps; title, intro, two section headings, six step sentences, six alt texts and the
+# outro replaced in both languages, and six 320px crops replace the five 400px ones —
+# list in qa/apply_alipay_two_options_20261124.py. DELIBERATE zh change, rebased).
 # What the gate is for survives each rebase: the ZH
 # build may only change where a change was signed off, and every assertion below still
 # fails on an accidental drift.
@@ -317,9 +323,32 @@ with sync_playwright() as pw:
     check("?lang=zh-HK renders the same as no lang parameter", diffs)
 
     # ---------------------------------------------------------------- C
-    cjk = {k: v["cjk"] for k, v in en_snaps.items() if v["cjk"]}
-    check(f"no CJK character anywhere in the English build ({len(en_snaps)} states)",
-          [f"{k}: {n} CJK chars" for k, n in cjk.items()])
+    # The AlipayHK tooltip quotes the app's own labels in Chinese on purpose: a donor
+    # matches them against what their phone shows, and translating them breaks the
+    # instruction. They are the ONLY Chinese allowed here — everything else still fails,
+    # and the other half of the check asserts they are present, so a later "translate
+    # them to be safe" pass cannot quietly delete the thing that makes the copy work.
+    APP_LABELS = ["慈善捐款", "捐款人資料", "我的捐款", "捐款記錄", "交易記錄",
+                  "捐款結果", "申請收據", "需要收據", "護瞳行動"]
+
+    def cjk_left(text):
+        for lab in APP_LABELS:
+            text = (text or "").replace(lab, "")
+        return len(re.findall(r"[\u3400-\u9fff]", text))
+
+    cjk = {}
+    for k, v in en_snaps.items():
+        n = cjk_left(v["text"])
+        if n:
+            cjk[k] = n
+    check(f"no CJK anywhere in the English build except the app labels it quotes "
+          f"({len(en_snaps)} states)", [f"{k}: {n} CJK chars" for k, n in cjk.items()])
+
+    quoted = " ".join(v["text"] for v in en_snaps.values()) + " " + " ".join(
+        a for v in en_snaps.values() for a in v["attrs"])
+    absent = [lab for lab in ("慈善捐款", "捐款人資料", "我的捐款", "捐款記錄",
+                             "申請收據", "需要收據") if lab not in quoted]
+    check("the English build keeps AlipayHK's six labels in Chinese, verbatim", absent)
 
     all_en = " ".join(v["text"] for v in en_snaps.values())
     # "year of assessment" became "the relevant assessment year" when the client's

@@ -616,8 +616,9 @@ with sync_playwright() as pw:
     # ONE pattern, TWO triggers, and both are exercised — because they are the same
     # code path and a regression in one is a regression in the other:
     #   · #alipay-help / #alipay-help-panel — the AlipayHK receipt route, live in
-    #     phase 1 inside the payment block: five client screencaps that walk a donor
-    #     to 申請收據 inside the app;
+    #     phase 1 inside the payment block: six client screencaps over two flows —
+    #     tick the receipt box while giving (2 steps), or claim it afterwards from
+    #     the donation records (4 steps);
     #   · #ref-help / #ref-help-panel — the payment-reference popover inside section 5,
     #     which is PHASE 2 code. It is measured here with the section forced visible:
     #     a hidden trigger cannot be clicked, and the module has to work on the day
@@ -627,7 +628,8 @@ with sync_playwright() as pw:
     # full-screen, opening it does not grow the block), the assets (every screenshot
     # loads and carries alt text — a lazy image in a hidden panel would never be
     # requested, and a dead path would ship silently), and no keyboard trap.
-    def popover_case(tag, mid, url, btn_id, panel_id, steps, frame_h, lang_q=""):
+    def popover_case(tag, mid, url, btn_id, panel_id, groups, frame_h, lang_q="",
+                     assets=None):
         pop = browser.new_page(viewport={"width": 390, "height": frame_h},
                                is_mobile=True, has_touch=True)
         pop.goto(url, wait_until="load")
@@ -645,6 +647,14 @@ with sync_playwright() as pw:
             label: document.getElementById('{btn_id}').getAttribute('aria-label') || ''}})""")
         pop.click(f"#{btn_id}")
         pop.wait_for_timeout(500)
+        # The crops below the panel's fold are loading="lazy", so they only fetch when
+        # they come into view — and a hidden panel never requests them at all. Walk
+        # the panel once, then assert: "every screenshot loaded" has to be able to fail.
+        pop.evaluate(f"()=>{{const p=document.getElementById('{panel_id}');"
+                     f"p.scrollTop=p.scrollHeight;}}")
+        pop.wait_for_timeout(900)
+        pop.evaluate(f"()=>{{const p=document.getElementById('{panel_id}');p.scrollTop=0;}}")
+        pop.wait_for_timeout(200)
         after = pop.evaluate(f"""()=>{{
             const pop = document.getElementById('{panel_id}');
             const r = pop.getBoundingClientRect(), d = document.documentElement;
@@ -657,6 +667,11 @@ with sync_playwright() as pw:
                     frame: Math.round(d.getBoundingClientRect().width),
                     scrolls: pop.scrollHeight > pop.clientHeight + 1,
                     overX: d.scrollWidth > d.clientWidth + 1,
+                    secs: [...pop.querySelectorAll('.hsec')].map(s => ({{
+                        opt: s.getAttribute('data-opt') || '',
+                        head: s.querySelector('.hsec-h') ? s.querySelector('.hsec-h').textContent.trim() : '',
+                        n: s.querySelectorAll('.hsteps li').length,
+                        labels: [...s.querySelectorAll('.n')].map(x => x.textContent.trim())}})),
                     steps: [...pop.querySelectorAll('.n')].map(n => n.textContent),
                     imgs: [...pop.querySelectorAll('img')].map(i => ({{
                         src: i.getAttribute('src'), ok: i.complete && i.naturalWidth > 0,
@@ -677,18 +692,46 @@ with sync_playwright() as pw:
             errs.append(f"panel is {after['h']}px of a {after['vh']}px frame — a full-screen modal")
         if after["bottom"] > frame_h or after["top"] < 0:
             errs.append(f"open panel {after['top']}–{after['bottom']} leaves the {frame_h}px frame")
-        if len(after["steps"]) != steps or len(after["imgs"]) != steps:
-            errs.append(f"steps {after['steps']} imgs {len(after['imgs'])} (want {steps} of each)")
-        want_labels = ([f"Step {i}" for i in range(1, steps + 1)]
-                       if lang_q else [f"\u7b2c {i} \u6b65" for i in range(1, steps + 1)])
+        total = sum(groups)
+        if len(after["steps"]) != total or len(after["imgs"]) != total:
+            errs.append(f"steps {after['steps']} imgs {len(after['imgs'])} (want {total} of each)")
+        # Step labels are numbered WITHIN each flow, so the wanted sequence is built
+        # per group — a flat 1..total would pass on a panel that merged the two.
+        want_labels = [lab for n in groups
+                       for lab in ([f"Step {i}" for i in range(1, n + 1)] if lang_q else
+                                   [f"\u7b2c {i} \u6b65" for i in range(1, n + 1)])]
         if [t.strip() for t in after["steps"]] != want_labels:
             errs.append(f"step labels {after['steps']} want {want_labels}")
         bad_img = [i for i in after["imgs"] if not i["ok"] or not i["alt"]]
         if bad_img:
             errs.append(f"image not loaded or missing alt: {bad_img}")
+        if assets:
+            want_src = [f"../assets/help/{x}" for x in assets]
+            got_src = [i["src"] for i in after["imgs"]]
+            if got_src != want_src:
+                errs.append(f"crops {got_src} want {want_src}")
         if not after["scrolls"] and after["h"] < 40:
             errs.append("panel renders as an empty box")
         check(f"{tag} opens as a dialog inside the frame{lang_q or ' (zh)'}", errs)
+
+        # 24 Nov: two flows in ONE dialog, Option 1 first — the client's own order,
+        # because it is the easier path and must be read before the fallback.
+        if len(groups) > 1:
+            secs = after["secs"]
+            sect = []
+            want_opts = [str(i + 1) for i in range(len(groups))]
+            if len(secs) != len(groups):
+                sect.append(f"{len(secs)} option sections, want {len(groups)}")
+            if [x["opt"] for x in secs] != want_opts:
+                sect.append(f"sections {[x['opt'] for x in secs]} want {want_opts}"
+                            " — Option 1 must be read first")
+            for n, x in enumerate(secs):
+                if n < len(groups) and x["n"] != groups[n]:
+                    sect.append(f"option {x['opt']}: {x['n']} steps, want {groups[n]}")
+                if not x["head"]:
+                    sect.append(f"option {x['opt']} carries no heading")
+            check(f"{tag} teaches both flows with their own step counts"
+                  f" ({' + '.join(str(g) for g in groups)}){lang_q or ' (zh)'}", sect)
 
         # The panel is absolutely positioned, so opening it must not grow the
         # document — that is what keeps the client's fixed frame honest in the
@@ -721,16 +764,21 @@ with sync_playwright() as pw:
               [] if out not in (panel_id, "") and out != "BODY" else [out])
         pop.close()
 
-    # phase 1 — the AlipayHK receipt route, in the payment block, at its declared height
+    # phase 1 — the AlipayHK receipt route, in the payment block, at its declared
+    # height. Two flows since 24 Nov: ticking the receipt box while giving (2 steps),
+    # then the fallback from the donation records (4 steps) — the client's own crops,
+    # in the client's own order.
+    ALIPAY_CROPS = [f"alipay-receipt-o1-step-{i}.webp" for i in (1, 2)] + \
+                   [f"alipay-receipt-o2-step-{i}.webp" for i in (1, 2, 3, 4)]
     for lang_q, frame_h in (("", 690), ("&lang=en", 800)):
         popover_case("the AlipayHK receipt tooltip", None,
                      f"{BASE}/embed/?part=pay{lang_q}", "alipay-help", "alipay-help-panel",
-                     5, frame_h, lang_q)
+                     (2, 4), frame_h, lang_q, assets=ALIPAY_CROPS)
     # phase 2 — the payment-reference popover, forced visible at its own declaration
     for lang_q, frame_h in (("", 990), ("&lang=en", 1185)):
         popover_case("the reference popover", "receipt",
                      f"{BASE}/embed/?part=receipt{lang_q}", "ref-help", "ref-help-panel",
-                     2, frame_h, lang_q)
+                     (2,), frame_h, lang_q)
 
     # ---------------------------------------------------------------- I · the event verification page
     pe = browser.new_page(viewport={"width": 1280, "height": 900})

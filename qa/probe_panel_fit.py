@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright
 
 BASE = "http://127.0.0.1:8765"
 WIDTHS = (320, 360, 390, 414, 568, 640, 721, 768, 900, 1024, 1280, 1440)
-FRAME = {"zh-HK": 640, "en": 750}
+FRAME = {"zh-HK": 690, "en": 800}   # docs/INTERFACE.md §2, 23 Nov issue
 
 with sync_playwright() as pw:
     b = pw.chromium.launch(channel="chrome", headless=True)

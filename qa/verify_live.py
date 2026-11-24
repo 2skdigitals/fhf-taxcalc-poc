@@ -155,9 +155,16 @@ MUST = {
     "its trigger": 'id="alipay-help"',
     "its panel is the same disclosure": 'id="alipay-help-panel"',
     "one wiring loop for both triggers": '$$("[data-help]").forEach',
-    "five captioned screencaps, step 1": "../assets/help/alipay-receipt-step-1.webp",
-    "…step 5": "../assets/help/alipay-receipt-step-5.webp",
-    "the outro that explains the Chinese UI": "The AlipayHK app is shown in Chinese",
+    # 24 Nov: two flows, six crops. Each of these strings exists only in the build
+    # that carries both options, so a cached copy of the five-step one cannot pass.
+    "Option 1 leads (2 steps)": "Option 1 \u2014 when you donate",
+    "Option 2 follows (4 steps)": "Option 2 \u2014 after you give",
+    "the intro states both ways": "Two ways. The first is easiest: tick the box while you give.",
+    "option 1 step 1 crop": "../assets/help/alipay-receipt-o1-step-1.webp",
+    "option 2 step 4 crop": "../assets/help/alipay-receipt-o2-step-4.webp",
+    "only the first crop is eager": 'loading="eager" src="../assets/help/alipay-receipt-o1-step-1.webp"',
+    "the lazy crops are warmed on open": "function warmCrops()",
+    "the outro that explains the Chinese UI": "The app is shown in Chinese",
 }
 missing = [k for k, v in MUST.items() if v not in body]
 check(f"{len(MUST)} markers of this pass are in the live document", missing)
@@ -208,20 +215,28 @@ for name in ("alipay-step-1.jpg", "alipay-step-2.jpg", "alipay-step-3.jpg"):
     check(f"the help screencap {name} is served", [] if s_img == 200 and n_img > 5000
           else [f"status {s_img}, {n_img} bytes"], f"{n_img} bytes")
 
-# The phase-1 AlipayHK route adds five WebP crops. A deploy that pushes index.html
-# and forgets assets/help/alipay-receipt-step-*.webp ships a tooltip of dead boxes
-# while /embed/ still answers 200 — so each one is fetched, and the total weight is
-# held to the brief (<100 KB for all five).
+# The AlipayHK route carries six WebP crops, two for the tick-the-box flow and four
+# for the claim-it-later one. A deploy that pushes index.html and forgets
+# assets/help/alipay-receipt-o*.webp ships a tooltip of dead boxes while /embed/
+# still answers 200 — so each one is fetched, and the total weight is held to the
+# brief (<100 KB for all six).
+CROPS = [f"alipay-receipt-o1-step-{n}.webp" for n in (1, 2)] + \
+        [f"alipay-receipt-o2-step-{n}.webp" for n in (1, 2, 3, 4)]
 total_kb = 0
-for n in range(1, 6):
-    name = f"alipay-receipt-step-{n}.webp"
+for name in CROPS:
     s_img, n_img = fetch_status(f"/assets/help/{name}")
     total_kb += n_img / 1024
-    check(f"the AlipayHK receipt screencap {n} is served",
+    check(f"the AlipayHK receipt screencap {name} is served",
           [] if s_img == 200 and n_img > 800 else [f"status {s_img}, {n_img} bytes"],
           f"{n_img / 1024:.1f} KB")
-check(f"the five receipt screencaps weigh under 100 KB together",
+check(f"the six receipt screencaps weigh under 100 KB together",
       [] if total_kb < 100 else [f"{total_kb:.1f} KB"], f"{total_kb:.1f} KB")
+# the five 400px crops are gone, and a page still pointing at one is a 404 waiting
+for gone in (1, 2, 3, 4, 5):
+    s_old, _ = fetch_status(f"/assets/help/alipay-receipt-step-{gone}.webp")
+    check(f"the superseded crop {gone} is gone (or was never there)",
+          [] if s_old != 200 else ["still served — nothing references it, delete it"],
+          str(s_old))
 
 # ── 2 · the live DOM ─────────────────────────────────────────────────────────
 with sync_playwright() as pw:
@@ -311,12 +326,14 @@ with sync_playwright() as pw:
         p.close()
 
     # ── 3 · the AlipayHK tooltip, on the live URL ────────────────────────────
-    # The widget's only overlay, and the only place five real screencaps are
-    # pictured. It is checked on the DEPLOYED bytes because the failure mode is a
-    # deploy that ships the document without assets/help/alipay-receipt-step-*.webp:
-    # the panel opens to five empty boxes and nothing else on the page complains.
+    # The widget's only overlay, and the only place six real screencaps are
+    # pictured, over the two flows the client sent. It is checked on the DEPLOYED
+    # bytes because the failure mode is a deploy that ships the document without
+    # assets/help/alipay-receipt-o*.webp: the panel opens to empty boxes and nothing
+    # else on the page complains.
     for lang, q in (("zh", ""), ("en", "&lang=en")):
-        for w, frame in ((390, 690), (1440, 690)):
+        frame = 690 if lang == "zh" else 800
+        for w in (390, 1440):
             p = b.new_page(viewport={"width": w, "height": frame},
                            is_mobile=(w < 600), has_touch=(w < 600))
             p.goto(f"{BASE}/embed/?part=pay{q}&cb={w}{lang}", wait_until="load")
@@ -325,6 +342,10 @@ with sync_playwright() as pw:
                                 "exp: document.getElementById('alipay-help').getAttribute('aria-expanded')})")
             p.click("#alipay-help")
             p.wait_for_timeout(900)
+            # the crops below the panel's fold are lazy: walk the panel, then assert
+            p.evaluate("()=>{const p=document.getElementById('alipay-help-panel');"
+                       "p.scrollTop=p.scrollHeight;}")
+            p.wait_for_timeout(1200)
             r = p.evaluate("""() => {
               const pop = document.getElementById('alipay-help-panel');
               const b = pop.getBoundingClientRect(), d = document.documentElement;
@@ -333,6 +354,10 @@ with sync_playwright() as pw:
                       top: Math.round(b.top), bottom: Math.round(b.bottom),
                       right: Math.round(b.right), vw: d.clientWidth,
                       steps: [...pop.querySelectorAll('.n')].map(n => n.textContent.trim()),
+                      secs: [...pop.querySelectorAll('.hsec')].map(s => ({
+                          opt: s.getAttribute('data-opt'),
+                          head: (s.querySelector('.hsec-h') || {}).textContent || '',
+                          n: s.querySelectorAll('.hsteps li').length})),
                       imgs: [...pop.querySelectorAll('img')].map(i => ({
                           src: i.getAttribute('src').split('/').pop(),
                           ok: i.complete && i.naturalWidth > 0,
@@ -345,8 +370,17 @@ with sync_playwright() as pw:
                 errs.append(f"closed state {before}")
             if r["hidden"] or r["exp"] != "true" or r["role"] != "dialog":
                 errs.append(f"open state {r['hidden']}/{r['exp']}/{r['role']}")
-            if len(r["steps"]) != 5 or len(r["imgs"]) != 5:
-                errs.append(f"steps {r['steps']} imgs {len(r['imgs'])}")
+            want = ["Step 1", "Step 2", "Step 1", "Step 2", "Step 3", "Step 4"]
+            if len(r["steps"]) != 6 or len(r["imgs"]) != 6:
+                errs.append(f"steps {r['steps']} imgs {len(r['imgs'])} (want 6 of each)")
+            if r["steps"] != want:
+                errs.append(f"step labels {r['steps']} want {want} (numbered within each option)")
+            # both flows, in the client's order, each with its own step count
+            opts = [(x["opt"], x["n"]) for x in r["secs"]]
+            if opts != [("1", 2), ("2", 4)]:
+                errs.append(f"option sections {opts} want [('1', 2), ('2', 4)]")
+            if [x["src"] for x in r["imgs"]] != CROPS:
+                errs.append(f"crops {[x['src'] for x in r['imgs']]} want {CROPS}")
             # NB: `bad` is the module's failure COUNTER — a local of that name would
             # rebind the global and make every later check crash on `bad += 1`.
             bad_imgs = [i for i in r["imgs"] if not i["ok"] or not i["alt"]]
@@ -356,8 +390,8 @@ with sync_playwright() as pw:
                 errs.append(f"panel leaves the frame: {r['top']}–{r['bottom']} of {frame}")
             if r["doc"] > frame:
                 errs.append(f"the open panel scrolls the frame: doc {r['doc']} > {frame}")
-            check(f"the live AlipayHK tooltip opens with five loaded steps ({lang}, {w}px)",
-                  errs, r["line"])
+            check(f"the live AlipayHK tooltip teaches both flows, six loaded crops "
+                  f"({lang}, {w}px)", errs, r["line"])
             p.close()
 
     # ── 4 · the IRD link is language-appropriate ─────────────────────────────
