@@ -27,6 +27,8 @@ The host page owns: page copy, SEO, schema, GTM container, consent, navigation, 
 
 Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per language, taking the peak and adding 45–70px of slack. **Set the number for the language you are embedding** and every block fits at every width, with no internal scrollbar.
 
+**Write the height as a bare integer — `height=2550`, never `height=2,550`.** An unquoted attribute with a thousands separator parses as `3` in every browser: the frame collapses and the block disappears while the frames beside it keep working. It happened on the live page on 23 Nov.
+
 | # | Block | URL | Height · zh-HK | Height · en | Content peak zh-HK | Content peak en |
 |---|---|---|---|---|---|---|
 | 0 | **One link (calculator → result → payment)** | `/embed/?part=all` (also the bare `/embed/`) | **2225px** | **2550px** | 2160 (at 944px, monthly) | 2482 (at 320px, monthly) |
