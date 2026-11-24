@@ -35,17 +35,25 @@
 
 <h1>Analytics handover — donation tax calculator</h1>
 <p class="lede">What the Media Agency has to add to their Google Tag Manager container, and what we do on the widget side.</p>
-<p class="meta">The Fred Hollows Foundation (HK) · tax calculator embed · 24 Nov 2026 · 2SK Solutions</p>
+<p class="meta">The Fred Hollows Foundation (HK) · tax calculator embed · 24 Nov 2026 · 2SK Solutions<br>
+<strong>Container:</strong> GTM-M7QJ9DZK &nbsp;·&nbsp; <strong>replaces:</strong> GTM-P3Q6PF55 on the campaign page</p>
 
 <div class="rule">
 <strong>The short version.</strong> The calculator runs inside an iframe, and it never loads a tag manager of its own — by design, so it can be embedded anywhere without shipping a second container onto the Foundation's page. It reports what a donor does by <code>postMessage</code> to the parent page. Your container needs <strong>one Custom HTML tag</strong> to catch those messages and push them into the data layer, plus the usual GA4 tag, trigger and variables. Nothing on our side changes.
+</div>
+
+<div class="callout" style="border-left-color:#1a6b3c;background:#F3FAF5">
+<strong>Checked on the live page, 24 Nov 2026.</strong> The campaign page currently loads <code>GTM-P3Q6PF55</code> only,
+and that container carries <strong>no bridge</strong> — a synthetic widget message produced no data layer push. So there is
+nothing to un-pick: when <code>GTM-M7QJ9DZK</code> replaces it, there will be one container and one bridge. No duplicate
+events, no cleanup of old tags required.
 </div>
 
 <h2>1 · Who does what</h2>
 <table>
 <tr><th style="width:34px">#</th><th>Step</th><th style="width:110px">Owner</th></tr>
 <tr><td>1</td><td>Confirm the container ID, the GA4 property and its Measurement ID (<code>G-…</code>) for the campaign page.</td><td><span class="who them">Agency</span></td></tr>
-<tr><td>2</td><td><strong>Remove the old container from the campaign page.</strong> If the Foundation's existing <code>GTM-P3Q6PF55</code> still loads alongside yours and both carry the bridge, every event fires twice.</td><td><span class="who both">Both</span></td></tr>
+<tr><td>2</td><td>Install <code>GTM-M7QJ9DZK</code> on the campaign page and remove <code>GTM-P3Q6PF55</code>. Leave only one container on the page — two bridges would double every event, because each container evaluates triggers on every data layer push regardless of which one made it.</td><td><span class="who them">Agency</span></td></tr>
 <tr><td>3</td><td>Add the bridge tag (§3) — fires on All Pages.</td><td><span class="who them">Agency</span></td></tr>
 <tr><td>4</td><td>Add the six data layer variables (§4).</td><td><span class="who them">Agency</span></td></tr>
 <tr><td>5</td><td>Add the single Custom Event trigger (§5).</td><td><span class="who them">Agency</span></td></tr>
@@ -54,6 +62,11 @@
 <tr><td>8</td><td>Preview, run the checks in §8, publish.</td><td><span class="who both">Both</span></td></tr>
 <tr><td>9</td><td>Nothing. The widget already reports to the parent page and needs no code change for a container swap.</td><td><span class="who us">2SK</span></td></tr>
 </table>
+
+<div class="callout">
+<strong>The calculator is currently unmeasured.</strong> Because the container on the page has no bridge, no calculator
+event has been recorded anywhere since launch. Nothing needs recovering — this is a clean start, not a repair.
+</div>
 
 <h2>2 · How the widget talks to the page</h2>
 <p>Every event arrives on the parent page as a message with this shape:</p>

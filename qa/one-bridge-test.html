@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>one bridge, two containers</title></head>
+<body>
+<h1>One bridge, two containers, two GA4 properties</h1>
+<pre id="out">waiting…</pre>
+<iframe id="w" src="/embed/?part=pay&lang=en" style="width:100%;height:700px;border:1px solid #ccc"></iframe>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  var CE = /^(calc_started|calc_result_shown|qr_view|rail_click|email_capture|receipt_request)$/;
+  window.__fireA = {}; window.__fireB = {};   // what each container's GA4 tag would send
+
+  // one bridge only — the new container's
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (!d || d.source !== "fhf-taxcalc" || d.type !== "event") return;
+    var p = Object.assign({}, d.params || {}); p.event = d.name; p.widget_lang = d.lang || ""; delete p.lang;
+    dataLayer.push(p);
+  });
+
+  // both containers' triggers evaluate on every push — that is the GTM behaviour under test
+  var push = dataLayer.push.bind(dataLayer);
+  dataLayer.push = function (o) {
+    var r = push(o);
+    if (o && CE.test(o.event)) {
+      window.__fireA[o.event] = (window.__fireA[o.event] || 0) + 1;   // container A → property A
+      window.__fireB[o.event] = (window.__fireB[o.event] || 0) + 1;   // container B → property B
+    }
+    document.getElementById('out').textContent =
+      'property A (new container)  ' + JSON.stringify(window.__fireA) + '\n' +
+      'property B (old container)  ' + JSON.stringify(window.__fireB);
+    return r;
+  };
+</script>
+</body></html>

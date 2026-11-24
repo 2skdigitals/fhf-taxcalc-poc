@@ -1,0 +1,42 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>double-container test</title></head>
+<body>
+<h1>What two containers do to one event</h1>
+<pre id="out">waiting…</pre>
+<iframe id="w" src="/embed/?part=pay&lang=en" style="width:100%;height:760px;border:1px solid #ccc"></iframe>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  window.__pushed = [];
+
+  // ── container A: the NEW bridge, as handed to the Media Agency ─────────────
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (!d || d.source !== "fhf-taxcalc" || d.type !== "event") return;
+    var p = Object.assign({}, d.params || {}); p.event = d.name; p.widget_lang = d.lang || ""; delete p.lang;
+    p.__container = "A (new)";
+    dataLayer.push(p);
+  });
+
+  // ── container B: the OLD container, if its POC bridge was never removed ────
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (!d || d.source !== "fhf-taxcalc" || d.type !== "event") return;
+    var p = Object.assign({}, d.params || {}); p.event = d.name; p.widget_lang = d.lang || ""; delete p.lang;
+    p.__container = "B (old)";
+    dataLayer.push(p);
+  });
+
+  // recorder: what a GA4 event tag in each container would act on
+  var push = dataLayer.push.bind(dataLayer);
+  dataLayer.push = function (o) {
+    var r = push(o);
+    window.__pushed.push(o);
+    var counts = {};
+    window.__pushed.forEach(function (x) { counts[x.event] = (counts[x.event] || 0) + 1; });
+    document.getElementById('out').textContent =
+      window.__pushed.map(function (x) { return x.event + '  ← container ' + x.__container; }).join('\n') +
+      '\n\ntotals per event: ' + JSON.stringify(counts, null, 1);
+    return r;
+  };
+</script>
+</body></html>

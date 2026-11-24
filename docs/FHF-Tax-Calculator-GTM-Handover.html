@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GTM handover — FHF donation tax calculator</title>
+<style>
+  :root{--navy:#01014E;--ink:#16161C;--muted:#6A6A75;--line:rgba(1,1,78,.16);--wash:#F6F6FD;--code:#F4F4FA}
+  *{box-sizing:border-box}
+  body{margin:0;padding:56px 40px 80px;font:16px/1.62 system-ui,-apple-system,"PingFang HK","Noto Sans HK",Helvetica,Arial,sans-serif;color:var(--ink);max-width:940px;margin-inline:auto}
+  h1{font-size:30px;letter-spacing:-.02em;margin:0 0 6px;color:var(--navy)}
+  .lede{color:var(--muted);margin:0 0 8px}
+  .meta{font-size:13px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:34px}
+  h2{font-size:20px;margin:40px 0 12px;color:var(--navy);letter-spacing:-.01em}
+  h3{font-size:15px;margin:26px 0 8px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  p,li{max-width:74ch}
+  table{border-collapse:collapse;width:100%;margin:14px 0 8px;font-size:14px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line)}
+  td code,p code,li code{background:var(--wash);padding:1px 5px;border-radius:2px;font-size:13px}
+  pre{background:var(--code);border:1px solid var(--line);border-radius:3px;padding:16px 18px;overflow-x:auto;font-size:12.5px;line-height:1.55;margin:12px 0}
+  pre code{background:none;padding:0}
+  .who{display:inline-block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:2px;font-weight:600;white-space:nowrap}
+  .us{background:var(--navy);color:#fff}
+  .them{background:#E97824;color:#fff}
+  .both{background:#dfe0ea;color:var(--navy)}
+  .callout{border-left:3px solid #E97824;background:#FEF7F1;padding:12px 16px;margin:18px 0;font-size:14px}
+  .callout strong{color:#B45714}
+  .rule{border-left:3px solid var(--navy);padding-left:14px;margin:18px 0;font-size:14px;color:var(--ink)}
+  ol,ul{padding-left:22px}
+  li{margin:5px 0}
+  .small{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<h1>Analytics handover — donation tax calculator</h1>
+<p class="lede">What the Media Agency has to add to their Google Tag Manager container, and what we do on the widget side.</p>
+<p class="meta">The Fred Hollows Foundation (HK) · tax calculator embed · 24 Nov 2026 · 2SK Solutions<br>
+<strong>Container:</strong> GTM-M7QJ9DZK &nbsp;·&nbsp; <strong>replaces:</strong> GTM-P3Q6PF55 on the campaign page</p>
+
+<div class="rule">
+<strong>The short version.</strong> The calculator runs inside an iframe, and it never loads a tag manager of its own — by design, so it can be embedded anywhere without shipping a second container onto the Foundation's page. It reports what a donor does by <code>postMessage</code> to the parent page. Your container needs <strong>one Custom HTML tag</strong> to catch those messages and push them into the data layer, plus the usual GA4 tag, trigger and variables. Nothing on our side changes.
+</div>
+
+<div class="callout" style="border-left-color:#1a6b3c;background:#F3FAF5">
+<strong>Checked on the live page, 24 Nov 2026.</strong> The campaign page currently loads <code>GTM-P3Q6PF55</code> only,
+and that container carries <strong>no bridge</strong> — a synthetic widget message produced no data layer push. So there is
+nothing to un-pick: when <code>GTM-M7QJ9DZK</code> replaces it, there will be one container and one bridge. No duplicate
+events, no cleanup of old tags required.
+</div>
+
+<h2>1 · Who does what</h2>
+<table>
+<tr><th style="width:34px">#</th><th>Step</th><th style="width:110px">Owner</th></tr>
+<tr><td>1</td><td>Confirm the container ID, the GA4 property and its Measurement ID (<code>G-…</code>) for the campaign page.</td><td><span class="who them">Agency</span></td></tr>
+<tr><td>2</td><td>Install <code>GTM-M7QJ9DZK</code> on the campaign page and remove <code>GTM-P3Q6PF55</code>. Leave only one container on the page — two bridges would double every event, because each container evaluates triggers on every data layer push regardless of which one made it.</td><td><span class="who them">Agency</span></td></tr>
+<tr><td>3</td><td>Add the bridge tag (§3) — fires on All Pages.</td><td><span class="who them">Agency</span></td></tr>
+<tr><td>4</td><td>Add the six data layer variables (§4).</td><td><span class="who them">Agency</span></td></tr>
+<tr><td>5</td><td>Add the single Custom Event trigger (§5).</td><td><span class="who them">Agency</span></td></tr>
+<tr><td>6</td><td>Add the GA4 configuration tag and the one GA4 event tag (§6).</td><td><span class="who them">Agency</span></td></tr>
+<tr><td>7</td><td>Register the custom dimensions in GA4 (§7) — without these the parameters arrive but read <code>(not set)</code> in reports.</td><td><span class="who them">Agency</span></td></tr>
+<tr><td>8</td><td>Preview, run the checks in §8, publish.</td><td><span class="who both">Both</span></td></tr>
+<tr><td>9</td><td>Nothing. The widget already reports to the parent page and needs no code change for a container swap.</td><td><span class="who us">2SK</span></td></tr>
+</table>
+
+<div class="callout">
+<strong>The calculator is currently unmeasured.</strong> Because the container on the page has no bridge, no calculator
+event has been recorded anywhere since launch. Nothing needs recovering — this is a clean start, not a repair.
+</div>
+
+<h2>2 · How the widget talks to the page</h2>
+<p>Every event arrives on the parent page as a message with this shape:</p>
+<pre><code>{ type: "event", name: "calc_started", source: "fhf-taxcalc", v: "1.x", lang: "en",
+  params: { … } }</code></pre>
+<p>Three rules for whatever reads it:</p>
+<ul>
+<li>Filter on <code>source === "fhf-taxcalc"</code>. Other scripts on the page post their own messages.</li>
+<li>Ignore every message where <code>type !== "event"</code> — the same channel also carries <code>resize</code> and <code>deeplink</code> messages, which are plumbing, not analytics.</li>
+<li>The widget never sets <code>page_location</code> for you; take the page URL from the container's own page context.</li>
+</ul>
+
+<h2>3 · The custom code — the bridge</h2>
+<h3>Tag: <code>FHF — widget bridge</code> · Type: Custom HTML · Trigger: All Pages</h3>
+<pre><code>&lt;script&gt;
+window.dataLayer = window.dataLayer || [];
+window.addEventListener("message", function (e) {
+  var d = e.data;
+  if (!d || d.source !== "fhf-taxcalc") return;   // not our widget
+  if (d.type !== "event") return;                  // resize / deeplink are plumbing
+  var payload = Object.assign({}, d.params || {});
+  payload.event = d.name;                          // dataLayer "event" drives the trigger
+  payload.widget_lang = d.lang || "";              // prefixed so it cannot clash in a shared container
+  delete payload.lang;                             // same value, sent once
+  dataLayer.push(payload);
+});
+&lt;/script&gt;</code></pre>
+<div class="callout">
+<strong>Do not</strong> add this tag to the iframe. It has to run on <code>hollows.org</code>, in the parent page — a tag inside the iframe cannot see the parent's data layer, and the widget deliberately ships no container.
+</div>
+
+<h2>4 · Data layer variables</h2>
+<p>Create each as a <strong>Data Layer Variable</strong>, name it exactly as below, and leave the default value empty.</p>
+<table>
+<tr><th>Variable name</th><th>Data Layer Variable name</th><th>Seen on</th></tr>
+<tr><td><code>DLV - band</code></td><td><code>band</code></td><td>calc_result_shown</td></tr>
+<tr><td><code>DLV - donation_type</code></td><td><code>donation_type</code></td><td>calc_result_shown, email_capture</td></tr>
+<tr><td><code>DLV - rail</code></td><td><code>rail</code></td><td>qr_view, rail_click</td></tr>
+<tr><td><code>DLV - state</code></td><td><code>state</code></td><td>qr_view, rail_click, email_capture</td></tr>
+<tr><td><code>DLV - cap_state</code></td><td><code>cap_state</code></td><td>calc_result_shown</td></tr>
+<tr><td><code>DLV - widget_lang</code></td><td><code>widget_lang</code></td><td>all events</td></tr>
+</table>
+<p class="small">Optional, if you want them in reports: <code>exact</code> (calc_result_shown), <code>method</code> and <code>has_reference</code> (receipt_request).</p>
+
+<h2>5 · Trigger</h2>
+<h3>Trigger: <code>CE — FHF widget events</code> · Type: Custom Event · Event name: matches RegEx</h3>
+<pre><code>^(calc_started|calc_result_shown|qr_view|rail_click|email_capture|receipt_request|receipt_fulfilled|donation_self_report)$</code></pre>
+<p>One trigger covers every event. The last two are not live yet — they are reserved for the receipt system and land when that phase ships, so the trigger does not have to be edited later.</p>
+
+<h2>6 · GA4 tags</h2>
+<ul>
+<li><strong><code>GA4 — config</code></strong> · Google Tag · Measurement ID <code>G-…</code> · Trigger <strong>Initialization – All Pages</strong>.</li>
+<li><strong><code>GA4 — FHF widget event</code></strong> · GA4 Event · Event Name <code>{{Event}}</code> · Trigger <code>CE — FHF widget events</code> · Parameters: <code>band</code> → <code>{{DLV - band}}</code>, <code>donation_type</code> → <code>{{DLV - donation_type}}</code>, <code>rail</code> → <code>{{DLV - rail}}</code>, <code>state</code> → <code>{{DLV - state}}</code>, <code>cap_state</code> → <code>{{DLV - cap_state}}</code>, <code>widget_lang</code> → <code>{{DLV - widget_lang}}</code>.</li>
+</ul>
+<p><code>{{Event}}</code> is a built-in variable. Do not create a data layer variable called <code>Event</code> — that is the most common way this setup fails silently.</p>
+
+<h2>7 · GA4 custom dimensions</h2>
+<p>Admin → Custom definitions → Create custom dimension, scope <strong>Event</strong>, one per row. Unregistered parameters collect nothing usable.</p>
+<table>
+<tr><th>Dimension name</th><th>Event parameter</th></tr>
+<tr><td>Widget band</td><td><code>band</code></td></tr>
+<tr><td>Donation type</td><td><code>donation_type</code></td></tr>
+<tr><td>Payment rail</td><td><code>rail</code></td></tr>
+<tr><td>Funnel state</td><td><code>state</code></td></tr>
+<tr><td>Cap state</td><td><code>cap_state</code></td></tr>
+<tr><td>Widget language</td><td><code>widget_lang</code></td></tr>
+</table>
+
+<h2>8 · Verify before publishing</h2>
+<ol>
+<li>Open the campaign page in GTM <strong>Preview</strong>.</li>
+<li>Type an amount into the calculator. Two events must appear: <code>calc_started</code>, then <code>calc_result_shown</code>.</li>
+<li>Open either event and read its parameters. There must be <strong>no amount, no income, no tax rate</strong> — only coarse bands and states. That is a deliberate constraint of the build: the widget cannot report a donor's finances. If you see a figure, stop and tell us.</li>
+<li>Scroll the payment block fully into view: <code>qr_view</code>. Click the AlipayHK tile: <code>rail_click</code> carrying <code>rail</code>.</li>
+<li>GA4 → Admin → DebugView — same events, same parameters, within a minute of publishing.</li>
+</ol>
+
+<h2>9 · What breaks it</h2>
+<table>
+<tr><th>Symptom</th><th>Cause</th></tr>
+<tr><td>Every event appears twice</td><td>Two containers on the page both running the bridge. Remove the old one.</td></tr>
+<tr><td>Events appear in Preview, never in GA4</td><td>Config tag is not on <strong>Initialization – All Pages</strong>, or the Measurement ID is wrong.</td></tr>
+<tr><td>Nothing at all</td><td>Bridge tag missing, or the iframe carries a <code>sandbox</code> without <code>allow-scripts</code>.</td></tr>
+<tr><td>Events fire but parameters read <code>(not set)</code></td><td>Custom dimensions were not registered (§7), or the parameters were not mapped on the event tag (§6).</td></tr>
+<tr><td>Consent banner blocks everything</td><td>The bridge runs before consent is granted. If the container uses Consent Mode, the events will queue — expected, not broken.</td></tr>
+</table>
+
+<h2>10 · Scope of what is measured</h2>
+<p>Four events can fire today. The other four exist in the build and are wired to the same trigger, but are dormant until the phases below ship — the trigger is written for all eight so it never needs editing.</p>
+<table>
+<tr><th>Event</th><th>Fires when</th><th>Useful parameters</th><th style="width:96px">Status</th></tr>
+<tr><td><code>calc_started</code></td><td>First input in the calculator</td><td>—</td><td>live</td></tr>
+<tr><td><code>calc_result_shown</code></td><td>An estimate is displayed (not below the HK$100 floor)</td><td>band, donation_type, cap_state, exact</td><td>live</td></tr>
+<tr><td><code>qr_view</code></td><td>The payment block scrolls into view (≥35%) — an impression</td><td>rail, state</td><td>live</td></tr>
+<tr><td><code>rail_click</code></td><td>A payment method is chosen</td><td>rail, state</td><td>live</td></tr>
+<tr><td><code>email_capture</code></td><td>The receipt form is submitted with an email</td><td>donation_type, state</td><td>phase 2</td></tr>
+<tr><td><code>receipt_request</code></td><td>A receipt is requested</td><td>method, has_reference</td><td>phase 2</td></tr>
+</table>
+<p class="small"><code>receipt_fulfilled</code> and <code>donation_self_report</code> are reserved: server-side, released with the receipt system (PayMe phase). Until then, expect <strong>four</strong> events in Preview.</p>
+
+
+<h2>Appendix · the embed itself</h2>
+<p>The campaign page hosts the calculator in one iframe. It needs no tag manager and takes no parameters — but it does need the right height, or the bottom of the block is clipped on small phones.</p>
+<pre><code>&lt;iframe src="https://2skdigitals.github.io/fhf-taxcalc-poc/embed/?lang=en"
+        width="100%" height=2550 frameborder=0&gt;&lt;/iframe&gt;</code></pre>
+<ul>
+<li><code>?lang=en</code> for the English page, <code>?lang=zh</code> for the Chinese one. Everything else is automatic.</li>
+<li><strong>Write the height as a bare integer.</strong> <code>height=2,550</code> parses as <code>3</code> in every browser — a thousands separator silently collapses the frame and the calculator disappears.</li>
+<li>The page currently carries <code>height=2200</code>. Measured content is 2,162 at desktop and 2,202 at 390px, so it fits until a 320px-wide phone, where the block is 2,482 and roughly 280px is cut off.</li>
+</ul>
+
+</body>
+</html>
