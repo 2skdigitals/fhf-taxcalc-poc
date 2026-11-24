@@ -165,9 +165,13 @@ MUST = {
     "Option 1 leads (2 steps)": "Option 1 \u2014 when you donate",
     "Option 2 follows (4 steps)": "Option 2 \u2014 after you give",
     "the intro states both ways": "Two ways. The first is easiest: tick the box while you give.",
+    # 24 Nov: the crop files were re-saved under the same names, so each src now
+    # carries `?v=…` to beat the CDN. The markers and the DOM comparison therefore
+    # match the ASSET, not the whole URL — otherwise a cache-busting query reads as
+    # a missing image, which is exactly how this gate went stale on 24 Nov.
     "option 1 step 1 crop": "../assets/help/alipay-receipt-o1-step-1.webp",
     "option 2 step 4 crop": "../assets/help/alipay-receipt-o2-step-4.webp",
-    "only the first crop is eager": 'loading="eager" src="../assets/help/alipay-receipt-o1-step-1.webp"',
+    "only the first crop is eager": 'loading="eager" src="../assets/help/alipay-receipt-o1-step-1.webp',
     "the lazy crops are warmed on open": "function warmCrops()",
     "the outro that explains the Chinese UI": "The app is shown in Chinese",
 }
@@ -387,8 +391,9 @@ with sync_playwright() as pw:
             opts = [(x["opt"], x["n"]) for x in r["secs"]]
             if opts != [("1", 2), ("2", 4)]:
                 errs.append(f"option sections {opts} want [('1', 2), ('2', 4)]")
-            if [x["src"] for x in r["imgs"]] != CROPS:
-                errs.append(f"crops {[x['src'] for x in r['imgs']]} want {CROPS}")
+            # the asset, not the URL: `?v=` is a cache key, not a different crop
+            if [x["src"].split("?")[0] for x in r["imgs"]] != CROPS:
+                errs.append(f"crops {[x['src'].split('?')[0] for x in r['imgs']]} want {CROPS}")
             # NB: `bad` is the module's failure COUNTER — a local of that name would
             # rebind the global and make every later check crash on `bad += 1`.
             bad_imgs = [i for i in r["imgs"] if not i["ok"] or not i["alt"]]
