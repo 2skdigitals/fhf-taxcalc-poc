@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Payment block — desktop options</title>
+<style>
+  :root{
+    --navy:#01014E; --ink:#16161C; --ink-2:#3F3F4A; --muted:#6A6A75;
+    --line:rgba(1,1,78,.14); --line-2:rgba(1,1,78,.26); --rule:1px solid var(--line);
+    --wash:rgba(1,1,78,.055); --field:#F6F6FD;
+    --t-cap:.8125rem; --t-sm:1rem; --t-body:1.125rem; --t-h:2rem;
+    --sans:system-ui,-apple-system,"PingFang HK","Noto Sans HK",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:40px 56px 80px;background:#fff;color:var(--ink);font-family:var(--sans)}
+  h1{font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 0 8px}
+  h2{font-size:var(--t-h);margin:0 0 22px;letter-spacing:-.01em}
+  section{padding:44px 0;border-top:1px solid rgba(1,1,78,.10)}
+  section:first-of-type{border-top:0}
+  .tag{display:inline-block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+       border:1px solid var(--line);border-radius:2px;padding:3px 7px;margin-bottom:14px}
+  .note{font-size:13px;color:var(--muted);margin:16px 0 0;max-width:62ch;line-height:1.6}
+  .stage{width:1000px}
+
+  /* ── what ships today ─────────────────────────────────────────────── */
+  .pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:56px;max-width:664px;
+        border-top:var(--rule);margin-top:26px;padding-top:34px;align-items:start}
+  .qrbox{border:1px solid var(--line);border-radius:3px;padding:26px;display:flex;align-items:center;justify-content:center;aspect-ratio:1/1}
+  .qrbox img{width:100%;max-width:190px;display:block}
+  .iconbox{border:1px solid var(--line);border-radius:3px;display:flex;align-items:center;justify-content:center;aspect-ratio:1/1}
+  .nm{font-size:var(--t-body);font-weight:600;margin:14px 0 3px}
+  .sub{font-size:var(--t-cap);color:var(--muted)}
+  .receiptline{margin-top:14px;border-left:3px solid #1677FF;padding:8px 0 8px 14px;font-size:var(--t-sm);
+               display:flex;align-items:center;gap:8px}
+  .q{width:24px;height:24px;border:2px solid var(--navy);border-radius:50%;display:inline-flex;
+     align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--navy);flex:none}
+
+  /* ── shared bits for the three options ────────────────────────────── */
+  .card{border:1px solid var(--line);border-radius:3px;background:#fff;text-decoration:none;color:inherit;display:block}
+  .icon{display:block}
+  .mono{font-variant-numeric:tabular-nums}
+
+  /* A — one card, label inside */
+  .optA{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:40px;max-width:720px;margin-top:8px}
+  .optA .card{padding:26px 24px 20px;display:flex;flex-direction:column;transition:border-color .22s cubic-bezier(.32,.72,0,1)}
+  .optA .card:hover{border-color:var(--line-2)}
+  .optA .visual{display:flex;align-items:center;justify-content:center;min-height:176px;margin-bottom:18px}
+  .optA .visual img{width:100%;max-width:200px}
+  .optA .nm{margin:0 0 3px}
+  .optA .foot{margin-top:auto;padding-top:16px;border-top:var(--rule);display:flex;align-items:center;justify-content:space-between;gap:10px;
+              font-size:var(--t-cap);color:var(--muted)}
+  .optA .foot .go{color:var(--navy);font-size:15px}
+  .optA .receipt{display:flex;align-items:center;gap:8px;padding:12px 0 0;border-top:var(--rule);margin-top:16px;font-size:var(--t-cap)}
+  .optA .receipt .dot{width:6px;height:6px;border-radius:50%;background:#1677FF;flex:none}
+
+  /* B — size by function */
+  .optB{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:24px;max-width:760px;margin-top:8px;align-items:stretch}
+  .optB .qr{display:flex;gap:24px;align-items:center;border:1px solid var(--line);border-radius:3px;padding:22px;text-decoration:none;color:inherit}
+  .optB .qr img{width:172px;flex:none}
+  .optB .row{border:1px solid var(--line);border-radius:3px;padding:22px;display:flex;flex-direction:column;
+             justify-content:center;gap:6px;text-decoration:none;color:var(--ink);position:relative}
+  .optB .row .amt{font-size:var(--t-cap);color:var(--muted);margin-top:auto}
+  .optB .receipt{margin-top:12px;font-size:var(--t-cap);display:flex;gap:8px;align-items:flex-start;line-height:1.5}
+  .optB .receipt .dot{margin-top:5px}
+  .optB .dot{width:6px;height:6px;border-radius:50%;background:#1677FF;flex:none}
+
+  /* C — QR hero */
+  .optC{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px;max-width:820px;margin-top:8px}
+  .optC .hero{border:1px solid var(--line);border-radius:3px;padding:30px 32px;display:flex;gap:32px;align-items:center;
+              background:linear-gradient(180deg,rgba(1,1,78,.028),transparent 46%);text-decoration:none;color:inherit}
+  .optC .hero img{width:200px;flex:none}
+  .optC .hero .kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#1677FF;font-weight:600;margin-bottom:8px}
+  .optC .hero h3{margin:0 0 6px;font-size:1.375rem;letter-spacing:-.01em}
+  .optC .hero p{margin:0;font-size:var(--t-cap);color:var(--muted);max-width:26ch;line-height:1.55}
+  .optC .side{border:1px solid var(--line);border-radius:3px;padding:26px;display:flex;flex-direction:column;justify-content:space-between;text-decoration:none;color:inherit}
+  .optC .side h3{margin:18px 0 4px;font-size:var(--t-body)}
+  .optC .side p{margin:0;font-size:var(--t-cap);color:var(--muted)}
+  .optC .receipt{margin-top:14px;padding-top:12px;border-top:var(--rule);font-size:var(--t-cap);display:flex;gap:8px;align-items:flex-start}
+  .optC .dot{width:6px;height:6px;border-radius:50%;background:#1677FF;flex:none;margin-top:5px}
+  .legal{margin-top:34px;font-size:var(--t-cap);color:var(--muted)}
+</style>
+</head>
+<body>
+
+<section>
+  <span class="tag">Today</span>
+  <h1>How you give — desktop</h1>
+  <h2>Current build</h2>
+  <div class="stage">
+    <div class="pair">
+      <div>
+        <div class="qrbox"><img src="qr.png" alt="AlipayHK QR"></div>
+        <div class="nm">AlipayHK</div>
+        <div class="sub">Scan with your phone</div>
+        <div class="receiptline"><span>Need a receipt? Apply inside AlipayHK.</span><span class="q">?</span></div>
+      </div>
+      <div>
+        <div class="iconbox">
+          <svg width="86" height="58" viewBox="0 0 86 58" fill="none"><rect x="2" y="2" width="82" height="54" rx="7" stroke="#01014E" stroke-width="5"/><rect x="2" y="14" width="82" height="10" fill="#01014E"/><rect x="14" y="38" width="20" height="5" rx="2.5" fill="#01014E"/></svg>
+        </div>
+        <div class="nm">Credit card</div>
+        <div class="sub">Pay by card</div>
+      </div>
+    </div>
+    <p class="legal">Based on IRD tax rates and info for the relevant assessment year; for general reference only.</p>
+  </div>
+  <p class="note">The two boxes are the same size but hold very different content, so the right one is mostly air. The name and sub-line sit outside the box, so each rail reads as a box plus a caption rather than one object; the receipt note hangs off a rule that starts in the gutter, one indent further left than the label above it, and only the left column has that third row — which leaves the bottom edge ragged.</p>
+</section>
+
+<section>
+  <span class="tag">Option A</span>
+  <h1>How you give — desktop</h1>
+  <h2>One card, label inside</h2>
+  <div class="stage">
+    <div class="optA">
+      <a class="card" href="#">
+        <div class="visual"><img src="qr.png" alt="AlipayHK QR code"></div>
+        <div class="nm">AlipayHK</div>
+        <div class="sub">Scan with your phone</div>
+        <div class="foot"><span>Open AlipayHK</span><span class="go" aria-hidden="true">↗</span></div>
+      </a>
+      <a class="card" href="#">
+        <div class="visual">
+          <svg width="96" height="64" viewBox="0 0 86 58" fill="none"><rect x="2" y="2" width="82" height="54" rx="7" stroke="#01014E" stroke-width="5"/><rect x="2" y="14" width="82" height="10" fill="#01014E"/><rect x="14" y="38" width="20" height="5" rx="2.5" fill="#01014E"/></svg>
+        </div>
+        <div class="nm">Credit card</div>
+        <div class="sub">Pay by card</div>
+        <div class="foot"><span>On the Foundation's page</span><span class="go" aria-hidden="true">↗</span></div>
+      </a>
+    </div>
+    <div style="max-width:720px">
+      <div class="optA" style="display:block">
+        <div class="receipt" style="border-top:0;padding-top:14px;margin-top:14px;font-size:13px">
+          <span class="dot"></span><span>Need a receipt? Apply inside AlipayHK.</span>
+          <span class="q" style="width:20px;height:20px;border-width:2px;font-size:11px">?</span>
+        </div>
+      </div>
+    </div>
+    <p class="legal">Based on IRD tax rates and info for the relevant assessment year; for general reference only.</p>
+  </div>
+  <p class="note">Card, name and action become one object — the thing you tap is the thing you read. Both cards carry a footer, so the two bottoms line up instead of one running three rows longer. The receipt note drops the gutter rule and sits under the pair as a single quiet line, which is what it is: a note about AlipayHK, not a third payment method. Cost: the cards get taller.</p>
+</section>
+
+<section>
+  <span class="tag">Option B</span>
+  <h1>How you give — desktop</h1>
+  <h2>Size by function</h2>
+  <div class="stage">
+    <div class="optB">
+      <a class="qr" href="#">
+        <img src="qr.png" alt="AlipayHK QR code">
+        <div>
+          <div class="nm" style="margin:0 0 3px">AlipayHK</div>
+          <div class="sub">Scan with your phone</div>
+          <div class="receipt" style="color:var(--ink-2)"><span class="dot"></span><span>Need a receipt? Apply inside AlipayHK.</span></div>
+        </div>
+      </a>
+      <a class="row" href="#">
+        <svg width="44" height="30" viewBox="0 0 86 58" fill="none"><rect x="2" y="2" width="82" height="54" rx="7" stroke="#01014E" stroke-width="5"/><rect x="2" y="14" width="82" height="10" fill="#01014E"/><rect x="14" y="38" width="20" height="5" rx="2.5" fill="#01014E"/></svg>
+        <div class="nm" style="margin:12px 0 3px">Credit card</div>
+        <div class="sub">Pay by card</div>
+        <div class="amt" style="display:flex;justify-content:space-between;margin-top:18px;padding-top:12px;border-top:var(--rule)">
+          <span style="font-size:13px">On the Foundation's page</span><span style="color:var(--navy)">↗</span>
+        </div>
+      </a>
+    </div>
+    <p class="legal">Based on IRD tax rates and info for the relevant assessment year; for general reference only.</p>
+  </div>
+  <p class="note">The QR is the only element that has to be a picture, so it gets the wider tile; the card is a link, so it becomes a compact tile. The receipt note sits inside the AlipayHK tile, under its sub-line, where it belongs. Reads as a deliberate hierarchy rather than two matching boxes — but it is asymmetric, and a client who wants "two options, equal weight" may not want that story.</p>
+</section>
+
+<section>
+  <span class="tag">Option C</span>
+  <h1>How you give — desktop</h1>
+  <h2>QR hero</h2>
+  <div class="stage">
+    <div class="optC">
+      <a class="hero" href="#">
+        <img src="qr.png" alt="AlipayHK QR code">
+        <div>
+          <div class="kicker">Recommended</div>
+          <h3>Give with AlipayHK</h3>
+          <p>Scan the code with your phone — no card details, and the lowest cost to the Foundation.</p>
+          <div class="receipt" style="max-width:34ch"><span class="dot"></span><span>Need a receipt? Apply inside AlipayHK.</span></div>
+        </div>
+      </a>
+      <a class="side" href="#">
+        <div>
+          <svg width="56" height="38" viewBox="0 0 86 58" fill="none"><rect x="2" y="2" width="82" height="54" rx="7" stroke="#01014E" stroke-width="5"/><rect x="2" y="14" width="82" height="10" fill="#01014E"/><rect x="14" y="38" width="20" height="5" rx="2.5" fill="#01014E"/></svg>
+          <h3>Credit card</h3>
+          <p>Pay by card on the Foundation's page.</p>
+        </div>
+        <div style="font-size:13px;color:var(--navy);margin-top:18px">Continue ↗</div>
+      </a>
+    </div>
+    <p class="legal">Based on IRD tax rates and info for the relevant assessment year; for general reference only.</p>
+  </div>
+  <p class="note">Makes AlipayHK the obvious first move and gives the block a focal point instead of two equal boxes. Strongest hierarchy of the three — and the biggest departure: it introduces a kicker word and a line of sales copy, both of which the client would have to approve, and it implies a preference the Foundation's finance team may not want stated on the page.</p>
+</section>
+
+</body>
+</html>

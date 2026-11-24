@@ -20,6 +20,18 @@ import re
 import sys
 from playwright.sync_api import sync_playwright
 
+# The QR check reads the RENDERED code off a screenshot and decodes it, because a
+# QR that renders at an unscannable size is exactly the bug this harness missed
+# once (the 450x350 card put the code at ~90px).
+try:
+    import cv2
+    import numpy as np
+except ModuleNotFoundError:                      # the system 3.9 has neither
+    raise SystemExit(
+        "opencv/numpy are not in this interpreter — the QR decode check needs them.\n"
+        "Run: /Library/Developer/CommandLineTools/usr/bin/python3 qa/poc_test.py"
+    )
+
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8765"
 ok = bad = 0
 
@@ -260,8 +272,14 @@ with sync_playwright() as pw:
     rails = f.evaluate("""() => [...document.querySelectorAll('.rails [data-rail]')].map(el => ({
         tag: el.tagName, rail: el.dataset.rail, href: el.getAttribute('href') || '',
         target: el.getAttribute('target') || '', rel: el.getAttribute('rel') || '',
+        shown: el.offsetParent !== null,
         text: el.textContent.replace(/\\s+/g, ' ').trim()}))""")
-    check("two payment rails present", [] if len(rails) == 2 else [str(rails)])
+    # Four links, TWO rails: the mobile rows and the desktop tiles are the same two
+    # destinations in mutually exclusive arrangements (Option B, 24 Nov — the
+    # AlipayHK tile became a link, because the whole tile is now clickable).
+    kinds = sorted({r["rail"] for r in rails})
+    check("two payment rails present — one link per rail in each arrangement",
+          [] if (kinds == ["alipay", "card"] and len(rails) == 4) else [str(rails)])
     bad_tag = [r for r in rails if r["tag"] != "A"]
     check("every rail is a link, not a dead button", [] if not bad_tag else [str(bad_tag)])
     # Two kinds of destination are legitimate now: the charity's own pages, and the
@@ -272,25 +290,53 @@ with sync_playwright() as pw:
     bad_href = [r for r in rails if not r["href"].startswith(ALLOWED)]
     check("every rail points at hollows.org or the decoded wallet endpoint",
           [] if not bad_href else [str(bad_href)])
-    pays = {r["rail"]: r["href"] for r in rails}
+    pays = {}
+    for r in rails:
+        pays.setdefault(r["rail"], set()).add(r["href"])
     check("AlipayHK carries the endpoint decoded from the published QR code",
-          [] if pays.get("alipay", "").startswith("https://render.alipay.hk/") else [str(pays)])
-    # The desktop arrangement is the other half of the same block: one QR + one card
-    # tile, equal weight. A stale third tile or a dead PayMe <img> would pass the
-    # mobile-row checks above, so assert the grid itself.
+          [] if all(h.startswith("https://render.alipay.hk/") for h in pays.get("alipay", []))
+          else [str(pays)])
+    # The desktop arrangement is the other half of the same block: Option B sizes
+    # each tile by its function — the QR tile is wide (the code has to be big
+    # enough to scan), the card tile is compact. Assert the structure, the asset
+    # and the asymmetry, not a remembered pixel width.
     grid = f.evaluate("""() => {
         const g = document.querySelector('.paygrid');
         const tiles = [...g.children].filter(c => getComputedStyle(c).display !== 'none');
+        const qr = g.querySelector('img');
         return {n: tiles.length,
                 imgs: tiles.filter(t => t.querySelector('img')).length,
-                rails: tiles.map(t => t.dataset.rail || ''),
+                rails: tiles.map(t => t.querySelector('[data-rail]')?.dataset.rail || ''),
                 w: tiles.map(t => Math.round(t.getBoundingClientRect().width)),
                 h: tiles.map(t => Math.round(t.getBoundingClientRect().height)),
-                srcs: [...g.querySelectorAll('img')].map(i => i.getAttribute('src'))};
+                srcs: [...g.querySelectorAll('img')].map(i => i.getAttribute('src')),
+                qrBox: qr ? [Math.round(qr.getBoundingClientRect().width),
+                             Math.round(qr.getBoundingClientRect().height)] : null};
     }""")
-    check("the desktop grid is one QR and one card tile, the same size",
-          [] if (grid["n"] == 2 and grid["imgs"] == 1 and grid["rails"] == ["", "card"]
-                 and len(set(grid["w"])) == 1 and len(set(grid["h"])) == 1) else [str(grid)])
+    check("the desktop pair is a wide AlipayHK tile and a compact card tile",
+          [] if (grid["n"] == 2 and grid["imgs"] == 1 and grid["rails"] == ["alipay", "card"]
+                 and grid["w"][0] > grid["w"][1] and len(set(grid["h"])) == 1) else [str(grid)])
+    check("the desktop tile renders the tight QR crop, at least 160px",
+          [] if (grid["srcs"] and grid["srcs"][0].endswith("/assets/logos/alipayhk-qr.png")
+                 and min(grid["qrBox"]) >= 160) else [str(grid)])
+
+    # A QR that renders but does not DECODE is the failure this pass exists to fix:
+    # the old 450x350 card put the code at ~90px, which no detector reads. So
+    # screenshot the rendered element and decode it — the only check that can fail
+    # for the right reason.
+    import io
+    from PIL import Image
+    shot = f.query_selector(".tile-qr").screenshot()
+    arr = np.array(Image.open(io.BytesIO(shot)).convert("L"))
+    decoded = ""
+    for scale in (1, 2, 3):
+        big = cv2.resize(arr, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+        decoded, _pts, _ = cv2.QRCodeDetector().detectAndDecode(big)
+        if decoded:
+            break
+    check("the QR rendered in the desktop tile decodes to the live donation endpoint",
+          [] if decoded.startswith("https://render.alipay.hk/") else
+          [f"decoded={decoded[:60]!r} from a {arr.shape[1]}x{arr.shape[0]}px screenshot"])
     # The whole point of this pass: the rail that was dropped leaves nothing behind.
     hard = f.evaluate("""() => {
         const t = document.getElementById('payment').textContent;
@@ -339,6 +385,9 @@ with sync_playwright() as pw:
     # Reissued for PHASE 1 23 Nov 2026 (qa/apply_phase1_alipay_20261123.py): section 5
     # is hidden, so `all` ends at "How you give" and `receipt` is an EMPTY frame.
     # zh-HK: 1720 / 1050 / 980 / 690 / 60 / 2225.
+    # 24 Nov 2026 (Option B payment pair): the payment block got SHORTER on a desktop
+    # (613/641 at 1024px instead of 649/677) and its phones are untouched, so these
+    # numbers do not move — 690 and 2225 still clear the real peak, which is at 320px.
     BUDGET = {"calc": 1720, "input": 1050, "result": 980, "pay": 690, "receipt": 60, "all": 2225}
     # PHASE1 mirrors the constant in embed/index.html. While it is true, section 5
     # renders nothing: `?part=receipt` is an empty placeholder (a CMS component may

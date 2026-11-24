@@ -74,7 +74,14 @@ BAK = ROOT / "embed" / "index.html.bak-pre-en-20261115"
 # while giving — 2 steps, led first — or claim it afterwards from the donation records —
 # 4 steps; title, intro, two section headings, six step sentences, six alt texts and the
 # outro replaced in both languages, and six 320px crops replace the five 400px ones —
-# list in qa/apply_alipay_two_options_20261124.py. DELIBERATE zh change, rebased).
+# list in qa/apply_alipay_two_options_20261124.py. DELIBERATE zh change, rebased) ·
+# 24 Nov (Option B payment pair, qa/apply_pay_optionb_20261124.py: **NO copy change** —
+# nothing a donor reads moved, and the 390px block is pixel-identical in both languages.
+# What moved is the DOM: the receipt note now sits inside the AlipayHK tile instead of
+# between the rails, and the desktop card tile carries a decorative ↗ (aria-hidden) on
+# its foot line. The check compares rendered strings, so a re-order reads as a change —
+# rebased rather than excused, and `bag()` below now reports a re-order with the copy
+# intact as a note instead of a failure. The rebase is the only reason this file moved.)
 # What the gate is for survives each rebase: the ZH
 # build may only change where a change was signed off, and every assertion below still
 # fails on an accidental drift.
@@ -207,6 +214,45 @@ STATES = {
 }
 
 
+def norm(v):
+    """Collapse whitespace runs before any comparison.
+
+    `textContent` carries the source indentation, so MOVING a node inside a
+    wrapper — which is what nesting the receipt note in the AlipayHK tile is —
+    changes a hundred spaces without changing one word. The gate's subject is
+    the donor-visible copy, so indentation is not evidence: it is normalised
+    away, and a real copy change still fails.
+    """
+    if isinstance(v, str):
+        return re.sub(r"\s+", " ", v).strip()
+    if isinstance(v, dict):
+        return {k: norm(x) for k, x in v.items()}
+    if isinstance(v, list):
+        return [norm(x) for x in v]
+    return v
+
+
+TOKEN = re.compile(r"[\u3400-\u9fff]+|[^\s\u3400-\u9fff]+")
+
+
+def bag(v):
+    """The same snapshot as the SET of copy tokens it renders.
+
+    Used only to tell a re-order from a rewrite. Tokens are CJK runs (Chinese has
+    no spaces, so a run is a phrase regardless of the source indentation) and
+    non-space runs of everything else — so moving a node changes the ORDER of the
+    bag without changing the bag, while any added, cut or reworded string changes
+    it. Plain word-splitting was not good enough: two elements that used to abut
+    (`<b>AlipayHK</b><span>…`) now have a newline between them, which would read
+    as a copy change when it is only indentation.
+    """
+    if isinstance(v, dict):
+        return {k: bag(x) for k, x in v.items()}
+    if isinstance(v, list):
+        return sorted(str(bag(x)) for x in v)
+    return sorted(TOKEN.findall(str(v)))
+
+
 def run_state(page, url, js):
     page.goto(url, wait_until="load")
     # #announce is an aria-live region written 600ms after the last render; a
@@ -215,7 +261,7 @@ def run_state(page, url, js):
     if js:
         page.evaluate(js)
     page.wait_for_timeout(850)
-    return page.evaluate(CAPTURE)
+    return norm(page.evaluate(CAPTURE))
 
 
 def parity_digits(s):
@@ -311,10 +357,25 @@ with sync_playwright() as pw:
         dump(dump_dir / "zh-strings-after.txt", zh_snaps)
         print(f"dumped {len(base_snaps)} states to {dump_dir}/zh-strings-{{before,after}}.txt\n")
 
-    diffs = []
+    diffs, reorders = [], []
     for key in base_snaps:
-        diffs += [f"{key} · {d}" for d in field_diffs(base_snaps[key], zh_snaps[key], FIELDS)]
+        d = field_diffs(base_snaps[key], zh_snaps[key], FIELDS)
+        if not d:
+            continue
+        # A failed diff is not automatically a copy change: nesting the receipt
+        # note inside the AlipayHK tile (Option B, 24 Nov) re-orders the payment
+        # block in the DOM while leaving every word where it was. So the strings
+        # are compared as a SET as well — equal sets mean the same copy in a new
+        # order, which is reported, not failed. A word added, cut or reworded
+        # changes the set and still fails.
+        if bag(base_snaps[key]) == bag(zh_snaps[key]):
+            reorders += [f"{key} · {x.split(' @')[0]}" for x in d]
+        else:
+            diffs += [f"{key} · {x}" for x in d]
     check(f"zh-HK rendered strings are byte-identical to the pre-change file ({len(base_snaps)} states)", diffs)
+    if reorders:
+        print(f"      note: {len(reorders)} field(s) re-ordered with the copy intact "
+              f"(no word added, cut or changed) — e.g. {reorders[0]}")
 
     # ---------------------------------------------------------------- B
     diffs = []

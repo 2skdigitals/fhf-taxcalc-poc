@@ -102,8 +102,13 @@ MUST = {
     "the HK$100 default": 'autocomplete="off" value="100"',
     "the HK$145,000 exact-income default": 'value="145,000"',
     "the exact swap adopts its starting value": "st.exact = digits(ex0.value)",
-    "the two-rail desktop grid": "grid-template-columns:repeat(2,minmax(0,1fr))",
-    "the AlipayHK QR tile": "../assets/logos/alipayhk.png",
+    # 24 Nov · Option B, "size by function": two tiles, unequal by function, the
+    # whole surface clickable through a stretched link, and the verified tight QR
+    # crop among the bytes. These strings exist only in the build that ships it.
+    "the Option B pair": "grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)",
+    "the stretched link": '.tile-link::after{content:"";position:absolute;inset:0;z-index:1',
+    "the AlipayHK QR tile": "../assets/logos/alipayhk-qr.png",
+    "the receipt note inside the tile": '<div class="payhelp" id="payhelp">',
     "the credit-card tile": 'data-rail="card"',
     "the payment lede names both rails that are left":
         "Scan the AlipayHK code with your phone, or pay by credit card on the Foundation's donation page.",

@@ -1,6 +1,6 @@
 # Iframe contract — FHF tax calculator widget
 
-Version **1.3.0** · POC · 2SK Solutions
+Version **1.4.0** · POC · 2SK Solutions
 
 Everything the host page (Optimizely CMS) must do, and everything the widget promises.
 If a line here is wrong, the build is wrong — this document is the boundary between the two teams.
@@ -46,14 +46,45 @@ Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per lan
 | `?part=input` · en | 1113 | 997 | 1029 | 1006 | 1006 |
 | `?part=result` · zh | 913 | 781 | 808 | 822 | 822 |
 | `?part=result` · en | 1129 | 971 | 808 | 822 | 822 |
-| `?part=pay` · zh | 628 | 566 | 641 | 649 | 649 |
-| `?part=pay` · en | 739 | 656 | 669 | 677 | 677 |
+| `?part=pay` · zh | 628 | 566 | 568 | 613 | 613 |
+| `?part=pay` · en | 739 | 656 | 596 | 641 | 641 |
 | `?part=receipt` · zh | 60 | 60 | 60 | 60 | 60 |
 | `?part=receipt` · en | 60 | 60 | 60 | 60 | 60 |
 | `?part=calc` · zh | 1656 | 1452 | 1615 | 1639 | 1639 |
 | `?part=calc` · en | 1962 | 1751 | 1695 | 1689 | 1689 |
-| `?part=all` · zh | 2121 | 1917 | 2159 | 2191 | 2191 |
-| `?part=all` · en | 2482 | 2244 | 2268 | 2269 | 2269 |
+| `?part=all` · zh | 2121 | 1917 | 2086 | 2156 | 2156 |
+| `?part=all` · en | 2482 | 2244 | 2194 | 2234 | 2234 |
+
+> **Revised 24 Nov 2026 (Option B payment pair, `qa/apply_pay_optionb_20261124.py`).** Kevin chose **Option B,
+> "size by function"** from `design/pay-desktop/options.html` and asked for a bigger code. The desktop payment
+> block is now two tiles at **≥720px**: a wide AlipayHK tile (QR + name + sub-line + the receipt note with its
+> `?`) and a compact credit-card tile (glyph, name, destination on a ruled foot line). Both carry widths of
+> **1.35fr / 1fr** inside a 760px pair; both are click-anywhere through a **stretched link** (the tile is a
+> `<div>`, its own `<a>` paints the surface with `::after`, and the note sits above that overlay so the button
+> stays real and keyboard-reachable). **Below 720px nothing changed at all** — the tiles collapse to the receipt
+> note alone, which keeps its position between the two rails; the 390px block is **pixel-identical**, verified by
+> diffing HEAD against this build at **13 widths from 320 to 719px in both languages (0 differing pixels)**.
+>
+> **The QR is the tight crop, `assets/logos/alipayhk-qr.png` (264×264).** The published card is 450×350 with the
+> code at 212×212 inside 119px of white a side, so at the block's 190px ceiling the code rendered at ~90px and
+> **would not decode**. The crop is the same code plus the spec's 4-module quiet zone; rendered at 190px it puts
+> a ~152px code on screen, and `qa/poc_test.py` now screenshots the rendered element and decodes it with
+> `cv2.QRCodeDetector` at 720/768/900/1024/1440px in both languages — every width decodes to
+> `https://render.alipay.hk/…`. Phone rails still carry no QR by design.
+>
+> **No declared height changes.** The pair is shorter than the two cards plus the separate receipt row it
+> replaces, and the peak is at 320px on a phone, which this pass does not touch: `?part=pay` stays **690 / 800**
+> and `?part=all` stays **2225 / 2550**, both with more slack than before. Content moved at the desktop widths
+> only — `?part=pay` **641 → 568** zh / **669 → 596** en at 768px, **649 → 613** / **677 → 641** at 1024 and
+> 1440px; `?part=all` **2159 → 2086** / **2268 → 2194** at 768px and **2191 → 2156** / **2269 → 2234** at 1024px
+> and above. The quoted table above is reissued accordingly; **the numbers the client pastes into the CMS do not
+> change**, so there is no CMS edit in this pass.
+>
+> One behaviour moved with the trigger: the receipt panel used to open **upward** from 720px because the note was
+> the last thing in the block. Inside the tile the note sits ~300px down a 640px frame, and there is no room
+> above it, so the panel now opens **downward from the note**, 420px wide, capped at
+> `clamp(240px, 100vh − 340px, 380px)`. `qa/probe_panel_fit.py` was re-run at 12 widths in both languages: the
+> panel stays inside the frame on all four sides at every one, and the steps still scroll inside the panel.
 
 > **Re-measured 24 Nov 2026** alongside the two-flow AlipayHK tooltip. The tooltip changes nothing here — it is
 > absolutely positioned and starts `hidden`, and an A/B against the pre-change file reports **0px** difference at
@@ -373,8 +404,17 @@ Then one GA4 Event tag per event name (or a single tag with `{{Event}}` as the e
 
 PayMe was **dropped from the page on 21 Nov 2026** on Kevin's instruction; its
 `assets/logos/payme.png` is left on disk, unreferenced, so a revert is one markup block rather than a
-re-crop. The two remaining rails are the QR (desktop) and the tap-through row (phone) — one code, one
-card, the same 190×148 tile.
+re-crop. The two remaining rails are the QR (desktop) and the tap-through row (phone).
+
+**Desktop (≥720px)** is two tiles sized by function (Option B, 24 Nov 2026): the AlipayHK tile is the
+wide one and carries the QR, the name, the scan line and the receipt note with its `?`; the credit-card
+tile is compact and carries the glyph, the name and the destination on a ruled foot line. Each tile is
+**click-anywhere** — the tile itself is a `<div>` and its own `<a>` stretches over it with `::after`,
+because the receipt note holds a `<button>` and a button may not be nested inside an `<a>`. The QR is
+**`assets/logos/alipayhk-qr.png`**, the tight 264×264 crop (the code plus the spec's 4-module quiet
+zone) rendered at 190px; the published 450×350 card put the same code at ~90px, which no scanner reads.
+**Phone (<720px)** has no QR at all — a donor cannot scan the screen they are holding — so the same two
+destinations are rows, with the receipt note between them.
 
 The widget posts a `deeplink` message **before** attempting navigation (only if a host ever adds a
 `data-deeplink` control — the POC bench that used it is stripped), because a successful app-open

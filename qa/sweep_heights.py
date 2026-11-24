@@ -54,6 +54,13 @@ REPORT_WIDTHS = (320, 390, 768, 1024, 1440)
 # is hidden (PHASE1) and ?part=receipt is an empty 60px frame, while the payment block
 # gains the AlipayHK receipt line. Peaks now: calc 1656/1962, input 987/1113,
 # result 913/1129, pay 628/739, receipt 0 (empty frame), all 2160/2482.
+# 24 Nov 2026 (Option B payment pair, qa/apply_pay_optionb_20261124.py): the desktop
+# payment block became two tiles sized by function and the receipt note moved inside
+# the AlipayHK tile. The pair is SHORTER than the cards it replaces (pay 649 → 613 at
+# 1024px in Chinese, 677 → 641 in English; all 2191 → 2156 / 2269 → 2234), and the
+# peak was already at 320px on a phone, which that pass does not touch — so NO
+# declaration moves and the peaks below are unchanged on purpose. Do not "correct"
+# the numbers to the desktop ones: the frame has to clear the phone.
 DECLARED = {
     "zh-HK": {"calc": 1720, "input": 1050, "result": 980, "pay": 690, "receipt": 60, "all": 2225},
     "en":    {"calc": 2030, "input": 1180, "result": 1190, "pay": 800, "receipt": 60, "all": 2550},

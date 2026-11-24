@@ -348,37 +348,75 @@ details.q li{margin:3px 0}
 .disc-global .disc-list a:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
 .rails{display:grid;border-top:var(--rule);margin-top:var(--s5)}
 /* the payment pair: one source of truth for the grid width, the gap between the
-   two rails, and the width of the receipt line that sits under AlipayHK */
-:root{--pairw:664px;--pairgap:56px}
-/* ── payment: QR on a desktop, tap-through rows on a phone ──────────────────────
+   two tiles, and the width of the tile that carries the code */
+:root{--pairw:760px;--pairgap:24px}
+/* ── payment: two tiles on a desktop, tap-through rows on a phone ──────────────
    A donor cannot scan the screen they are reading, so the two arrangements are
    mutually exclusive rather than progressive. Breakpoint 720px: below it every
    real phone and every narrow CMS column gets the rows. */
-.paygrid{display:none}
 .rails a.r-alipay{border-left:3px solid #1677FF;padding-left:14px}
 .rails a.r-card{border-left:3px solid var(--navy);padding-left:14px}
-@media (min-width:720px){
-  .rails{display:none}
-  /* Two rails, so two equal columns — and the pair is held to a pair-width, or a
-     190px code and a 190px card drift 800px apart on a wide desktop. */
-  .paygrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--pairgap);
-           max-width:min(100%,var(--pairw));
-           border-top:var(--rule);margin-top:var(--s5);padding-top:var(--s6);align-items:start}
-  .qrcard{margin:0;display:block;color:inherit;text-decoration:none}
-  .qrcard img{display:block;width:100%;max-width:190px;height:auto;aspect-ratio:450/350;
-              object-fit:contain;border-radius:10px;border:1px solid var(--line);background:var(--white)}
-  /* every tile occupies the same box so the three captions sit on one baseline */
-  .qrcard .glyph{display:flex;align-items:center;justify-content:center;
-                 width:100%;max-width:190px;aspect-ratio:450/350;border:1px solid var(--line);
-                 border-radius:10px;color:var(--navy);background:var(--white)}
-  .qrcard figcaption{margin-top:12px;font-size:var(--t-cap);color:var(--muted);line-height:1.5}
-  .qrcard figcaption b{display:block;font-size:var(--t-sm);font-weight:600;color:var(--ink);
-                       letter-spacing:-.01em;margin-bottom:2px}
-  .qrcard:hover .glyph{border-color:var(--line-2)}
-  .qrcard:hover figcaption b{color:var(--navy)}
-  .qrcard:hover img{border-color:var(--line-2)}
+/* Below 720px the desktop tiles collapse to the one thing a phone needs from
+   them — the AlipayHK receipt line, which keeps its exact place between the two
+   rails, its rule, its inset and its own spacing. The desktop pass (Option B,
+   24 Nov) is therefore invisible on a phone: no rail row, no spacing and no
+   copy on this block changes, and `qa/shot_pay_desktop_20261124.py` proves it
+   by pixel-diffing the 390px block before and after. */
+@media (max-width:719.98px){
+  .paygrid{display:block}
+  .tile-a > *:not(.tile-a-txt),.tile-a-txt > *:not(.payhelp),.tile-b{display:none}
 }
-.rails a{
+@media (min-width:720px){
+  .rails{display:block;border-top:0;margin-top:0}
+  .rails > a{display:none}
+  /* ── Option B, "size by function" (approved by Kevin 24 Nov) ───────────────
+     The QR is the only element that has to be a picture, so its tile takes the
+     width; the card is a link, so it becomes a compact tile. Both tiles are
+     click-anywhere, built as a STRETCHED LINK: the receipt note carries a
+     <button>, and a button may not be nested inside an <a> — so the tile is a
+     <div>, its own <a> paints the whole surface with ::after, and the note is
+     lifted above that overlay so the ? stays clickable and in tab order. */
+  .paygrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);
+           gap:var(--pairgap);max-width:min(100%,var(--pairw));
+           border-top:var(--rule);margin-top:var(--s5);padding-top:var(--s6);
+           align-items:stretch}
+  .tile{position:relative;display:flex;border:1px solid var(--line);border-radius:3px;
+        transition:border-color 140ms var(--ease)}
+  .tile:hover{border-color:var(--line-2)}
+  .tile-a{align-items:center;gap:var(--s6);padding:22px}
+  /* the tight crop (264x264, code + its 4-module quiet zone) at 190px: a ~152px
+     code on screen, which is the first size OpenCV decodes reliably. The old
+     450x350 card put the same code at ~90px inside 119px of white. */
+  .tile-a .tile-qr{flex:none;width:190px;height:190px;border-radius:3px}
+  .tile-a-txt{display:flex;flex-direction:column;min-width:0}
+  .tile-link{color:inherit;text-decoration:none;align-self:flex-start}
+  /* the whole tile is the hit area; the link stays the only tab stop */
+  .tile-link::after{content:"";position:absolute;inset:0;z-index:1;border-radius:3px}
+  .tile-link:focus-visible{outline:none}
+  .tile-link:focus-visible::after{outline:2px solid var(--navy);outline-offset:2px}
+  .tile-nm{display:block;font-size:var(--t-body);font-weight:600;letter-spacing:-.01em;line-height:1.3}
+  .tile:hover .tile-nm{color:var(--navy)}
+  .tile-sub{display:block;font-size:var(--t-cap);line-height:1.45;color:var(--muted);margin-top:3px}
+  /* the card tile: glyph, name, and where it goes on a ruled foot line */
+  .tile-b{flex-direction:column;padding:22px}
+  .tile-b .tile-glyph{display:flex;align-items:center;color:var(--navy)}
+  .tile-b .tile-link{margin-top:14px}
+  .tile-b .tile-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;
+                     margin-top:auto;padding-top:var(--s3);border-top:var(--rule);
+                     font-size:var(--t-cap);line-height:1.45;color:var(--muted)}
+  .tile-b .tile-foot .go{color:var(--navy);font-size:1rem}
+  .tile-b:hover .go{transform:translate(2px,-2px)}
+  /* A 190px code and a 363px tile leave the label column 105px wide in the band
+     just above the breakpoint, so the tile steps down once there rather than
+     squeezing the note into one word a line. */
+}
+@media (min-width:720px) and (max-width:899px){
+  .tile-a{gap:var(--s5);padding:18px}
+  .tile-a .tile-qr{width:160px;height:160px}
+  .tile-b{padding:18px}
+}
+/* direct children only: the desktop tiles keep their own link treatment */
+.rails > a{
   display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:1px 16px;
   min-height:64px;padding:13px 0;border-bottom:var(--rule);
   text-decoration:none;color:var(--ink);
@@ -390,8 +428,8 @@ details.q li{margin:3px 0}
   grid-row:1 / span 2;grid-column:2;align-self:center;font-size:1rem;color:var(--muted);
   transition:transform 140ms var(--ease),color 140ms var(--ease);
 }
-.rails a:hover{color:var(--navy)}
-.rails a:hover .go{transform:translate(2px,-2px);color:var(--navy)}
+.rails > a:hover{color:var(--navy)}
+.rails > a:hover .go{transform:translate(2px,-2px);color:var(--navy)}
 .alt{margin:var(--s4) 0 0;font-size:var(--t-sm)}
 .alt a{color:var(--navy);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-color:rgba(1,1,78,.32);min-height:44px;display:inline-flex;align-items:center}
 .alt a:hover{text-decoration-color:var(--navy)}
@@ -535,20 +573,30 @@ details.q li{margin:3px 0}
 @media(min-width:720px){
   .rails{display:block;border-top:0;margin-top:0}
   .rails > a{display:none}
-  /* the receipt line is part of the AlipayHK rail, not a third global item: it sits
-     under that card, at that card's width (560 − 48 gap = two 256px columns), and
-     keeps the blue rule that ties it to the rail (23 Nov) */
-  .rails .payhelp{border-left:3px solid #1677FF;padding:10px 0 12px 14px;
-                  max-width:calc((var(--pairw) - var(--pairgap)) / 2)}
-  .payhelp{padding:15px 0 0}
+  /* Option B puts the receipt note INSIDE the AlipayHK tile, under its sub-line,
+     so the mobile rail's 3px blue rule and 14px inset go: the tile edge is the
+     container now, and a 6px dot marks the note. It is lifted above the tile's
+     stretched link (z-index) — that is what keeps the ? a real, clickable,
+     keyboard-reachable button rather than a shape under an overlay. */
+  .rails .payhelp{border-left:0;padding:0;max-width:none}
+  .payhelp{padding:0;margin-top:var(--s3);position:relative;z-index:2}
+  .payhelp-dot{display:inline-block;width:6px;height:6px;border-radius:50%;
+               background:#1677FF;margin-right:6px;vertical-align:middle}
   /* text and button on one row: the text may wrap, the button stays beside it
      rather than being pushed to the column's right edge */
-  .payhelp-line{display:block;max-width:none}
+  .payhelp-line{display:block;max-width:none;color:var(--ink-2)}
   .payhelp-line .helpbtn{display:inline-flex;vertical-align:middle;margin:0 0 0 3px}
-  /* the wrapper is now only as wide as the AlipayHK column (256px), so the panel
-     needs its own width or it collapses to that column and squeezes the crops */
-  #payhelp .helppop{top:auto;bottom:calc(100% + 8px);left:0;right:auto;
+  /* The trigger used to be the last thing in the block, so the panel opened
+     UPWARD and had the whole block above it. Inside the tile it sits ~130px down
+     from the tile's top and ~320px down a 640px frame — upward there is no room
+     left. It now opens DOWNWARD from the note (over the tile's lower edge and the
+     disclaimer), capped so its bottom always lands inside the declared height,
+     at a width that clears the right edge at 720px. Measured in
+     `qa/probe_panel_fit.py` at 320–1440px, both languages. */
+  #payhelp .helppop{top:0;bottom:auto;left:0;right:auto;
                     width:min(420px,calc(100vw - 32px));max-width:420px;
+                    /* a floor, because a host frame shorter than 340px would make
+                       the subtraction negative and collapse the panel to nothing */
                     max-height:clamp(240px,calc(100vh - 340px),380px)}
 }
 .btn{
@@ -744,27 +792,6 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     <div class="step"><span class="step-n" aria-hidden="true">4</span><h2 id="s3h" data-i18n="s3.h">How you give</h2></div>
     <p class="lede" data-i18n="s3.lede">Scan the code with your phone, or open the app on this device.</p>
 
-    <!-- Desktop: the live AlipayHK donation code the Foundation already publishes on
-         its own ways-to-give page, decoded from the published asset, so this panel
-         takes real payments. Replace assets/logos/*.png when the charity issues a
-         campaign-tagged code; nothing else changes. -->
-    <div class="paygrid">
-      <figure class="qrcard">
-        <img loading="lazy" src="../assets/logos/alipayhk.png" width="450" height="350"
-             alt="AlipayHK donation QR code for The Fred Hollows Foundation" data-i18n-alt="s3.qr.alt.alipay">
-        <figcaption><b>AlipayHK</b><span data-i18n="s3.scan">Scan with your phone</span></figcaption>
-      </figure>
-      <a class="qrcard" href="https://www.hollows.org/zh-Hant-HK/donate/" target="_top" rel="noopener" data-rail="card">
-        <span class="glyph" aria-hidden="true">
-          <svg viewBox="0 0 24 17" width="46" height="33" fill="none" stroke="currentColor" stroke-width="1.4">
-            <rect x="1" y="1" width="22" height="15" rx="2.5"/>
-            <path d="M1 6h22" stroke-width="2.6"/>
-            <path d="M4.5 11.5h5"/>
-          </svg>
-        </span>
-        <figcaption><b data-i18n="s3.card.nm">Credit card</b><span data-i18n="s3.card.sub">On the Foundation's donation page</span></figcaption>
-      </a>
-    </div>
 
     <!-- Mobile: no QR (you cannot scan your own screen) — each row opens the payment
          app or the card page directly. The <i class="mark"> slot is where an official
@@ -776,95 +803,132 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
         <span class="go" aria-hidden="true">↗</span>
       </a>
 
-      <!-- Phase 1: the receipt route for an AlipayHK gift. AlipayHK issues the
-           receipt inside its own app, so the rail carries the instruction plus
-           six crops that walk a donor through BOTH routes Denise sent (24 Nov):
-           ticking 「需要收據」 while giving (two steps, led first — it is the
-           easier path), or claiming afterwards from the donation records (four
-           steps). The copy deliberately stops short of promising an issued
-           receipt: it names where to apply.
+      <!-- Desktop, Option B (approved 24 Nov): the QR is the only element that has
+           to be a picture, so its tile carries the width; the card is a link, so it
+           becomes a compact tile. Both tiles are click-anywhere, but the tile is a
+           <div> and only its own <a> stretches over it: the receipt note inside the
+           AlipayHK tile holds a <button>, and a button may not live inside an <a>.
+           The code is the tight crop — 264px, the code plus the spec's 4-module
+           quiet zone — because the published card is 450x350 with the code at 212px
+           inside 119px of white a side, which at 190px rendered a ~90px code no
+           scanner decodes. Same code, same destination, bigger on screen. -->
+      <div class="paygrid">
+        <div class="tile tile-a">
+          <img class="tile-qr" loading="lazy" src="../assets/logos/alipayhk-qr.png" width="264" height="264"
+               alt="AlipayHK donation QR code for The Fred Hollows Foundation" data-i18n-alt="s3.qr.alt.alipay">
+          <div class="tile-a-txt">
+            <a class="tile-link" href="https://render.alipay.hk/p/s/hkwallet/landing?scheme=alipayhk%3A%2F%2Fplatformapi%2Fstartapp%3FappId%3D20000067%26url%3Dhttps%253A%252F%252Fcod.run%252Fzf950015iae7uhyx" target="_top" rel="noopener" data-rail="alipay">
+              <b class="tile-nm">AlipayHK</b>
+            </a>
+            <span class="tile-sub" data-i18n="s3.scan">Scan with your phone</span>
+            <!-- Phase 1: the receipt route for an AlipayHK gift. AlipayHK issues the
+                 receipt inside its own app, so the rail carries the instruction plus
+                 six crops that walk a donor through BOTH routes Denise sent (24 Nov):
+                 ticking 「需要收據」 while giving (two steps, led first — it is the
+                 easier path), or claiming afterwards from the donation records (four
+                 steps). The copy deliberately stops short of promising an issued
+                 receipt: it names where to apply.
 
-           The crops are the client's own donor-side screens at 320x529 (67 KB
-           for all six). AlipayHK's UI is Chinese, which is why the app labels
-           stay in Chinese inside the English sentences — a donor matches what
-           they see — and why the outro says the interface is Chinese. -->
-      <div class="payhelp" id="payhelp">
-        <p class="payhelp-line">
-          <span data-i18n="s3.receipt.line">Need a receipt? Apply inside AlipayHK.</span>
-          <button type="button" class="helpbtn" id="alipay-help" aria-expanded="false"
-                  aria-controls="alipay-help-panel" data-help="alipay-help-panel"
-                  data-i18n-aria="s3.receipt.btn">
-            <span class="i" aria-hidden="true">?</span>
-          </button>
-        </p>
+                 The crops are the client's own donor-side screens at 320x529 (67 KB
+                 for all six). AlipayHK's UI is Chinese, which is why the app labels
+                 stay in Chinese inside the English sentences — a donor matches what
+                 they see — and why the outro says the interface is Chinese. -->
+            <div class="payhelp" id="payhelp">
+              <p class="payhelp-line">
+                <span class="payhelp-dot" aria-hidden="true"></span>
+                <span data-i18n="s3.receipt.line">Need a receipt? Apply inside AlipayHK.</span>
+                <button type="button" class="helpbtn" id="alipay-help" aria-expanded="false"
+                        aria-controls="alipay-help-panel" data-help="alipay-help-panel"
+                        data-i18n-aria="s3.receipt.btn">
+                  <span class="i" aria-hidden="true">?</span>
+                </button>
+              </p>
 
-        <div class="helppop" id="alipay-help-panel" role="dialog"
-             aria-labelledby="alipay-help-title" hidden>
-          <button type="button" class="hclose" data-help-close
-                  aria-label="Close" data-i18n-aria="s3.rcpt.close">&#10005;</button>
-          <h3 id="alipay-help-title" data-i18n="s3.rcpt.title">Getting a receipt from AlipayHK</h3>
-          <p data-i18n="s3.rcpt.intro">Two ways. The first is easiest: tick the box while you give.</p>
+              <div class="helppop" id="alipay-help-panel" role="dialog"
+                   aria-labelledby="alipay-help-title" hidden>
+                <button type="button" class="hclose" data-help-close
+                        aria-label="Close" data-i18n-aria="s3.rcpt.close">&#10005;</button>
+                <h3 id="alipay-help-title" data-i18n="s3.rcpt.title">Getting a receipt from AlipayHK</h3>
+                <p data-i18n="s3.rcpt.intro">Two ways. The first is easiest: tick the box while you give.</p>
 
-          <div class="hsec" data-opt="1" role="group" aria-labelledby="alipay-o1-h">
-            <h4 class="hsec-h" id="alipay-o1-h" data-i18n="s3.rcpt.o1head">Option 1 — when you donate</h4>
-            <p class="hsec-sub" data-i18n="s3.rcpt.o1sub">Request a donation receipt and enter your personal details when donating.</p>
-            <ol class="hsteps">
-              <li>
-                <span class="n" data-i18n="s3.rcpt.o1.s1t">Step 1</span>
-                <img loading="eager" src="../assets/help/alipay-receipt-o1-step-1.webp" width="320" height="529"
-                     alt="AlipayHK donation detail screen: the charity, the suggested amounts and, at the foot, the unticked 「需要收據」 box" data-i18n-alt="s3.rcpt.o1.alt1">
-                <p data-i18n="s3.rcpt.o1.s1">Tick 「需要收據」 (need a receipt) under the amount.</p>
-              </li>
+                <div class="hsec" data-opt="1" role="group" aria-labelledby="alipay-o1-h">
+                  <h4 class="hsec-h" id="alipay-o1-h" data-i18n="s3.rcpt.o1head">Option 1 — when you donate</h4>
+                  <p class="hsec-sub" data-i18n="s3.rcpt.o1sub">Request a donation receipt and enter your personal details when donating.</p>
+                  <ol class="hsteps">
+                    <li>
+                      <span class="n" data-i18n="s3.rcpt.o1.s1t">Step 1</span>
+                      <img loading="eager" src="../assets/help/alipay-receipt-o1-step-1.webp?v=20261124b" width="320" height="213"
+                           alt="AlipayHK donation detail screen: the charity, the suggested amounts and, at the foot, the unticked 「需要收據」 box" data-i18n-alt="s3.rcpt.o1.alt1">
+                      <p data-i18n="s3.rcpt.o1.s1">Tick 「需要收據」 (need a receipt) under the amount.</p>
+                    </li>
 
-              <li>
-                <span class="n" data-i18n="s3.rcpt.o1.s2t">Step 2</span>
-                <img loading="lazy" src="../assets/help/alipay-receipt-o1-step-2.webp" width="320" height="529"
-                     alt="The same screen with 「需要收據」 ticked and the 「捐款人資料」 form open below it: name in English, email, phone and address" data-i18n-alt="s3.rcpt.o1.alt2">
-                <p data-i18n="s3.rcpt.o1.s2">The donor form appears — name in English, email, phone. Fill it in, then confirm the gift.</p>
-              </li>
+                    <li>
+                      <span class="n" data-i18n="s3.rcpt.o1.s2t">Step 2</span>
+                      <img loading="lazy" src="../assets/help/alipay-receipt-o1-step-2.webp?v=20261124b" width="320" height="452"
+                           alt="The same screen with 「需要收據」 ticked and the 「捐款人資料」 form open below it: name in English, email, phone and address" data-i18n-alt="s3.rcpt.o1.alt2">
+                      <p data-i18n="s3.rcpt.o1.s2">The donor form appears — name in English, email, phone. Fill it in, then confirm the gift.</p>
+                    </li>
 
-            </ol>
+                  </ol>
+                </div>
+
+                <div class="hsec" data-opt="2" role="group" aria-labelledby="alipay-o2-h">
+                  <h4 class="hsec-h" id="alipay-o2-h" data-i18n="s3.rcpt.o2head">Option 2 — after you give</h4>
+                  <p class="hsec-sub" data-i18n="s3.rcpt.o2sub">If you forgot to tick the box, you can still claim it from your donation records.</p>
+                  <ol class="hsteps">
+                    <li>
+                      <span class="n" data-i18n="s3.rcpt.o2.s1t">Step 1</span>
+                      <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-1.webp?v=20261124b" width="320" height="370"
+                           alt="AlipayHK home screen with 慈善捐款 in the shortcut grid, fourth in the first row" data-i18n-alt="s3.rcpt.o2.alt1">
+                      <p data-i18n="s3.rcpt.o2.s1">Open AlipayHK and go to 慈善捐款.</p>
+                    </li>
+
+                    <li>
+                      <span class="n" data-i18n="s3.rcpt.o2.s2t">Step 2</span>
+                      <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-2.webp?v=20261124b" width="320" height="239"
+                           alt="The 慈善捐款 page with its menu of donation options, including the 捐款記錄 row" data-i18n-alt="s3.rcpt.o2.alt2">
+                      <p data-i18n="s3.rcpt.o2.s2">Tap 我的捐款 at the bottom, then 捐款記錄.</p>
+                    </li>
+
+                    <li>
+                      <span class="n" data-i18n="s3.rcpt.o2.s3t">Step 3</span>
+                      <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-3.webp?v=20261124b" width="320" height="207"
+                           alt="The 交易記錄 list showing one gift to 護瞳行動 with its date and amount" data-i18n-alt="s3.rcpt.o2.alt3">
+                      <p data-i18n="s3.rcpt.o2.s3">Find the gift by the charity and the date.</p>
+                    </li>
+
+                    <li>
+                      <span class="n" data-i18n="s3.rcpt.o2.s4t">Step 4</span>
+                      <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-4.webp?v=20261124b" width="320" height="88"
+                           alt="The 捐款結果 screen with the blue 申請收據 button at the foot, above the return link" data-i18n-alt="s3.rcpt.o2.alt4">
+                      <p data-i18n="s3.rcpt.o2.s4">Tap 申請收據 and submit your details.</p>
+                    </li>
+
+                  </ol>
+                </div>
+
+                <p class="houtro" data-i18n="s3.rcpt.outro">The app is shown in Chinese; the buttons sit in the same place on your screen.</p>
+              </div>
+            </div>
           </div>
-
-          <div class="hsec" data-opt="2" role="group" aria-labelledby="alipay-o2-h">
-            <h4 class="hsec-h" id="alipay-o2-h" data-i18n="s3.rcpt.o2head">Option 2 — after you give</h4>
-            <p class="hsec-sub" data-i18n="s3.rcpt.o2sub">If you forgot to tick the box, you can still claim it from your donation records.</p>
-            <ol class="hsteps">
-              <li>
-                <span class="n" data-i18n="s3.rcpt.o2.s1t">Step 1</span>
-                <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-1.webp" width="320" height="529"
-                     alt="AlipayHK home screen with 慈善捐款 in the shortcut grid, fourth in the first row" data-i18n-alt="s3.rcpt.o2.alt1">
-                <p data-i18n="s3.rcpt.o2.s1">Open AlipayHK and go to 慈善捐款.</p>
-              </li>
-
-              <li>
-                <span class="n" data-i18n="s3.rcpt.o2.s2t">Step 2</span>
-                <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-2.webp" width="320" height="529"
-                     alt="The 慈善捐款 page with its menu of donation options, including the 捐款記錄 row" data-i18n-alt="s3.rcpt.o2.alt2">
-                <p data-i18n="s3.rcpt.o2.s2">Tap 我的捐款 at the bottom, then 捐款記錄.</p>
-              </li>
-
-              <li>
-                <span class="n" data-i18n="s3.rcpt.o2.s3t">Step 3</span>
-                <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-3.webp" width="320" height="529"
-                     alt="The 交易記錄 list showing one gift to 護瞳行動 with its date and amount" data-i18n-alt="s3.rcpt.o2.alt3">
-                <p data-i18n="s3.rcpt.o2.s3">Find the gift by the charity and the date.</p>
-              </li>
-
-              <li>
-                <span class="n" data-i18n="s3.rcpt.o2.s4t">Step 4</span>
-                <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-4.webp" width="320" height="84"
-                     alt="The 捐款結果 screen with the blue 申請收據 button at the foot, above the return link" data-i18n-alt="s3.rcpt.o2.alt4">
-                <p data-i18n="s3.rcpt.o2.s4">Tap 申請收據 and submit your details.</p>
-              </li>
-
-            </ol>
-          </div>
-
-          <p class="houtro" data-i18n="s3.rcpt.outro">The app is shown in Chinese; the buttons sit in the same place on your screen.</p>
+        </div>
+        <div class="tile tile-b">
+          <span class="tile-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 17" width="46" height="33" fill="none" stroke="currentColor" stroke-width="1.4">
+              <rect x="1" y="1" width="22" height="15" rx="2.5"/>
+              <path d="M1 6h22" stroke-width="2.6"/>
+              <path d="M4.5 11.5h5"/>
+            </svg>
+          </span>
+          <a class="tile-link" href="https://www.hollows.org/zh-Hant-HK/donate/" target="_top" rel="noopener" data-rail="card">
+            <b class="tile-nm" data-i18n="s3.card.nm">Credit card</b>
+          </a>
+          <span class="tile-foot">
+            <span data-i18n="s3.card.sub">On the Foundation's donation page</span>
+            <span class="go" aria-hidden="true">↗</span>
+          </span>
         </div>
       </div>
-
       <a href="https://www.hollows.org/zh-Hant-HK/donate/" target="_top" rel="noopener" data-rail="card" class="r-card">
         <span class="nm" data-i18n="s3.card.nm">Credit card</span>
         <span class="sub" data-i18n="s3.card.sub">On the Foundation's donation page</span>
