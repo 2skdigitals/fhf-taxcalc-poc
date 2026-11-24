@@ -370,7 +370,10 @@ with sync_playwright() as pw:
                 errs.append(f"closed state {before}")
             if r["hidden"] or r["exp"] != "true" or r["role"] != "dialog":
                 errs.append(f"open state {r['hidden']}/{r['exp']}/{r['role']}")
-            want = ["Step 1", "Step 2", "Step 1", "Step 2", "Step 3", "Step 4"]
+            # numbered WITHIN each option, and in the frame's own language
+            want = [lab for n in (2, 4)
+                    for lab in ([f"Step {i}" for i in range(1, n + 1)] if lang == "en" else
+                                [f"\u7b2c {i} \u6b65" for i in range(1, n + 1)])]
             if len(r["steps"]) != 6 or len(r["imgs"]) != 6:
                 errs.append(f"steps {r['steps']} imgs {len(r['imgs'])} (want 6 of each)")
             if r["steps"] != want:
