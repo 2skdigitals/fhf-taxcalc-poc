@@ -707,7 +707,9 @@ with sync_playwright() as pw:
             errs.append(f"image not loaded or missing alt: {bad_img}")
         if assets:
             want_src = [f"../assets/help/{x}" for x in assets]
-            got_src = [i["src"] for i in after["imgs"]]
+            # compare the asset path, not the whole URL: a ?v= cache-buster is the
+            # same crop after it was re-saved under the same filename
+            got_src = [i["src"].split("?")[0] for i in after["imgs"]]
             if got_src != want_src:
                 errs.append(f"crops {got_src} want {want_src}")
         if not after["scrolls"] and after["h"] < 40:
