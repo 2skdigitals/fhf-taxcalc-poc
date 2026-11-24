@@ -1537,6 +1537,16 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
        7th GA4 custom dimension (Event scope) or it reads as (not set). */
     p.lang = L;
     post({type:"event", name:name, params:p});
+    if (GTM_ID && gtmLoaded) {
+      /* the frame's URL is not the page the donor is on. document.referrer is the
+         only honest source for it from inside a cross-origin frame, and without it
+         GA4 files the calculator as its own site and splits the session. */
+      var dl = {event:name};
+      for (var k in p) if (Object.prototype.hasOwnProperty.call(p,k)) dl[k] = p[k];
+      dl.widget_lang = L; delete dl.lang;
+      dl.page_location = (document.referrer || "").split("#")[0] || location.href;
+      (window.dataLayer = window.dataLayer || []).push(dl);
+    }
     if (cfg.debug) console.log("[fhf-taxcalc]", name, p);
     dbg("event: " + name + " " + JSON.stringify(p));
     if (name === "calc_result_shown") sent.result = true;
@@ -1567,7 +1577,10 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     ro.observe(document.body);
     ro.observe($("#root"));
   }
-  window.addEventListener("load", function(){ pushHeight(true); });
+  window.addEventListener("load", function(){ pushHeight(true);
+    /* after paint: the container must never delay the calculator */
+    if (window.requestIdleCallback) requestIdleCallback(gtmLoad, {timeout: 2500}); else setTimeout(gtmLoad, 1200);
+  });
   window.addEventListener("resize", scheduleHeight);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleHeight);
 
@@ -1581,6 +1594,29 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
     debug: qs.get("debug") === "1"
   };
   L = cfg.lang;   /* fhf_init below must report the language, not the default */
+  /* ---------- in-frame container ----------
+     The client's container lives inside this frame, so its id can only be named
+     here, at build time. It must never come from the URL: a ?gtm= parameter was
+     removed on 23 Nov because any crafted link could load an attacker's container
+     into this origin, and a container runs Custom HTML — arbitrary JS with access
+     to the donor's form (security assessment, finding A3). A constant cannot be
+     substituted by a link, so it does not reopen that hole.
+     Empty = the widget stays container-free (the host-bridge arrangement). */
+  var GTM_ID = "";   /* "GTM-M7QJ9DZK" = the client's container, loaded inside this frame */
+  var GTM_WAIT_FOR_CONSENT = false;          /* true = hold the container until the host says yes */
+  var gtmLoaded = false, gtmConsent = !GTM_WAIT_FOR_CONSENT;
+
+  function gtmLoad(){
+    if (gtmLoaded || !GTM_ID || !gtmConsent) return;
+    gtmLoaded = true;
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({"gtm.start": new Date().getTime(), event: "gtm.js"});
+    var g = document.createElement("script");
+    g.async = true;
+    g.src = "https://www.googletagmanager.com/gtm.js?id=" + encodeURIComponent(GTM_ID);
+    document.head.appendChild(g);
+  }
+
   /* The ?gtm= parameter was removed (23 Nov). It accepted any GTM-XXXX id, shape-
      checked only, and loaded it as a script in THIS origin — and a GTM container
      can run Custom HTML, i.e. arbitrary JS with access to the donor's form and to
@@ -1637,7 +1673,8 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       if (d.config && d.config.lang) setLang(d.config.lang);
     }
     if (d.type === "fhf-ping") post({type:"pong", height: measure()});
-    if (d.type === "fhf-consent") cfg.consent = !!d.marketing;
+    if (d.type === "fhf-consent") { cfg.consent = !!d.marketing;
+      gtmConsent = cfg.consent; if (gtmConsent) gtmLoad(); }
   }, false);
 
   function dbg(t){
