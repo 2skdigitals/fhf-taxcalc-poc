@@ -1,0 +1,25 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>bridge test</title></head>
+<body>
+<h1>Bridge test</h1>
+<pre id="out">waiting…</pre>
+<iframe id="w" src="/embed/?part=pay&lang=en" style="width:100%;height:820px;border:1px solid #ccc"></iframe>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  window.__pushed = [];
+  // ── the exact snippet handed to the Media Agency ──────────────────────────
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (!d || d.source !== "fhf-taxcalc") return;
+    if (d.type !== "event") return;
+    var payload = Object.assign({}, d.params || {});
+    payload.event = d.name;
+    payload.widget_lang = d.lang || "";
+    delete payload.lang;
+    dataLayer.push(payload);
+  });
+  // ── recorder (test only) ─────────────────────────────────────────────────
+  var push = dataLayer.push.bind(dataLayer);
+  dataLayer.push = function (o) { var r = push(o); window.__pushed.push(o); document.getElementById('out').textContent = JSON.stringify(window.__pushed, null, 1); return r; };
+</script>
+</body></html>
