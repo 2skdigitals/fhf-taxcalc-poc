@@ -116,7 +116,21 @@ added, cut or reworded string still fails. That pass produced 63 re-ordered fiel
 
 ## Live
 
-Deployed to `main` and verified from `https://2skdigitals.github.io/fhf-taxcalc-poc/embed/`:
-HTTP 200, served bytes hash-identical to the working tree, both tiles render, the QR decodes from
-the live page, the six receipt crops load, `?part=pay` reports the declared height (see
-`qa/verify_live.py` output in the pass log).
+Deployed to `main` (`1a5e78d`) and verified from
+`https://2skdigitals.github.io/fhf-taxcalc-poc/embed/`:
+
+- **HTTP 200**, and the served bytes are **byte-identical** to `embed/index.html`
+  (`sha256 f224443990725794…`, 119,135 bytes) — `qa/verify_live.py`, 28/28.
+- **The QR decodes from the live page**: 168 chars, `https://render.alipay.hk/p/s/hkw…`, captured from
+  the rendered `.tile-qr` at 768 and 1440px in both languages.
+- **`?part=pay` reports its declared height** — `documentElement.scrollHeight` 690 zh / 800 en at 390,
+  768 and 1440px, i.e. exactly the number in the CMS.
+- **The six receipt crops load** (41.9 KB together) and the tooltip opens with both flows in both
+  languages at 390 and 1440px.
+- `qa/poc_test.py` against the live base: **101 passed, 0 failed**.
+
+Live shots: `shots/pay-desktop-20261124/LIVE-{zh-HK,en}-{768,1440}[-panel].png`.
+
+A stale gate was found and fixed on the way: `qa/verify_live.py` still matched the receipt crops by
+their full URL, so the `?v=20261124b` cache keys added in `aa8f09b` made five of its checks fail on a
+correct deploy. It now compares the asset path (commit `d366790`).
