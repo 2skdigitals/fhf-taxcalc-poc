@@ -398,8 +398,9 @@ details.q li{margin:3px 0}
   .tile:hover .tile-nm{color:var(--navy)}
   .tile-sub{display:block;font-size:var(--t-cap);line-height:1.45;color:var(--muted);margin-top:3px}
   /* the card tile: glyph, name, and where it goes on a ruled foot line */
-  .tile-b{flex-direction:column;padding:22px}
+  .tile-b{flex-direction:column;justify-content:space-between;padding:22px}
   .tile-b .tile-glyph{display:flex;align-items:center;color:var(--navy)}
+  .tile-b .tile-glyph svg{width:56px;height:40px}
   .tile-b .tile-link{margin-top:14px}
   .tile-b .tile-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;
                      margin-top:auto;padding-top:var(--s3);border-top:var(--rule);
@@ -814,7 +815,7 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
            scanner decodes. Same code, same destination, bigger on screen. -->
       <div class="paygrid">
         <div class="tile tile-a">
-          <img class="tile-qr" loading="lazy" src="../assets/logos/alipayhk-qr.png" width="264" height="264"
+          <img class="tile-qr" loading="eager" src="../assets/logos/alipayhk-qr.png" width="264" height="264"
                alt="AlipayHK donation QR code for The Fred Hollows Foundation" data-i18n-alt="s3.qr.alt.alipay">
           <div class="tile-a-txt">
             <a class="tile-link" href="https://render.alipay.hk/p/s/hkwallet/landing?scheme=alipayhk%3A%2F%2Fplatformapi%2Fstartapp%3FappId%3D20000067%26url%3Dhttps%253A%252F%252Fcod.run%252Fzf950015iae7uhyx" target="_top" rel="noopener" data-rail="alipay">
