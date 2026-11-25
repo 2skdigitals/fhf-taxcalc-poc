@@ -1005,7 +1005,9 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
         <input id="consent" type="checkbox">
         <span data-i18n="rc.consent">I agree that the Foundation may use these details to match my gift and issue my tax receipt.</span>
       </label>
-      <p class="fine" data-i18n-html="rc.disclink">Read the <a href="#disclaimer" id="disc-link">disclaimer</a> before you send anything.</p>
+      <!-- The sentence used to link to #disclaimer. The disclaimer now lives on
+           the host page, so the anchor is gone and this is plain text. -->
+      <p class="fine" data-i18n="rc.disclink">Read the disclaimer before you send anything.</p>
       <button class="btn" type="submit" id="rsubmit" data-i18n="rc.submit">Request my receipt</button>
       <p class="msg" id="capture-status" aria-live="polite" hidden></p>
       <p class="hint" data-i18n="rc.keep">Keep the receipt for six years — the IRD may ask to see it.</p>
@@ -1013,25 +1015,14 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
 
   </section>
 
-  <!-- The page-level footer. The disclaimer sits here — OUTSIDE every panel —
-       so it is the one block every part carries, and it survives phase 1 with
-       section 5 switched off (PHASE1). Legally reviewed client copy: never let
-       it move inside a panel or behind a disclosure again. -->
-  <p class="fine" data-i18n="foot.legal">Based on IRD tax rates and info for the relevant assessment year; for general reference only.</p>
-
-      <!-- The legal block: always visible, five numbered sentences (23 Nov).
-           It is NOT a disclosure any more — #disc-link still points at this id,
-           so the consent line keeps working; the block takes focus on arrival. -->
-      <section class="disc-global" id="disclaimer" tabindex="-1" aria-labelledby="disc-h">
-        <h3 class="disc-h" id="disc-h" data-i18n="rc.disc.head">Disclaimer:</h3>
-        <ol class="disc-list">
-          <li data-i18n-html="rc.disc.1">Based on IRD tax rates and info for the relevant assessment year; for general reference only.</li>
-          <li data-i18n-html="rc.disc.2">Does not collect, record, or store entered data.</li>
-          <li data-i18n-html="rc.disc.3">Estimates tax using progressive or standard rates (whichever is lower); actual results depend on the IRD.</li>
-          <li data-i18n-html="rc.disc.4">Not formal financial/tax advice; refer to the <a href="https://www.ird.gov.hk/eng/welcome.htm" target="_blank" rel="noopener noreferrer">Hong Kong Inland Revenue Department website</a> or a professional.</li>
-          <li data-i18n-html="rc.disc.5">The Fred Hollows Foundation (HK) Limited assumes no liability for use or reliance.</li>
-        </ol>
-      </section>
+  <!-- The legal fine print used to close this document: a one-line "Based on IRD
+       tax rates…" note plus a five-sentence numbered disclaimer, outside every
+       panel so that every part carried it. It now belongs to the client's own
+       page (their Rich Text Editor block), so the widget does not carry it in
+       any part and no part's height includes it. The CSS for the block is left
+       in place on purpose — it is the record of what shipped, and the phase-1
+       rule for the empty `?part=receipt` frame still names it. Do not rebuild
+       the block here: two copies of a legal notice is the defect this pass fixes. -->
 
   <div id="dbg" aria-hidden="true"></div>
 </div>
@@ -1195,16 +1186,9 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "rc.help.alt2": "AlipayHK 交易詳情頁",
       "rc.help.alt3": "交易詳情頁最底部的交易編號",
       "rc.consent": "本人同意護瞳行動使用上述資料核對捐款，並發出扣稅收據。",
-      "rc.disclink": "提交前請先閱讀<a href=\"#disclaimer\" id=\"disc-link\">免責聲明</a>。",
+      "rc.disclink": "提交前請先閱讀免責聲明。",
       "rc.submit": "提交收據申請",
       "rc.keep": "請保留收據六年；稅務局可能要求查閱。",
-      "rc.disc.head": "免責聲明:",
-      "rc.disc.1": "根據稅務局相關課稅年度資料估算，僅供一般參考.",
-      "rc.disc.2": "不會收集、記錄或儲存任何輸入資料.",
-      "rc.disc.3": "以累進稅率或標準稅率（以較低者為準）估算應繳稅款；最終以稅務局核定為準。",
-      "rc.disc.4": "不構成專業意見，詳情請參閱<a href=\"https://www.ird.gov.hk/chi/welcome.htm\" target=\"_blank\" rel=\"noopener noreferrer\">香港稅務局網頁</a>或諮詢顧問.",
-      "rc.disc.5": "護瞳行動（香港）有限公司概不承擔相關法律責任。",
-      "foot.legal": "根據稅務局相關課稅年度資料估算，僅供一般參考。",
       "band.unknown": "不確定",
       "band.r0": "HK$145,000 以下",
       "band.r2": "HK$145,000 – 195,000",
@@ -1356,16 +1340,9 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
       "rc.help.alt2": "AlipayHK transaction detail page",
       "rc.help.alt3": "The transaction ID at the foot of the record",
       "rc.consent": "I agree that the Foundation may use these details to match my gift and issue my tax receipt.",
-      "rc.disclink": "Read the <a href=\"#disclaimer\" id=\"disc-link\">disclaimer</a> before you send anything.",
+      "rc.disclink": "Read the disclaimer before you send anything.",
       "rc.submit": "Request my receipt",
       "rc.keep": "Keep the receipt for six years — the IRD may ask to see it.",
-      "rc.disc.head": "Disclaimer:",
-      "rc.disc.1": "Based on IRD tax rates and info for the relevant assessment year; for general reference only.",
-      "rc.disc.2": "Does not collect, record, or store entered data.",
-      "rc.disc.3": "Estimates tax using progressive or standard rates (whichever is lower); actual results depend on the IRD.",
-      "rc.disc.4": "Not formal financial/tax advice; refer to the <a href=\"https://www.ird.gov.hk/eng/welcome.htm\" target=\"_blank\" rel=\"noopener noreferrer\">Hong Kong Inland Revenue Department website</a> or a professional.",
-      "rc.disc.5": "The Fred Hollows Foundation (HK) Limited assumes no liability for use or reliance.",
-      "foot.legal": "Based on IRD tax rates and info for the relevant assessment year; for general reference only.",
       "band.unknown": "not sure",
       "band.r0": "below HK$145,000",
       "band.r2": "HK$145,000 – 195,000",
@@ -2042,23 +2019,6 @@ body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
   $$("details.q").forEach(function(d){
     d.addEventListener("toggle", function(){ scheduleHeight(); });
   });
-  /* The consent-line link used to OPEN a collapsed accordion. The block is
-     always visible now, so the link's job is the jump plus focus: without it a
-     keyboard or screen-reader user is moved on screen but left at the top of the
-     document. preventScroll keeps the browser's own anchor jump. Bound on the
-     document because applyLang() re-creates that paragraph when the language
-     changes — a listener on the old node would be orphaned. */
-  document.addEventListener("click", function (e) {
-    var el = e.target;
-    while (el && el !== document) {
-      if (el.id === "disc-link") {
-        var d = $("#disclaimer"); if (d) { d.focus({preventScroll: true}); }
-        return;
-      }
-      el = el.parentNode;
-    }
-  });
-
   /* ---------- the payment-reference help popover ----------
      A disclosure that happens to be an overlay: a real <button> with
      aria-expanded, a panel with role="dialog" and aria-labelledby, Escape to

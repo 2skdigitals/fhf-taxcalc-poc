@@ -61,9 +61,14 @@ REPORT_WIDTHS = (320, 390, 768, 1024, 1440)
 # peak was already at 320px on a phone, which that pass does not touch — so NO
 # declaration moves and the peaks below are unchanged on purpose. Do not "correct"
 # the numbers to the desktop ones: the frame has to clear the phone.
+# Reissued 25 Nov 2026 (the disclaimer left the widget for the client's own Rich Text
+# Editor block, qa/apply_remove_disclaimer_20261125.py): the block closed EVERY part, so
+# every block shortens — 170px at desktop widths, 317–336px at 320px where the five
+# sentences wrapped hardest. Peaks now: calc 1425/1541, input 817/875, result 660/792,
+# pay 443/472, receipt 0 (empty phase-1 frame), all 1942/2062.
 DECLARED = {
-    "zh-HK": {"calc": 1720, "input": 1050, "result": 980, "pay": 690, "receipt": 60, "all": 2225},
-    "en":    {"calc": 2030, "input": 1180, "result": 1190, "pay": 800, "receipt": 60, "all": 2550},
+    "zh-HK": {"calc": 1495, "input": 880, "result": 725, "pay": 505, "receipt": 60, "all": 2010},
+    "en":    {"calc": 1610, "input": 940, "result": 860, "pay": 535, "receipt": 60, "all": 2130},
 }
 
 peaks = {}

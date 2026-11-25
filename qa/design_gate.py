@@ -23,8 +23,8 @@ from playwright.sync_api import sync_playwright
 # heights the client pastes into the CMS — must cover the MONTHLY layout too, which is
 # a second, taller shape (that omission shipped a 70px inner scroll at 320px)
 DECLARED = {
-    "zh-HK": {"calc": 1720, "input": 1050, "result": 980, "pay": 690, "receipt": 60, "all": 2225},
-    "en": {"calc": 2030, "input": 1180, "result": 1190, "pay": 800, "receipt": 60, "all": 2550},
+    "zh-HK": {"calc": 1495, "input": 880, "result": 725, "pay": 505, "receipt": 60, "all": 2010},
+    "en": {"calc": 1610, "input": 940, "result": 860, "pay": 535, "receipt": 60, "all": 2130},
 }
 WIDTHS = (320, 360, 390, 414, 568, 768, 944, 1280, 1440)
 PARTS = ("calc", "input", "result", "pay", "receipt", "all")
@@ -46,10 +46,14 @@ CONTRAST_TARGETS = [
     ("figure", "#net"),
     ("figure label", "#saved-label, .figs dt, dt"),
     ("primary action", "button[type=submit], .btn"),
-    # 23 Nov: the disclaimer's accordion became an h3 + <ol>. The title is what a
-    # reader scans for, so it is the pair that is measured — at the same 13px
-    # fine-print size as the list under it.
-    ("disclaimer heading", "#disclaimer .disc-h"),
+    # 25 Nov: the disclaimer (an h3 + <ol> until this pass) left the widget for the
+    # client's own page, so the smallest text role on the page is now the consent
+    # line in the receipt form — still `.fine`, still 13px, still the pair that says
+    # whether the fine print is legible. It lives in the phase-2 block, which is why
+    # the contrast pass runs on ?part=calc&lang=en with the form hidden: computed
+    # style still resolves, and a colour change to the smallest role is exactly what
+    # this target exists to catch.
+    ("fine print (consent line)", "p.fine"),
 ]
 
 MEASURE_JS = """(sel) => {
@@ -191,12 +195,18 @@ def main():
         for src in broken:
             fails.append(f"FAIL image did not load: {src}")
 
-        # ── D · the disclaimer is ALWAYS visible, in every block, with five items
-        # 23 Nov: it was a collapsed <details> and this check asserted the collapse.
-        # The client wanted a permanent numbered list, so the assertion inverts: the
-        # block must have height on first paint, must not be inside a disclosure, and
-        # must carry its heading and exactly five <li>. Checking only "it exists"
-        # would pass on the old accordion.
+        # ── D · the disclaimer is GONE, and every block ends clean without it
+        # 25 Nov: the client carries the legal notice in a Rich Text Editor block on
+        # their own page, so the widget must not carry it in any part. This check used
+        # to assert the opposite three times over (visible, five items, a heading) —
+        # it inverts rather than disappears, because the failure mode now is a later
+        # pass restoring the block "because the parts look bare".
+        #
+        # Two things are still worth measuring per block: no `#disclaimer` and no
+        # page-level `p.fine`, and the document ending on the last visible panel with
+        # only `.wrap`'s own bottom padding under it. An orphan `border-top` (the
+        # removed block's rule) or a stray margin reads as a broken end to the block
+        # and is invisible in a passing crop — this is the check that sees it.
         for part in PARTS:
             pg = browser.new_page(viewport={"width": 390, "height": 60 if (PHASE1 and part == "receipt") else 900})
             pg.goto(f"{args.base}/embed/?part={part}", wait_until="load")
@@ -211,32 +221,47 @@ def main():
                                    && (x.textContent || '').trim().length);
                   return {sh: document.documentElement.scrollHeight,
                           receipt: !!document.getElementById('receipt').offsetParent,
+                          disc: !!document.getElementById('disclaimer'),
                           visible: vis.map(x => x.tagName + (x.id ? '#' + x.id : '')).slice(0, 5)};
                 }""")
                 if e["receipt"] or e["sh"] > 61:
                     fails.append(f"FAIL ?part=receipt is not an empty placeholder in phase 1: {e}")
+                if e["disc"]:
+                    fails.append(f"FAIL ?part=receipt still renders the disclaimer: {e}")
                 pg.close()
                 continue
-            d = pg.evaluate("""() => { const el = document.getElementById('disclaimer');
-              if (!el) return null;
-              const h = el.querySelector('h3'), ol = el.querySelector('ol');
-              const cs = getComputedStyle(el);
-              return {tag: el.tagName, h: Math.round(el.getBoundingClientRect().height),
-                      head: h ? h.textContent.trim() : '',
-                      items: ol ? ol.children.length : 0,
-                      inDetails: !!el.closest('details'),
-                      hidden: cs.display === 'none' || cs.visibility === 'hidden'}; }""")
-            if not d:
-                fails.append(f"FAIL disclaimer missing in ?part={part}")
-            else:
-                if d["hidden"] or d["h"] == 0:
-                    fails.append(f"FAIL disclaimer not visible on first paint in ?part={part}: {d}")
-                if d["inDetails"]:
-                    fails.append(f"FAIL disclaimer is still inside a disclosure in ?part={part}")
-                if d["head"] != "免責聲明:":
-                    fails.append(f"FAIL disclaimer heading {d['head']!r} in ?part={part}")
-                if d["items"] != 5:
-                    fails.append(f"FAIL disclaimer has {d['items']} items in ?part={part}")
+            d = pg.evaluate("""() => {
+              const wrap = document.querySelector('.wrap');
+              const vis = e => e.offsetParent && e.getBoundingClientRect().height > 0
+                               && getComputedStyle(e).display !== 'none';
+              const kids = [...wrap.children].filter(vis);
+              const last = kids[kids.length - 1];
+              const edge = last.getBoundingClientRect().bottom + window.scrollY;
+              // elements, not a gap: `.wrap` carries min-height:100vh, so a short block
+              // is legitimately taller than its content and a gap check calls that
+              // viewport stretch orphan spacing.
+              const tail = last ? [...wrap.querySelectorAll('*')].filter(e => {
+                  if (e.offsetParent === null || getComputedStyle(e).display === 'none') return false;
+                  if (e.contains(last) || last.contains(e)) return false;
+                  const r = e.getBoundingClientRect();
+                  return r.height > 0 && r.top + window.scrollY > edge + 1;
+                }).map(e => e.tagName + (e.id ? '#' + e.id : '')).slice(0, 4) : [];
+              return {disc: !!document.getElementById('disclaimer'),
+                      wrapFine: document.querySelectorAll('.wrap > p.fine').length,
+                      last: last ? last.tagName + (last.id ? '#' + last.id : '') : null,
+                      tail: tail,
+                      rule: last ? getComputedStyle(last).borderBottomWidth : ''};
+            }""")
+            if d["disc"]:
+                fails.append(f"FAIL the disclaimer is back in ?part={part}")
+            if d["wrapFine"]:
+                fails.append(f"FAIL {d['wrapFine']} page-level p.fine line(s) close ?part={part}")
+            if not d["last"] or not d["last"].startswith("SECTION#"):
+                fails.append(f"FAIL ?part={part} does not end on a panel: {d['last']}")
+            if d["tail"]:
+                fails.append(f"FAIL something still renders below the last panel in ?part={part}: {d['tail']}")
+            if d["rule"] not in ("0px", ""):
+                fails.append(f"FAIL ?part={part} ends on a panel that carries a bottom rule ({d['rule']})")
             pg.close()
 
         browser.close()

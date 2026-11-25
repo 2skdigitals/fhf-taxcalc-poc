@@ -151,11 +151,11 @@
 <h2>Appendix · the embed itself</h2>
 <p>The container id is compiled into the widget, so the embed takes no parameter for it. The frame only needs the right height.</p>
 <pre><code>&lt;iframe src="https://2skdigitals.github.io/fhf-taxcalc-poc/embed/?lang=en"
-        width="100%" height=2550 frameborder=0&gt;&lt;/iframe&gt;</code></pre>
+        width="100%" height=2130 frameborder=0&gt;&lt;/iframe&gt;</code></pre>
 <ul>
 <li><code>?lang=en</code> on the English page, <code>?lang=zh</code> on the Chinese one.</li>
-<li><strong>Write the height as a bare integer.</strong> <code>height=2,550</code> parses as <code>3</code> in every browser and the calculator vanishes.</li>
-<li>The page currently carries <code>height=2200</code>: measured content is 2,162 at desktop and 2,202 at 390px — it fits until a 320px-wide phone, where the block is 2,482 and roughly 280px is cut off.</li>
+<li><strong>Write the height as a bare integer.</strong> <code>height=2,130</code> parses as <code>3</code> in every browser and the calculator vanishes.</li>
+<li>The page currently carries <code>height=2200</code> on the English frame, and <strong>it still fits</strong>: since the disclaimer moved to the page's own Rich Text Editor block the English content peaks at <strong>2,062</strong> (at 320px), so 2,200 carries 138px of slack. <code>height=2130</code> is the exact declaration if you want to trim it. The Chinese frame needs <strong>2,010</strong>; 2,225 is safe the same way.</li>
 </ul>
 
 </body>

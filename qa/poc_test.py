@@ -384,11 +384,14 @@ with sync_playwright() as pw:
     # became an always-visible five-item list, +110..260px on every block.
     # Reissued for PHASE 1 23 Nov 2026 (qa/apply_phase1_alipay_20261123.py): section 5
     # is hidden, so `all` ends at "How you give" and `receipt` is an EMPTY frame.
-    # zh-HK: 1720 / 1050 / 980 / 690 / 60 / 2225.
+    # 25 Nov 2026 (the disclaimer left the widget): every block sheds 170px at desktop
+    # widths and 317-336px at 320px, so the zh set is reissued as 1495 / 880 / 725 /
+    # 505 / 60 / 2010, and the en set as 1610 / 940 / 860 / 535 / 60 / 2130.
+    # zh-HK: 1495 / 880 / 725 / 505 / 60 / 2010.
     # 24 Nov 2026 (Option B payment pair): the payment block got SHORTER on a desktop
     # (613/641 at 1024px instead of 649/677) and its phones are untouched, so these
     # numbers do not move — 690 and 2225 still clear the real peak, which is at 320px.
-    BUDGET = {"calc": 1720, "input": 1050, "result": 980, "pay": 690, "receipt": 60, "all": 2225}
+    BUDGET = {"calc": 1495, "input": 880, "result": 725, "pay": 505, "receipt": 60, "all": 2010}
     # PHASE1 mirrors the constant in embed/index.html. While it is true, section 5
     # renders nothing: `?part=receipt` is an empty placeholder (a CMS component may
     # still point at it and a frame must never render a form that cannot submit) and
@@ -420,13 +423,16 @@ with sync_playwright() as pw:
             pf.close()
 
     # ---------------------------------------------------------------- H2 · phase 1
-    # Two things must be true at once while PHASE1 is set, and the second is the one
-    # that would ship silently: the receipt module is ABSENT from every live block
-    # (no half-drawn form, nothing to submit), and the client's legally reviewed
-    # disclaimer is still visible at the foot of each live block. `?part=receipt` is
-    # checked separately: it must render nothing at all, so that a CMS component still
-    # pointed at it shows an empty box rather than a form.
-    for part in ("all", "calc", "pay"):
+    # The receipt module must be ABSENT from every live block while PHASE1 is set (no
+    # half-drawn form, nothing to submit), and each block must END cleanly where the
+    # disclaimer used to be: the client's Rich Text Editor block carries the legal
+    # notice now, so the last thing in the document is the last visible panel and the
+    # only space under it is `.wrap`'s own bottom padding. An orphan rule (the
+    # disclaimer's `border-top`) or a leftover `p.fine` would read as a broken end to
+    # the block, and neither is visible in a passing crop.
+    # `?part=receipt` is checked separately: it must render nothing at all, so that a
+    # CMS component still pointed at it shows an empty box rather than a form.
+    for part, last_panel in (("all", "payment"), ("calc", "result"), ("pay", "payment")):
         p1 = browser.new_page(viewport={"width": 390, "height": 900}, is_mobile=True, has_touch=True)
         p1.goto(f"{BASE}/embed/?part={part}", wait_until="load")
         p1.wait_for_timeout(500)
@@ -434,27 +440,39 @@ with sync_playwright() as pw:
           const vis = e => !!e && e.getBoundingClientRect().height > 0
                           && getComputedStyle(e).display !== 'none';
           const rc = document.getElementById('receipt');
-          const d = document.getElementById('disclaimer');
-          const panels = [...document.querySelectorAll('section.panel')].filter(vis).map(s => s.id);
+          const wrap = document.querySelector('.wrap');
+          const kids = [...wrap.children].filter(vis);
+          const last = kids[kids.length - 1];
           return {rc_vis: vis(rc), form_vis: vis(document.getElementById('rform')),
-                  disc_vis: vis(d),
-                  disc_items: document.querySelectorAll('#disclaimer .disc-list > li').length,
-                  disc_below: panels.length ? Math.round(d.getBoundingClientRect().top) >
-                                               Math.round(document.getElementById(panels[panels.length - 1])
-                                                          .getBoundingClientRect().bottom) : null,
-                  last: panels[panels.length - 1] || null,
-                  heading5: !!document.querySelector('#receipt h2')};
+                  disc: !!document.getElementById('disclaimer'),
+                  wrapFine: document.querySelectorAll('.wrap > p.fine').length,
+                  last: last ? last.tagName + (last.id ? '#' + last.id : '') : null,
+                  // Anything PAINTED below the last panel: the removed block's rule, a
+                  // stray .fine line, a leftover margin wrapper. Measured as elements,
+                  // not as a gap, because `.wrap` carries min-height:100vh — on a short
+                  // block the document is legitimately taller than its content, and a
+                  // gap check reads that viewport stretch as orphan spacing.
+                  tail: last ? [...wrap.querySelectorAll('*')].filter(e => {
+                      if (e.offsetParent === null) return false;
+                      if (getComputedStyle(e).display === 'none') return false;
+                      if (e.contains(last) || last.contains(e)) return false;
+                      const r = e.getBoundingClientRect();
+                      return r.height > 0 && r.top + window.scrollY >
+                             last.getBoundingClientRect().bottom + window.scrollY + 1;
+                    }).map(e => e.tagName + (e.id ? '#' + e.id : '')).slice(0, 4) : []};
         }""")
         errs = []
         if st["rc_vis"] or st["form_vis"]:
             errs.append(f"the receipt module is still rendering (rc={st['rc_vis']} form={st['form_vis']})")
-        if not st["disc_vis"]:
-            errs.append("the disclaimer is not visible")
-        if st["disc_items"] != 5:
-            errs.append(f"the disclaimer has {st['disc_items']} items, expected 5")
-        if not st["disc_below"]:
-            errs.append(f"the disclaimer does not close the block (last panel {st['last']})")
-        check(f"[phase 1] ?part={part} has no receipt form and still carries the disclaimer", errs)
+        if st["disc"]:
+            errs.append("the #disclaimer block is back in the document")
+        if st["wrapFine"]:
+            errs.append(f"{st['wrapFine']} page-level p.fine line(s) still close the document")
+        if st["last"] != "SECTION#" + last_panel:
+            errs.append(f"the document does not end on the {last_panel} panel (last {st['last']})")
+        if st["tail"]:
+            errs.append(f"something still renders below the last panel: {st['tail']}")
+        check(f"[phase 1] ?part={part} has no receipt form and ends clean on its last panel", errs)
         p1.close()
 
     p1 = browser.new_page(viewport={"width": 390, "height": 60})
@@ -576,32 +594,14 @@ with sync_playwright() as pw:
 
     # ---------------------------------------------------------------- L · C2 declarations
     d = bench.evaluate("""()=>{
-        const el=document.getElementById('disclaimer');
-        const h=document.querySelector('#disclaimer h3');
-        const li=document.querySelectorAll('#disclaimer .disc-list > li');
-        const a=document.querySelector('#disclaimer .disc-list a');
+        const link = document.querySelector('p.fine[data-i18n="rc.disclink"]');
         const out={scope:(document.querySelector('.scope')||{}).textContent||'',
                    spouse:(document.getElementById('spouse')||{}).textContent||'',
-                   link:(document.querySelector('#receipt a[href="#disclaimer"]')||{}).textContent||'',
-                   foot:(document.querySelector('.wrap > p.fine')||{}).textContent||'',
-                   floorline:(document.getElementById('gift-min')||{}).textContent||'',
-                   disc: el?el.textContent:'', visible:false, head:'', size:0,
-                   ratio:0, items:0, listLink:''};
-        if(!el || !h) return out;
-        const rgb = s => (s.match(/[\\d.]+/g)||[]).slice(0,3).map(Number);
-        const lum = c => { const f = v => { v/=255;
-            return v<=.03928 ? v/12.92 : Math.pow((v+.055)/1.055,2.4); };
-            return .2126*f(c[0])+.7152*f(c[1])+.0722*f(c[2]); };
-        // the widget is transparent on purpose, so white is the honest ground
-        let bg=[255,255,255], n=h;
-        while(n){ const b=getComputedStyle(n).backgroundColor;
-                  if(b && !/rgba\\(0, 0, 0, 0\\)|transparent/.test(b)){ bg=rgb(b); break; }
-                  n=n.parentElement; }
-        const cs=getComputedStyle(h), L1=lum(rgb(cs.color)), L2=lum(bg);
-        out.head=h.textContent; out.size=parseFloat(cs.fontSize);
-        out.ratio=Math.round((Math.max(L1,L2)+.05)/(Math.min(L1,L2)+.05)*100)/100;
-        out.items=li.length; out.listLink=a?a.textContent:'';
-        out.visible=el.getBoundingClientRect().height>0 && cs.display!=='none';
+                   disclink: link?link.textContent:'',
+                   disclinkKids: link?link.children.length:-1,
+                   disc: !!document.getElementById('disclaimer'),
+                   foot: document.querySelectorAll('.wrap > p.fine').length,
+                   floorline:(document.getElementById('gift-min')||{}).textContent||''};
         return out;
     }""")
     # The client's slide-7 note removes the scope reminder beside the figures: the
@@ -618,22 +618,18 @@ with sync_playwright() as pw:
     # the regression this line exists to catch.
     check("the spouse FAQ is absent from the result block (client instruction, 23 Nov)",
           [] if not d["spouse"].strip() else [d["spouse"][:80]])
-    # 23 Nov: the disclaimer is no longer an accordion. The check moved from "is the
-    # <summary> collapsed" to "is the title present, visible without a click, and
-    # legible": the same intent (the legal block is there, readable, and names itself)
-    # against the structure that now ships. Collapsed was the old contract; removing
-    # the assertion instead would have left the heading and the fine print unmeasured.
-    check("the disclaimer's title is present, visible and meets AA contrast", []
-          if (d["visible"] and d["head"].strip() == "免責聲明:"
-              and d["ratio"] >= 4.5 and d["size"] >= 12)
-          else [f"visible={d['visible']} head={d['head']!r} "
-                f"ratio={d['ratio']} size={d['size']}"])
-    check("the disclaimer is a five-item list, and the consent line reaches it", []
-          if (d["items"] == 5 and "免責聲明" in d["link"]
-              and "最終以稅務局核定為準" in d["disc"]
-              and "不會收集、記錄或儲存任何輸入資料" in d["disc"]
-              and "不能取代專業意見" not in d["disc"])
-          else [f"items={d['items']} link={d['link']!r} text={d['disc'][:120]!r}"])
+    # 25 Nov: the disclaimer left the widget — the client's own Rich Text Editor block
+    # carries it now, so the check inverts rather than disappears. `id="disclaimer"`
+    # and the page-level `p.fine` must stay GONE (the second copy of a legal notice is
+    # the defect this pass fixed), and the consent line must have lost its anchor
+    # while keeping the client's sentence. Checked in the DOM here; I2 below checks the
+    # served BYTES, because a hidden copy still ships.
+    check("the widget carries no disclaimer block and no page-level foot.legal line", []
+          if (not d["disc"] and d["foot"] == 0)
+          else [f"disclaimer={d['disc']} .wrap > p.fine={d['foot']}"])
+    check("the consent line is plain text — the disclaimer anchor is gone", []
+          if (d["disclink"].strip() == "提交前請先閱讀免責聲明。" and d["disclinkKids"] == 0)
+          else [f"text={d['disclink']!r} children={d['disclinkKids']}"])
     check("the HK$100 floor line is on the donation field, in the client's words",
           [] if "捐款金額達到或超過 HK$100 可獲得稅收減免。" in d["floorline"] else [d["floorline"][:80]])
 
@@ -671,7 +667,8 @@ with sync_playwright() as pw:
     #   · #ref-help / #ref-help-panel — the payment-reference popover inside section 5,
     #     which is PHASE 2 code. It is measured here with the section forced visible:
     #     a hidden trigger cannot be clicked, and the module has to work on the day
-    #     PHASE1 flips. Its frame numbers are the phase-2 declarations (990 / 1185).
+    #     PHASE1 flips. Its frame numbers are the phase-2 declarations (745 / 855 —
+    #     reissued 25 Nov: the removed disclaimer took ~214px off this block too).
     # What is asserted, per popover: the disclosure contract (real <button>,
     # aria-expanded), the overlay contract (role=dialog, inside the frame, never
     # full-screen, opening it does not grow the block), the assets (every screenshot
@@ -811,8 +808,13 @@ with sync_playwright() as pw:
         for _ in range(5):
             pop.keyboard.press("Tab")
         out = pop.evaluate("()=>document.activeElement.id||document.activeElement.tagName")
+        # Five Tabs must move focus OFF the panel. `BODY` is a valid answer and used to
+        # be scored as a failure: with the consent line's `#disc-link` anchor gone
+        # (25 Nov) the receipt form has one fewer focusable tab stop, so the fifth Tab
+        # now leaves the frame entirely — the OPPOSITE of a trap. What fails is focus
+        # still sitting on the panel after five Tabs, which is what a trap looks like.
         check(f"{tag} is not a keyboard trap (5 Tabs leave it){lang_q or ' (zh)'}",
-              [] if out not in (panel_id, "") and out != "BODY" else [out])
+              [] if out not in (panel_id, "") else [out])
         pop.close()
 
     # phase 1 — the AlipayHK receipt route, in the payment block, at its declared
@@ -826,7 +828,7 @@ with sync_playwright() as pw:
                      f"{BASE}/embed/?part=pay{lang_q}", "alipay-help", "alipay-help-panel",
                      (2, 4), frame_h, lang_q, assets=ALIPAY_CROPS)
     # phase 2 — the payment-reference popover, forced visible at its own declaration
-    for lang_q, frame_h in (("", 990), ("&lang=en", 1185)):
+    for lang_q, frame_h in (("", 745), ("&lang=en", 855)):
         popover_case("the reference popover", "receipt",
                      f"{BASE}/embed/?part=receipt{lang_q}", "ref-help", "ref-help-panel",
                      (2,), frame_h, lang_q)
@@ -844,6 +846,28 @@ with sync_playwright() as pw:
     check("the event page receives calc_started + calc_result_shown and stays clean",
           [] if (int(ev["n"]) >= 2 and ev["hon"].strip() == "clean" and ev["rows"] >= 2) else [str(ev)])
     pe.close()
+
+    # ---------------------------------------------------------------- I2 · the disclaimer is the host page's job
+    # The client added a Rich Text Editor block on their own page to carry the legal
+    # notice, so the widget must not carry a second copy — and a stale deploy is the
+    # only way it comes back. This runs against the SERVED BYTES, not the DOM (a
+    # hidden copy still ships), in both language forms: an i18n key that survived in
+    # one table is invisible to a default-state DOM check, because the table is JS
+    # source and never renders.
+    import urllib.request
+    errs = []
+    for q in ("?part=all", "?part=all&lang=en"):
+        with urllib.request.urlopen(f"{BASE}/embed/{q}", timeout=30) as r:
+            raw = r.read().decode("utf-8")
+        # the marker for the one-line note is the MARKUP, not the bare attribute: the
+        # retained CSS rule `p.fine[data-i18n="foot.legal"]{max-width:none}` carries that
+        # attribute on purpose, and a check that cannot tell a rule from a control is
+        # worthless.
+        for needle in ('id="disclaimer"', '<p class="fine" data-i18n="foot.legal"',
+                       'rc.disc.head', 'rc.disc.1', 'rc.disc.5', 'id="disc-link"'):
+            if needle in raw:
+                errs.append(f"{q}: {needle} is still in the served document")
+    check("the served document carries no disclaimer and no foot.legal key, in either language", errs)
 
     # ---------------------------------------------------------------- J · no third-party script, ever
     # The ?gtm= parameter used to load any GTM-XXXX id inside this origin; a GTM

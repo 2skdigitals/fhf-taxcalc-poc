@@ -18,7 +18,7 @@ Already correct today. No change needed. For reference:
 <iframe
   src="https://2skdigitals.github.io/fhf-taxcalc-poc/embed/"
   title="慈善捐款扣稅計算機"
-  style="border:0;width:100%;height:2225px;display:block"
+  style="border:0;width:100%;height:2010px;display:block"
   loading="lazy"></iframe>
 ```
 
@@ -31,7 +31,7 @@ this **one**:
 <iframe
   src="https://2skdigitals.github.io/fhf-taxcalc-poc/embed/?lang=en"
   title="Tax deduction calculator"
-  style="border:0;width:100%;height:2550px;display:block"
+  style="border:0;width:100%;height:2130px;display:block"
   loading="lazy"></iframe>
 ```
 
@@ -41,14 +41,16 @@ this **one**:
 
 | Frame | Height to set | Measured content |
 |---|---|---|
-| Chinese, calculator → payment | **2225** | 2160 |
-| English, calculator → payment | **2550** | 2482 |
+| Chinese, calculator → payment | **2010** | 1942 |
+| English, calculator → payment | **2130** | 2062 |
 
 Both sizes carry slack, so nothing clips if a string wraps differently at their column width. **These numbers
-are current as of 23 Nov 2026**, measured by `qa/sweep_heights.py` after phase 1 (the receipt block hidden, the
-AlipayHK receipt line added) — that pass REMOVED ~560–710px from the one-link frame and added ~43px to the payment
-block, so any height issued before it is stale. English is still ~260px taller than Chinese at its peak: set the
-column for the language you are embedding, never reuse the other.
+are current as of 25 Nov 2026**, measured by `qa/sweep_heights.py` after the disclaimer left the widget for the
+client's own Rich Text Editor block — that pass removed 170px from every block at desktop widths and up to 336px at
+320px, so any height issued before it is stale (2225 / 2550 → **2010 / 2130**). English is still ~120px taller than
+Chinese at its peak: set the column for the language you are embedding, never reuse the other.
+**The English page's `height=2200` still fits** (peak 2062) — 2130 is the exact number if they want to trim it, and
+2225 on the Chinese page is safe the same way.
 
 ## Why one frame rather than three
 
@@ -58,5 +60,5 @@ column for the language you are embedding, never reuse the other.
 - Two fewer iframes to size, lazy-load and keep in step when a block's copy changes.
 
 The three-part split remains available if they ever want the blocks separated again: `?part=calc`, `?part=pay`,
-`?part=receipt`, with heights 1720 / 690 / 60 (zh) and 2030 / 800 / 60 (en) — the receipt block is 990 / 1185
+`?part=receipt`, with heights 1495 / 505 / 60 (zh) and 1610 / 535 / 60 (en) — the receipt block is 745 / 855
 when it returns in phase 2.

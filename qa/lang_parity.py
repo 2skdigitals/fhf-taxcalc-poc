@@ -81,7 +81,13 @@ BAK = ROOT / "embed" / "index.html.bak-pre-en-20261115"
 # between the rails, and the desktop card tile carries a decorative ↗ (aria-hidden) on
 # its foot line. The check compares rendered strings, so a re-order reads as a change —
 # rebased rather than excused, and `bag()` below now reports a re-order with the copy
-# intact as a note instead of a failure. The rebase is the only reason this file moved.)
+# intact as a note instead of a failure. The rebase is the only reason this file moved.) ·
+# 25 Nov (the disclaimer LEFT the widget: the client added a Rich Text Editor block on
+# their own page to carry it, so `rc.disc.head`, `rc.disc.1`…`rc.disc.5` and `foot.legal`
+# are deleted from BOTH tables and `rc.disclink` loses its `#disclaimer` anchor and
+# becomes plain text — list in qa/apply_remove_disclaimer_20261125.py. DELIBERATE zh copy
+# removal, rebased. Section H now asserts the ABSENCE in both languages and on the
+# served bytes, so a re-introduced copy cannot pass by matching a stale baseline)
 # What the gate is for survives each rebase: the ZH
 # build may only change where a change was signed off, and every assertion below still
 # fails on an accidental drift.
@@ -199,9 +205,9 @@ STATES = {
     ],
     "receipt": [
         ("default", None),
-        # the disclaimer is permanently open now; the state that still needs
-        # covering is the consent-line jump, which is what a donor reaches it by
-        ("disclaimer link", "()=>{document.getElementById('disc-link').click();}"),
+        # 25 Nov: the "disclaimer link" state is gone with the link — the consent line
+        # is plain text now (there is no anchor to click, and clicking a missing id
+        # raised inside page.evaluate, which reads as a harness crash, not a copy diff).
         ("empty submit", "()=>{document.getElementById('rform').requestSubmit();}"),
         ("bad email", "(function(){document.getElementById('rname').value='陳大文';"
                       "document.getElementById('rmail').value='nope';"
@@ -421,8 +427,12 @@ with sync_playwright() as pw:
     # Their sheet also introduced "Net Chargeable Income" and "Salaries Tax", which are
     # IRD terms, so the list follows the copy that now ships rather than the copy that
     # did — and it still fails if the English drifts into ad-hoc wording.
+    # 25 Nov: "assessment year" was dropped from this list with the disclaimer — that
+    # phrase only ever existed in the legal block, which the host page now carries.
+    # The list follows the copy that still ships, and it still fails if the English
+    # drifts into ad-hoc wording.
     terms = ["net chargeable income", "assessable income", "salaries tax",
-             "standard rate", "assessment year", "donation"]
+             "standard rate", "progressive tax rates", "donation"]
     missing = [t for t in terms if t.lower() not in all_en.lower()]
     check("English copy uses the IRD terms (" + ", ".join(terms) + ")", missing)
 
@@ -463,126 +473,75 @@ with sync_playwright() as pw:
            if "−HK$" in (v["ids"].get("saved") or "")]
     check("the tax-saved figure never renders with a minus sign, in either language", neg)
 
-    # ---------------------------------------------------------------- H · the client's disclaimer
-    # Downloads/Tax Calculator.docx carries the wording the client has approved.
-    # Their text beats our draft, so this pins it character for character in both
-    # languages rather than trusting that the edit landed.
+    # ---------------------------------------------------------------- H · the disclaimer is the HOST PAGE's job
+    # Until 25 Nov 2026 the widget closed every part with the client's five-sentence
+    # disclaimer plus a one-line "Based on IRD tax rates…" note above it. The client
+    # has added a Rich Text Editor block on their own page to carry the notice, so the
+    # widget must not carry it at all: two copies of a legal notice is the defect this
+    # pass fixes. The assertion therefore INVERTS rather than disappearing — it is the
+    # line that stops a future pass re-adding the block "because the parts look bare".
     #
-    # 23 Nov 2026: the accordion became an always-visible numbered list, so the
-    # pin moves from one <br>-joined paragraph to five <ol>/<li>. One string per
-    # item is the point — a single joined string would pass while an item boundary
-    # moved, and the list is now the delivered structure. The Chinese punctuation
-    # is the client's, not normalised: items 1, 2 and 4 end with an ASCII ".", 3
-    # and 5 with "。". Changing one character still fails.
-    DISC = {
-        "zh-HK": {
-            "head": "免責聲明:",
-            "items": [
-                "根據稅務局相關課稅年度資料估算，僅供一般參考.",
-                "不會收集、記錄或儲存任何輸入資料.",
-                "以累進稅率或標準稅率（以較低者為準）估算應繳稅款；最終以稅務局核定為準。",
-                "不構成專業意見，詳情請參閱香港稅務局網頁或諮詢顧問.",
-                "護瞳行動（香港）有限公司概不承擔相關法律責任。",
-            ],
-            "href": "https://www.ird.gov.hk/chi/welcome.htm",
-            "link": "香港稅務局網頁",
-        },
-        "en": {
-            "head": "Disclaimer:",
-            "items": [
-                "Based on IRD tax rates and info for the relevant assessment year; for general reference only.",
-                "Does not collect, record, or store entered data.",
-                "Estimates tax using progressive or standard rates (whichever is lower); "
-                "actual results depend on the IRD.",
-                "Not formal financial/tax advice; refer to the Hong Kong Inland Revenue "
-                "Department website or a professional.",
-                "The Fred Hollows Foundation (HK) Limited assumes no liability for use or reliance.",
-            ],
-            "href": "https://www.ird.gov.hk/eng/welcome.htm",
-            "link": "Hong Kong Inland Revenue Department website",
-        },
+    # Three ways, because each one fails differently:
+    #   · the SERVED BYTES — a copy that is hidden, or that only exists in the zh table,
+    #     still ships, and neither is visible in a default-state DOM read;
+    #   · the LIVE DOM in both languages — the block's id, its item count and its link;
+    #   · the CONSENT LINE — it pointed at `#disclaimer`, so it lost its anchor and must
+    #     now be the client's sentence as plain text: "Read the disclaimer before you
+    #     send anything." / 「提交前請先閱讀免責聲明。」 The copy is client-reviewed; the
+    #     only change allowed here is that the link is gone.
+    # The CSS (`.disc-global`, `.disc-list`, `.disc-h`, the focus rules) and the
+    # `p.fine[data-i18n="foot.legal"]` rule are deliberately still in the file — they
+    # are the record of what shipped. They are not asserted here, because a rule that
+    # matches nothing is not a contract.
+    DISCLINK = {
+        "zh-HK": "提交前請先閱讀免責聲明。",
+        "en": "Read the disclaimer before you send anything.",
     }
-    got, errs = {}, []
-    for lang in ("zh-HK", "en"):
+    # Strings that existed ONLY in the legal block. If one comes back, the block is back.
+    # NB the marker for the one-line note is the MARKUP, not the bare attribute: the
+    # retained CSS rule `p.fine[data-i18n="foot.legal"]{max-width:none}` contains that
+    # attribute too, and a check that cannot tell a rule from a control certifies
+    # nothing. The rule is a deliberate keepsake; a `<p ... data-i18n="foot.legal">` is
+    # the retired block coming back.
+    GONE = ['id="disclaimer"', '<p class="fine" data-i18n="foot.legal"', "rc.disc.", 'id="disc-link"',
+            "根據稅務局相關課稅年度資料估算", "for the relevant assessment year"]
+    errs = []
+    import urllib.request
+    for lang, q in (("zh-HK", ""), ("en", "&lang=en")):
+        with urllib.request.urlopen(f"{BASE}/embed/?part=all{q}", timeout=30) as r:
+            raw = r.read().decode("utf-8")
+        errs += [f"{lang}: {g!r} is still in the served document" for g in GONE if g in raw]
+    check("the served document carries no disclaimer, in either language (the host page owns it)", errs)
+
+    errs, link_text = [], {}
+    for lang, q in (("zh-HK", ""), ("en", "&lang=en")):
         pd = browser.new_page(viewport={"width": 390, "height": 900})
-        # ?part=pay, not ?part=receipt: section 5 is hidden while PHASE1 is true, and
-        # the disclaimer is the one block every CONTENT part still carries. Measuring
-        # it in the empty placeholder would measure nothing.
-        pd.goto(f"{BASE}/embed/?part=pay&lang={lang}", wait_until="load")
+        pd.goto(f"{BASE}/embed/?part=pay{q}", wait_until="load")
         pd.wait_for_timeout(450)
-        got[lang] = pd.evaluate(
-            "()=>{const d=document.getElementById('disclaimer');if(!d)return null;"
-            "const h=d.querySelector('h3'), ol=d.querySelector('ol'), a=d.querySelector('a');"
-            "return {head:h?h.textContent:'', "
-            "items:ol?[...ol.children].map(li=>li.textContent):[], "
-            "href:a?a.getAttribute('href'):'', link:a?a.textContent:''};}")
+        got = pd.evaluate("""() => {
+          const d = document.getElementById('disclaimer');
+          const p = document.querySelector('p.fine[data-i18n="rc.disclink"]');
+          return {disc: !!d,
+                  wrapFine: document.querySelectorAll('.wrap > p.fine').length,
+                  text: p ? p.textContent : null,
+                  kids: p ? p.children.length : -1,
+                  hrefs: [...document.querySelectorAll('a[href="#disclaimer"], a[href*="ird.gov.hk"]')].length};
+        }""")
         pd.close()
-        want = DISC[lang]
-        if not got[lang]:
-            errs.append(f"{lang}: #disclaimer is missing")
-            continue
-        g = got[lang]
-        if g["head"] != want["head"]:
-            errs.append(f"{lang} heading: {g['head']!r} != {want['head']!r}")
-        if len(g["items"]) != 5:
-            errs.append(f"{lang}: {len(g['items'])} list items, expected 5")
-        for n, (a, b) in enumerate(zip(g["items"], want["items"]), 1):
-            if a != b:
-                i = next((i for i in range(min(len(a), len(b))) if a[i] != b[i]),
-                         min(len(a), len(b)))
-                errs.append(f"{lang} item {n} @{i}: {a[max(0,i-25):i+35]!r} != "
-                            f"{b[max(0,i-25):i+35]!r}")
-        # the link is not decoration: sent to the wrong locale it is a defect an
-        # English reader cannot recover from, and a missing rel hands the referrer over
-        if g["href"] != want["href"]:
-            errs.append(f"{lang} link href: {g['href']!r} != {want['href']!r}")
-        if g["link"] != want["link"]:
-            errs.append(f"{lang} link text: {g['link']!r} != {want['link']!r}")
-    check("the disclaimer is the client's approved text, verbatim, in both languages", errs)
+        link_text[lang] = got["text"]
+        if got["disc"]:
+            errs.append(f"{lang}: #disclaimer is back in the document")
+        if got["wrapFine"]:
+            errs.append(f"{lang}: {got['wrapFine']} page-level p.fine line(s) still close the document")
+        if got["hrefs"]:
+            errs.append(f"{lang}: {got['hrefs']} link(s) to the removed disclaimer / IRD page remain")
+        if (got["text"] or "").strip() != DISCLINK[lang]:
+            errs.append(f"{lang} consent line: {got['text']!r} != {DISCLINK[lang]!r}")
+        if got["kids"] != 0:
+            errs.append(f"{lang} consent line still carries {got['kids']} element(s) — the anchor is back")
+    check("no disclaimer block in either language, and the consent line is plain text", errs)
+    print(f"      consent line: zh {link_text['zh-HK']!r} · en {link_text['en']!r}")
 
-    # The client's decision (23 Nov 2026, relayed by Kevin): the IRD link is
-    # LANGUAGE-APPROPRIATE — English to /eng/, Chinese to /chi/ — so the two hrefs must
-    # DIFFER. An equal pair is the defect (it means one language is being sent to a page
-    # it cannot read), and so is either side pointing somewhere else.
-    check("the IRD link follows the frame's language: en → /eng/, zh → /chi/",
-          [] if (got.get("zh-HK", {}).get("href") == "https://www.ird.gov.hk/chi/welcome.htm"
-                 and got.get("en", {}).get("href") == "https://www.ird.gov.hk/eng/welcome.htm")
-          else [f"zh={got.get('zh-HK', {}).get('href')!r} en={got.get('en', {}).get('href')!r}"])
-
-    # The list must READ as numbered to a screen reader: a real <ol> of five
-    # <li>, not five lines starting with a typed digit.
-    shape = []
-    for lang in ("zh-HK", "en"):
-        pd = browser.new_page(viewport={"width": 390, "height": 900})
-        pd.goto(f"{BASE}/embed/?part=pay&lang={lang}", wait_until="load")
-        pd.wait_for_timeout(400)
-        s = pd.evaluate("""()=>{const d=document.getElementById('disclaimer');
-          if(!d) return null;
-          const ol=d.querySelector('ol'), a=d.querySelector('a');
-          const cs=ol?getComputedStyle(ol):null;
-          return {ol:!!ol, lis:ol?ol.children.length:0,
-                  marker:cs?cs.listStyleType:'',
-                  visible:d.getBoundingClientRect().height>0 &&
-                          getComputedStyle(d).display!=='none',
-                  digits:/^\\s*[1-5][.)]/.test(ol&&ol.children[0]?ol.children[0].textContent:''),
-                  blank:(a?a.getAttribute('target'):null)==='_blank',
-                  rel:(a?a.getAttribute('rel'):'')||''};}""")
-        pd.close()
-        if not s:
-            shape.append(f"{lang}: no #disclaimer")
-            continue
-        if not s["ol"] or s["lis"] != 5:
-            shape.append(f"{lang}: ol={s['ol']} items={s['lis']}")
-        if s["marker"] not in ("decimal", "decimal-leading-zero"):
-            shape.append(f"{lang}: list-style {s['marker']!r} is not a decimal list")
-        if not s["visible"]:
-            shape.append(f"{lang}: the disclaimer is not visible without a click")
-        if s["digits"]:
-            shape.append(f"{lang}: item 1 carries a typed ordinal — the <ol> owns the numbers")
-        if not s["blank"] or "noopener" not in s["rel"] or "noreferrer" not in s["rel"]:
-            shape.append(f"{lang}: target/rel {s['blank']}/{s['rel']!r}")
-    check("the disclaimer is an always-visible <ol> of five, linked with rel=noopener noreferrer",
-          shape)
 
     # ---------------------------------------------------------------- F
     # language switch by postMessage inside a live frame, through the real host

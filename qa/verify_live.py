@@ -118,11 +118,15 @@ MUST = {
     "?part=all in the part map": 'all:     ["calculator","result","payment","receipt"]',
     "all sections shown": 'body[data-part="all"] #calculator',
     "positive saving (no minus in markup)": '<dd id="saved">HK$14 至 HK$17</dd>',
-    "the client's disclaimer line 1": "Based on IRD tax rates and info for the relevant assessment year; "
-                                      "for general reference only.",
-    "the client's disclaimer line 5": "The Fred Hollows Foundation (HK) Limited assumes no liability for "
-                                      "use or reliance.",
-    "the client's Chinese disclaimer": "護瞳行動（香港）有限公司概不承擔相關法律責任。",
+    # 25 Nov: the disclaimer left the widget for the client's own Rich Text Editor
+    # block, so the markers of this pass are the sentences that REPLACED it — the
+    # consent line, plain text in both languages, no anchor. A cached copy of the
+    # previous deployment still carries the blocked copies and cannot pass these.
+    "the consent line, en, plain text": '"rc.disclink": "Read the disclaimer before you send anything.",',
+    "the consent line, zh, plain text": '"rc.disclink": "提交前請先閱讀免責聲明。",',
+    # the disclaimer's CSS is deliberately retained as the record of what shipped —
+    # asserting one rule proves the file is the build that removed the block on purpose
+    "the retained fine-print rule": 'p.fine[data-i18n="foot.legal"]{max-width:none}',
     # 23 Nov: the design review pass. These four strings only exist in the file
     # that was built — a cached copy of the previous deployment cannot have them.
     "the 4px spacing scale": "--s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:32px;",
@@ -193,6 +197,16 @@ MUST_NOT = {
     "44rem column": "max-width:44rem",
     "minus-sign render": '"−" + money',
     "our draft disclaimer": "不能取代專業意見",
+    # 25 Nov: the disclaimer block itself, the one-line legal note above it, and the
+    # anchor the consent line used to point at. Two copies of a legal notice is the
+    # defect the pass fixed, so their return is a regression — the CSS rules are
+    # exempt by construction (they name `#disclaimer` as a selector, never as an id).
+    "the disclaimer block": 'id="disclaimer"',
+    "the one-line legal note": '"foot.legal":',
+    "the disclaimer's sentences": "for the relevant assessment year",
+    "its Chinese sentence": "根據稅務局相關課稅年度資料估算",
+    "the consent line's anchor": 'id="disc-link"',
+    "its i18n keys": "rc.disc.",
     "the monthly reminder link": 'data-i18n="s3.monthly"',
     "the scope reminder": 'data-i18n="s2.scope"',
     # 23 Nov: the hover state pointed at a colour token that never existed.
@@ -262,11 +276,16 @@ with sync_playwright() as pw:
                         .filter(s=>getComputedStyle(s).display!=='none').map(s=>s.id),
             receipt: !!document.getElementById('receipt').offsetParent,
             form: !!document.getElementById('rform').offsetParent,
-            disc: (()=>{const d=document.getElementById('disclaimer');
-                        return d ? {h: Math.round(d.getBoundingClientRect().height),
-                                    items: d.querySelectorAll('.disc-list > li').length,
-                                    href: (d.querySelector('a')||{}).getAttribute
-                                          ? d.querySelector('a').getAttribute('href') : ''} : null;})(),
+            disc: !!document.getElementById('disclaimer'),
+            wrapFine: document.querySelectorAll('.wrap > p.fine').length,
+            end: (()=>{const wrap=document.querySelector('.wrap');
+                       const vis=e=>e.offsetParent && getComputedStyle(e).display!=='none';
+                       const kids=[...wrap.children].filter(vis);
+                       const last=kids[kids.length-1];
+                       return {tag: last?last.tagName+(last.id?'#'+last.id:''):null,
+                               under: last?Math.round(document.documentElement.scrollHeight -
+                                      (last.getBoundingClientRect().bottom + scrollY)):null,
+                               pad: Math.round(parseFloat(getComputedStyle(wrap).paddingBottom))};})(),
             saved: document.getElementById('saved').textContent,
             net: document.getElementById('net').textContent,
             gift: document.getElementById('gift').value,
@@ -298,10 +317,18 @@ with sync_playwright() as pw:
         if d["receipt"] or d["form"]:
             errs.append(f"the receipt module is still rendering "
                         f"(section={d['receipt']} form={d['form']})")
-        if not d["disc"] or d["disc"]["h"] == 0 or d["disc"]["items"] != 5:
-            errs.append(f"the disclaimer is not visible with five items: {d['disc']}")
-        if d["disc"] and d["disc"]["href"] != "https://www.ird.gov.hk/eng/welcome.htm":
-            errs.append(f"the English IRD link is {d['disc']['href']!r}")
+        # 25 Nov: the disclaimer is the HOST page's block now, so the live widget must
+        # not carry it — and the document must end on the payment panel with only
+        # `.wrap`'s own bottom padding under it (no orphan rule, no dangling spacing).
+        if d["disc"]:
+            errs.append("the #disclaimer block is back in the live document")
+        if d["wrapFine"]:
+            errs.append(f"{d['wrapFine']} page-level p.fine line(s) still close the document")
+        if not d["end"]["tag"] or not d["end"]["tag"].startswith("SECTION#"):
+            errs.append(f"the document does not end on a panel: {d['end']}")
+        elif abs(d["end"]["under"] - d["end"]["pad"]) > 1:
+            errs.append(f"the document ends with {d['end']['under']}px under the last panel, "
+                        f"not the {d['end']['pad']}px of .wrap padding")
         if "−" in d["saved"] or "HK$" not in d["saved"]:
             errs.append(f"saved {d['saved']!r}")
         if d["net"] != "HK$100":
@@ -407,32 +434,38 @@ with sync_playwright() as pw:
                   f"({lang}, {w}px)", errs, r["line"])
             p.close()
 
-    # ── 4 · the IRD link is language-appropriate ─────────────────────────────
-    # Client decision, relayed by Kevin: en → /eng/, zh → /chi/. The two must DIFFER;
-    # an equal pair means one language is being sent to a page it cannot read.
-    hrefs = {}
+    # ── 4 · the consent line lost its anchor, and did not become something else
+    # Until 25 Nov it read "Read the disclaimer before you send anything." with a link
+    # to `#disclaimer`; the block is the host page's now, so the sentence is plain text
+    # in both languages and carries NO anchor. This replaces the old "the IRD link
+    # follows the frame's language" check — that link lived inside the removed block,
+    # and the host page owns it from here (it is their copy, in their editor).
+    got = {}
     for lang, q in (("zh", ""), ("en", "&lang=en")):
         p = b.new_page(viewport={"width": 390, "height": 900})
-        p.goto(f"{BASE}/embed/?part=pay{q}&cb=ird{lang}", wait_until="load")
+        p.goto(f"{BASE}/embed/?part=pay{q}&cb=dl{lang}", wait_until="load")
         p.wait_for_timeout(600)
-        hrefs[lang] = p.evaluate(
-            "()=>{const a=document.querySelector('#disclaimer .disc-list a');"
-            "return a ? {href: a.getAttribute('href'), text: a.textContent, "
-            "rel: a.getAttribute('rel'), target: a.getAttribute('target')} : null;}")
+        got[lang] = p.evaluate(
+            "()=>{const el=document.querySelector('p.fine[data-i18n=\"rc.disclink\"]');"
+            "return el ? {text: el.textContent, kids: el.children.length,"
+            " hrefs: document.querySelectorAll('a[href=\"#disclaimer\"], a[href*=\"ird.gov.hk\"]').length}"
+            " : null;}")
         p.close()
+    WANT = {"zh": "提交前請先閱讀免責聲明。", "en": "Read the disclaimer before you send anything."}
     errs = []
-    if not hrefs["zh"] or hrefs["zh"]["href"] != "https://www.ird.gov.hk/chi/welcome.htm":
-        errs.append(f"zh {hrefs['zh']}")
-    if not hrefs["en"] or hrefs["en"]["href"] != "https://www.ird.gov.hk/eng/welcome.htm":
-        errs.append(f"en {hrefs['en']}")
-    if hrefs["zh"] and hrefs["en"] and hrefs["zh"]["href"] == hrefs["en"]["href"]:
-        errs.append("the two languages point at the same URL")
-    for k, v in hrefs.items():
-        if v and ("noopener" not in (v["rel"] or "") or v["target"] != "_blank"):
-            errs.append(f"{k}: target/rel {v['target']}/{v['rel']!r}")
-    check("the live IRD link follows the frame's language (en /eng/, zh /chi/)", errs,
-          f"zh {hrefs['zh']['href'] if hrefs['zh'] else None} · "
-          f"en {hrefs['en']['href'] if hrefs['en'] else None}")
+    for lang in ("zh", "en"):
+        g = got[lang]
+        if not g:
+            errs.append(f"{lang}: the consent line is missing")
+            continue
+        if g["text"].strip() != WANT[lang]:
+            errs.append(f"{lang}: {g['text']!r} != {WANT[lang]!r}")
+        if g["kids"]:
+            errs.append(f"{lang}: the consent line carries {g['kids']} element(s) — the anchor is back")
+        if g["hrefs"]:
+            errs.append(f"{lang}: {g['hrefs']} link(s) to the removed disclaimer / IRD page remain")
+    check("the consent line is the client's sentence, plain text, in both languages", errs,
+          " · ".join(got[k]["text"] for k in ("zh", "en") if got.get(k)))
 
     # ── 5 · ?part=receipt is an empty placeholder ────────────────────────────
     for lang, q in (("zh", ""), ("en", "&lang=en")):

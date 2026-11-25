@@ -1,6 +1,6 @@
 # Iframe contract — FHF tax calculator widget
 
-Version **1.4.0** · POC · 2SK Solutions
+Version **1.5.0** · POC · 2SK Solutions
 
 Everything the host page (Optimizely CMS) must do, and everything the widget promises.
 If a line here is wrong, the build is wrong — this document is the boundary between the two teams.
@@ -27,33 +27,55 @@ The host page owns: page copy, SEO, schema, GTM container, consent, navigation, 
 
 Measured by `qa/sweep_heights.py` at **22 widths from 320px to 1440px**, per language, taking the peak and adding 45–70px of slack. **Set the number for the language you are embedding** and every block fits at every width, with no internal scrollbar.
 
-**Write the height as a bare integer — `height=2550`, never `height=2,550`.** An unquoted attribute with a thousands separator parses as `3` in every browser: the frame collapses and the block disappears while the frames beside it keep working. It happened on the live page on 23 Nov.
+**Write the height as a bare integer — `height=2130`, never `height=2,130`.** An unquoted attribute with a thousands separator parses as `3` in every browser: the frame collapses and the block disappears while the frames beside it keep working. It happened on the live page on 23 Nov.
 
 | # | Block | URL | Height · zh-HK | Height · en | Content peak zh-HK | Content peak en |
 |---|---|---|---|---|---|---|
-| 0 | **One link (calculator → result → payment)** | `/embed/?part=all` (also the bare `/embed/`) | **2225px** | **2550px** | 2160 (at 944px, monthly) | 2482 (at 320px, monthly) |
-| 1 | Calculator + result | `/embed/?part=calc` | **1720px** | **2030px** | 1656 (at 320px, monthly) | 1962 (at 320px, monthly) |
-| 1a | Calculator only | `/embed/?part=input` | **1050px** | **1180px** | 987 (at 900px, monthly) | 1113 (at 320px, monthly) |
-| 1b | Result only | `/embed/?part=result` | **980px** | **1190px** | 913 (at 320px) | 1129 (at 320px) |
-| 2 | Payment | `/embed/?part=pay` | **690px** | **800px** | 628 (at 320px) | 739 (at 320px) |
+| 0 | **One link (calculator → result → payment)** | `/embed/?part=all` (also the bare `/embed/`) | **2010px** | **2130px** | 1942 (at 944px, monthly) | 2062 (at 320px, monthly) |
+| 1 | Calculator + result | `/embed/?part=calc` | **1495px** | **1610px** | 1425 (at 944px, monthly) | 1541 (at 320px, monthly) |
+| 1a | Calculator only | `/embed/?part=input` | **880px** | **940px** | 817 (at 900px, monthly) | 875 (at 900px, monthly) |
+| 1b | Result only | `/embed/?part=result` | **725px** | **860px** | 660 (at 320px) | 792 (at 320px) |
+| 2 | Payment | `/embed/?part=pay` | **505px** | **535px** | 443 (at 900px) | 472 (at 900px) |
 | 3 | Receipt — **empty frame in phase 1** | `/embed/?part=receipt` | **60px** | **60px** | renders nothing | renders nothing |
 
-**Quoted at the five widths the client asked for (content height, px) — re-measured 24 Nov 2026**
+**Quoted at the five widths the client asked for (content height, px) — re-measured 25 Nov 2026**
 
 | Block | 320 | 390 | 768 | 1024 | 1440 |
 |---|---|---|---|---|---|
-| `?part=input` · zh | 942 | 818 | 976 | 987 | 987 |
-| `?part=input` · en | 1113 | 997 | 1029 | 1006 | 1006 |
-| `?part=result` · zh | 913 | 781 | 808 | 822 | 822 |
-| `?part=result` · en | 1129 | 971 | 808 | 822 | 822 |
-| `?part=pay` · zh | 628 | 566 | 568 | 613 | 613 |
-| `?part=pay` · en | 739 | 656 | 596 | 641 | 641 |
+| `?part=input` · zh | 689 | 627 | 807 | 817 | 817 |
+| `?part=input` · en | 777 | 744 | 859 | 836 | 836 |
+| `?part=result` · zh | 660 | 591 | 638 | 652 | 652 |
+| `?part=result` · en | 792 | 718 | 638 | 652 | 652 |
+| `?part=pay` · zh | 375 | 375 | 398 | 443 | 443 |
+| `?part=pay` · en | 403 | 403 | 426 | 472 | 472 |
 | `?part=receipt` · zh | 60 | 60 | 60 | 60 | 60 |
 | `?part=receipt` · en | 60 | 60 | 60 | 60 | 60 |
-| `?part=calc` · zh | 1656 | 1452 | 1615 | 1639 | 1639 |
-| `?part=calc` · en | 1962 | 1751 | 1695 | 1689 | 1689 |
-| `?part=all` · zh | 2121 | 1917 | 2086 | 2156 | 2156 |
-| `?part=all` · en | 2482 | 2244 | 2194 | 2234 | 2234 |
+| `?part=calc` · zh | 1339 | 1218 | 1401 | 1425 | 1425 |
+| `?part=calc` · en | 1541 | 1434 | 1481 | 1475 | 1475 |
+| `?part=all` · zh | 1803 | 1682 | 1872 | 1942 | 1942 |
+| `?part=all` · en | 2062 | 1926 | 1981 | 2020 | 2020 |
+
+> **Revised 25 Nov 2026 (the disclaimer left the widget, `qa/apply_remove_disclaimer_20261125.py`).**
+> The client added a Rich Text Editor block on their own page to carry the legal disclaimer, so the widget
+> stopped carrying it: the five-sentence `<section id="disclaimer">` and the one-line "Based on IRD tax
+> rates…" note above it are gone, in both languages, along with their i18n keys. Their copy is now written
+> **once**, on their page — the widget does not render it in any part.
+> - **Every declared height moves down**, because the block closed *every* part: `?part=all`
+>   **2225 → 2010px** zh-HK, **2550 → 2130px** en; `calc` **1720 → 1495 / 2030 → 1610**;
+>   `input` **1050 → 880 / 1180 → 940**; `result` **980 → 725 / 1190 → 860**;
+>   `pay` **690 → 505 / 800 → 535**. `?part=receipt` stays **60px** (it is the empty phase-1 frame).
+>   New peaks: calc 1425 / 1541, input 817 / 875, result 660 / 792, pay 443 / 472, all 1942 / 2062.
+> - **The English page carries `height=2200`, and it does not have to change.** The English content peak is
+>   **2062px** (at 320px), so 2200 still fits with 138px to spare; **2130** is the exact declaration if they
+>   want to trim it. The Chinese frame at 2225 is likewise safe, or 2010 exactly.
+> - **The disclaimer's CSS is deliberately left in place** (`.disc-global`, `.disc-list`, `.disc-h`, the
+>   focus rules, and the phase-1 rule for the empty `?part=receipt` frame). It is the record of what
+>   shipped; nothing matches it, so it costs nothing. Do not rebuild the block to "use" it.
+> - **The consent line inside the phase-2 receipt form lost its anchor** — it read "Read the disclaimer
+>   before you send anything." with a link to the block, and the block is gone. It is plain text now, both
+>   languages, and `qa/lang_parity.py` + `qa/poc_test.py` fail if the link or the block returns.
+> - **When PayMe ships and section 5 returns**, `?part=receipt` becomes a real block at **745px** zh-HK /
+>   **855px** en (it was quoted as 990 / 1185; the same ~214px leaves it).
 
 > **Revised 24 Nov 2026 (Option B payment pair, `qa/apply_pay_optionb_20261124.py`).** Kevin chose **Option B,
 > "size by function"** from `design/pay-desktop/options.html` and asked for a bigger code. The desktop payment

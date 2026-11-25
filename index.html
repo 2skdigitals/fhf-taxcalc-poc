@@ -59,16 +59,16 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
   <table>
     <thead><tr><th style="width:26%">Block</th><th style="width:30%">URL</th><th style="width:20%">Set height</th><th>Content at their widths (328–1280px)</th></tr></thead>
     <tbody>
-      <tr><td><b>1 · Calculator</b></td><td><code id="p1">/embed/?part=input</code></td><td><b>1050px</b></td><td>781 – 1113</td></tr>
-      <tr><td><b>2 · Result</b></td><td><code id="p2">/embed/?part=result</code></td><td><b>980px</b></td><td>781 – 1129</td></tr>
-      <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>690px</b></td><td>523 – 739</td></tr>
+      <tr><td><b>1 · Calculator</b></td><td><code id="p1">/embed/?part=input</code></td><td><b>880px</b></td><td>627 – 817</td></tr>
+      <tr><td><b>2 · Result</b></td><td><code id="p2">/embed/?part=result</code></td><td><b>725px</b></td><td>591 – 792</td></tr>
+      <tr><td><b>3 · Payment</b></td><td><code id="p3">/embed/?part=pay</code></td><td><b>505px</b></td><td>375 – 472</td></tr>
       <tr><td><b>4 · Receipt</b> (phase 2 — returns with PayMe)</td><td><code id="p4">/embed/?part=receipt</code></td><td><b>60px</b> — empty frame, phase 1</td><td>renders nothing</td></tr>
-      <tr><td><b>1+2 combined</b></td><td><code id="p5">/embed/?part=calc</code></td><td><b>1720px</b></td><td>1421 – 1962</td></tr>
-      <tr><td><b>Calc → result → payment</b></td><td><code id="p6">/embed/?part=all</code></td><td><b>2225px</b> / 2550 en</td><td>1857 – 2482</td></tr>
+      <tr><td><b>1+2 combined</b></td><td><code id="p5">/embed/?part=calc</code></td><td><b>1495px</b></td><td>1218 – 1541</td></tr>
+      <tr><td><b>Calc → result → payment</b></td><td><code id="p6">/embed/?part=all</code></td><td><b>2010px</b> / 2130 en</td><td>1682 – 2062</td></tr>
     </tbody>
   </table>
   <p class="lede" style="margin:-6px 0 10px;font-size:13px;color:#68707b">These are the worst cases across every width their page actually produces (iframe 328px on a small phone → 1280px on a wide desktop), plus margin. If the component can take a <b>different height per breakpoint</b>, tell us and we'll hand you a two-number set instead — that removes the remaining vertical slack on desktop.</p>
-  <p class="lede" style="margin:0 0 34px;font-size:13px;color:#68707b">All four also work as <b>one</b> document: <code>/embed/?part=all</code> — and a bare <code>/embed/</code> now defaults to it. It is 2,160px (zh) / 2,482px (en) at its tallest reachable state, so it fits a single frame; it is still a tall frame on a phone, which is why the four-block split stays the recommended arrangement.</p>
+  <p class="lede" style="margin:0 0 34px;font-size:13px;color:#68707b">All four also work as <b>one</b> document: <code>/embed/?part=all</code> — and a bare <code>/embed/</code> now defaults to it. It is 1,942px (zh) / 2,062px (en) at its tallest reachable state, so it fits a single frame; it is still a tall frame on a phone, which is why the four-block split stays the recommended arrangement.</p>
 
   <h2>3 · The test bench + the context preview</h2>
   <div class="cards">
@@ -101,8 +101,8 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid va
 
   <h2>4 · What to record (one pass, five minutes)</h2>
   <ol>
-    <li>Paste <b>Block 1</b> at <b>1120px</b>. Confirm it renders and that <b>no internal scrollbar</b> appears (that is the whole point of the height table — the content must fit the box).</li>
-    <li>Repeat for Blocks 2–4 at 920 / 600 / 780px. If any block clips, tell us the width and we adjust the block, not the number.</li>
+    <li>Paste <b>Block 1</b> at <b>880px</b>. Confirm it renders and that <b>no internal scrollbar</b> appears (that is the whole point of the height table — the content must fit the box).</li>
+    <li>Repeat for Blocks 2–4 at 725 / 505 / 60px (block 4 is an empty frame in phase 1). If any block clips, tell us the width and we adjust the block, not the number.</li>
     <li>If the component sets a <b>sandbox</b>, add it in the bench first — then confirm the credit-card tile still leaves the iframe and lands on hollows.org/donate.</li>
     <li>On a phone width, tap the <b>AlipayHK</b> row and read the message: does the browser let the frame open the wallet app, or is the QR the only mobile path?</li>
     <li>Fill the receipt form and submit — <b>Checks</b> must turn <code>email_capture</code> to PASS.</li>
