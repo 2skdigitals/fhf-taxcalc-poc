@@ -88,12 +88,8 @@ h2{
 .lede{font-size:var(--t-body);line-height:1.56;color:var(--ink-2);margin:var(--s3) 0 0;max-width:var(--measure)}
 .hint{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:var(--s2) 0 0;max-width:var(--measure)}
 .fine{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:var(--s4) 0 0;max-width:var(--measure)}
-/* the closing legal sentence is one line on the client's page, and it was wrapping
-   to two because it inherited the reading measure (23 Nov) */
-p.fine[data-i18n="foot.legal"]{max-width:none}
-/* The legal line closes the document, so it stands off the last block by more
-   than the 8px that separates a paragraph from its own caption. At 14px it
-   read as the last line of the receipt form. */
+/* The consent line is the last fine print in the document, so it stands off the
+   last block by more than the 8px that separates a paragraph from its caption. */
 .wrap > p.fine{margin-top:var(--s6)}
 /* The remark under the band ladder is a NOTE on the description above it, not
    body copy: it sits one step under the 13px hint (23 Nov — the client asked for
@@ -320,32 +316,6 @@ details.q li{margin:3px 0}
 .scope{font-size:var(--t-cap);line-height:1.55;color:var(--ink-2);margin:var(--s4) 0 0;max-width:var(--measure)}
 
 /* ── 3 · how you give ──────────────────────────────────────── */
-/* 23 Nov: the disclaimer is the page's fine print and it is ALWAYS OPEN — the
-   client wanted five numbered sentences, not an accordion. It keeps the 13px
-   fine-print token and the whole column: at 15px inside a 510px measure it read
-   larger than the 13px notes directly above it and left half the column empty.
-   The heading is an h3 at the same fine-print size — a document heading, not a
-   display heading, because this block sits under a 32px block heading. */
-.disc-global{border-top:1px solid var(--line);margin-top:var(--s4);padding-top:var(--s3)}
-/* #disc-link jumps here; the block takes focus so a keyboard or screen-reader
-   user lands inside the text instead of at the top of the document. */
-.disc-global:focus{outline:none}
-.disc-global:focus-visible{outline:2px solid var(--navy);outline-offset:4px}
-.disc-global .disc-h{margin:0 0 var(--s2);font-size:var(--t-cap);line-height:1.6;
-                     font-weight:700;letter-spacing:.01em;color:var(--ink)}
-/* a real <ol>, so the numbers are the list's, not typed digits — they follow the
-   language and a screen reader announces "list of 5 items". */
-.disc-global .disc-list{margin:0;padding-left:1.5em;font-size:var(--t-cap);
-                        line-height:1.6;color:var(--ink-2);max-width:none}
-.disc-global .disc-list li{margin:0 0 2px}
-.disc-global .disc-list li:last-child{margin-bottom:0}
-/* The IRD link sits inside a paragraph of small print, so it reads as a link
-   (navy, underlined — the same treatment as the widget's other inline links),
-   never as a button. #E97824 fails AA as text at any size (2.93:1 on white). */
-.disc-global .disc-list a{color:var(--navy);text-decoration:underline;
-                          text-underline-offset:2px;text-decoration-thickness:1px}
-.disc-global .disc-list a:hover{text-decoration-thickness:2px}
-.disc-global .disc-list a:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
 .rails{display:grid;border-top:var(--rule);margin-top:var(--s5)}
 /* the payment pair: one source of truth for the grid width, the gap between the
    two tiles, and the width of the tile that carries the code */
@@ -637,7 +607,6 @@ body[data-part="all"] #receipt{display:block}
    its markup, its form, its popover and its analytics wiring, which is what
    makes PHASE1 a one-line return for PayMe. */
 html[data-phase="1"] #receipt{display:none!important}
-html[data-phase="1"] body[data-part="receipt"] #disclaimer{display:none!important}
 body[data-part="input"] #goto-row,
 body[data-part="result"] #goto-row,
 body[data-part="calc"] #goto-row{display:none!important}
