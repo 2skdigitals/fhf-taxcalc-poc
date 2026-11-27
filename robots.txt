@@ -1,0 +1,5 @@
+# The widget is embedded in the Foundation's own campaign pages, which carry the
+# SEO. Nothing on this host should be indexed in its own right, and nothing on it
+# is a page — only /embed/ (loaded inside an iframe) and the images it uses.
+User-agent: *
+Disallow: /
