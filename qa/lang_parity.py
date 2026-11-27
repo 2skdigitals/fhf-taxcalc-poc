@@ -88,6 +88,15 @@ BAK = ROOT / "embed" / "index.html.bak-pre-en-20261115"
 # becomes plain text — list in qa/apply_remove_disclaimer_20261125.py. DELIBERATE zh copy
 # removal, rebased. Section H now asserts the ABSENCE in both languages and on the
 # served bytes, so a re-introduced copy cannot pass by matching a stale baseline)
+# 27 Nov (the client's wording fix: `s1.band.label` + `s1.band.aria` 年薪 → 全年收入 —
+# the field takes total income, not salary — qa/apply_alipay_en_crops_20261127.py; the same
+# pass gave the AlipayHK tooltip an ENGLISH crop set and rewrote its English sentences to
+# name the labels those crops actually show, which changes no zh string. DELIBERATE zh
+# change, rebased) · The gate's second half now asserts the opposite of what it did
+# before: the English build must name the SIX ENGLISH labels (Receipt request, Donor
+# information, Charity, Mine, Donation record) and quote NO Chinese app label at all —
+# the property is "the copy names what the picture shows", which is what the old
+# Chinese-label assertion was for.
 # What the gate is for survives each rebase: the ZH
 # build may only change where a change was signed off, and every assertion below still
 # fails on an accidental drift.
@@ -395,8 +404,11 @@ with sync_playwright() as pw:
     # instruction. They are the ONLY Chinese allowed here — everything else still fails,
     # and the other half of the check asserts they are present, so a later "translate
     # them to be safe" pass cannot quietly delete the thing that makes the copy work.
-    APP_LABELS = ["慈善捐款", "捐款人資料", "我的捐款", "捐款記錄", "交易記錄",
-                  "捐款結果", "申請收據", "需要收據", "護瞳行動"]
+    # 27 Nov: the English frame now shows ENGLISH app captures, so no Chinese label is
+    # legitimate in the English build any more — the list is empty and the check below is
+    # therefore absolute. Keeping the old exemptions would let a Chinese label back in
+    # silently, which is the exact defect this pair of assertions exists to catch.
+    APP_LABELS = []
 
     def cjk_left(text):
         for lab in APP_LABELS:
@@ -408,14 +420,20 @@ with sync_playwright() as pw:
         n = cjk_left(v["text"])
         if n:
             cjk[k] = n
-    check(f"no CJK anywhere in the English build except the app labels it quotes "
-          f"({len(en_snaps)} states)", [f"{k}: {n} CJK chars" for k, n in cjk.items()])
+    check(f"no CJK anywhere in the English build ({len(en_snaps)} states)",
+          [f"{k}: {n} CJK chars" for k, n in cjk.items()])
 
     quoted = " ".join(v["text"] for v in en_snaps.values()) + " " + " ".join(
         a for v in en_snaps.values() for a in v["attrs"])
-    absent = [lab for lab in ("慈善捐款", "捐款人資料", "我的捐款", "捐款記錄",
-                             "申請收據", "需要收據") if lab not in quoted]
-    check("the English build keeps AlipayHK's six labels in Chinese, verbatim", absent)
+    # The pairing this guards: the English crops show Receipt request / Charity / Mine /
+    # Donation record, so the English sentences must name those, and must not name a
+    # Chinese label the English reader cannot find on screen.
+    want_en = ["Receipt request", "Donor information", "Charity", "Mine", "Donation record"]
+    errs = [f"missing English label {lab!r}" for lab in want_en if lab not in quoted]
+    errs += [f"Chinese label {lab!r} still named in the English build"
+             for lab in ("慈善捐款", "捐款人資料", "我的捐款", "捐款記錄", "申請收據", "需要收據")
+             if lab in quoted]
+    check("the English build names the six labels its English crops show", errs)
 
     all_en = " ".join(v["text"] for v in en_snaps.values())
     # "year of assessment" became "the relevant assessment year" when the client's

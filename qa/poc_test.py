@@ -821,12 +821,18 @@ with sync_playwright() as pw:
     # height. Two flows since 24 Nov: ticking the receipt box while giving (2 steps),
     # then the fallback from the donation records (4 steps) — the client's own crops,
     # in the client's own order.
-    ALIPAY_CROPS = [f"alipay-receipt-o1-step-{i}.webp" for i in (1, 2)] + \
-                   [f"alipay-receipt-o2-step-{i}.webp" for i in (1, 2, 3, 4)]
+    # 27 Nov: the crops are language-specific — the client's Chinese build for
+    # zh-Hant-HK, her English-interface captures for en — so the expected set is
+    # built per language. A list pinned to one filenames set passes on a frame
+    # showing the wrong language for its copy; this asserts the pairing.
+    def alipay_crops(en):
+        stem = "alipay-receipt-en-" if en else "alipay-receipt-"
+        return [f"{stem}o1-step-{i}.webp" for i in (1, 2)] + \
+               [f"{stem}o2-step-{i}.webp" for i in (1, 2, 3, 4)]
     for lang_q, frame_h in (("", 690), ("&lang=en", 800)):
         popover_case("the AlipayHK receipt tooltip", None,
                      f"{BASE}/embed/?part=pay{lang_q}", "alipay-help", "alipay-help-panel",
-                     (2, 4), frame_h, lang_q, assets=ALIPAY_CROPS)
+                     (2, 4), frame_h, lang_q, assets=alipay_crops(bool(lang_q)))
     # phase 2 — the payment-reference popover, forced visible at its own declaration
     for lang_q, frame_h in (("", 745), ("&lang=en", 855)):
         popover_case("the reference popover", "receipt",

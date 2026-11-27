@@ -136,7 +136,7 @@ MUST = {
     # 23 Nov: the client's section-by-section copy sheet.
     "Section 1 heading (zh)": "請選擇並輸入您的捐款金額",
     "Section 1 heading (en)": "Please select and input your donation amount",
-    "Section 2 heading (zh)": "請選擇您的收入範圍或輸入您的年薪",
+    "Section 2 heading (zh)": "請選擇您的收入範圍或輸入您的全年收入",
     "Section 2 heading (en)": "Please select your income range or input your yearly income",
     "the single-allowance hint (en)": "Estimated based on a single person’s basic allowance of HK$145,000",
     "the exact-income link": "Enter exact income instead",
@@ -177,7 +177,14 @@ MUST = {
     "option 2 step 4 crop": "../assets/help/alipay-receipt-o2-step-4.webp",
     "only the first crop is eager": 'loading="eager" src="../assets/help/alipay-receipt-o1-step-1.webp',
     "the lazy crops are warmed on open": "function warmCrops()",
-    "the outro that explains the Chinese UI": "The app is shown in Chinese",
+    # 27 Nov: the crops are per language now, so the English frame names the English
+    # labels and the Chinese one keeps its own. Both markers must be present — the
+    # tooltip that carried Chinese alts and a "shown in Chinese" outro in English
+    # passed every earlier gate because nothing asserted the pairing.
+    "the English outro": "These screens are from AlipayHK's English interface",
+    "the English crop set is wired": "alipay-receipt-en-o2-step-4.webp",
+    "the per-language source swap": '$$("[data-src-zh]").forEach',
+    "the income label reads 全年收入": "\u8acb\u9078\u64c7\u60a8\u7684\u6536\u5165\u7bc4\u570d\u6216\u8f38\u5165\u60a8\u7684\u5168\u5e74\u6536\u5165",
 }
 missing = [k for k, v in MUST.items() if v not in body]
 check(f"{len(MUST)} markers of this pass are in the live document", missing)
@@ -243,8 +250,10 @@ for name in ("alipay-step-1.jpg", "alipay-step-2.jpg", "alipay-step-3.jpg"):
 # assets/help/alipay-receipt-o*.webp ships a tooltip of dead boxes while /embed/
 # still answers 200 — so each one is fetched, and the total weight is held to the
 # brief (<100 KB for all six).
-CROPS = [f"alipay-receipt-o1-step-{n}.webp" for n in (1, 2)] + \
-        [f"alipay-receipt-o2-step-{n}.webp" for n in (1, 2, 3, 4)]
+CROPS = ([f"alipay-receipt-o1-step-{n}.webp" for n in (1, 2)] +
+         [f"alipay-receipt-o2-step-{n}.webp" for n in (1, 2, 3, 4)] +
+         [f"alipay-receipt-en-o1-step-{n}.webp" for n in (1, 2)] +
+         [f"alipay-receipt-en-o2-step-{n}.webp" for n in (1, 2, 3, 4)])
 total_kb = 0
 for name in CROPS:
     s_img, n_img = fetch_status(f"/assets/help/{name}")
@@ -252,8 +261,8 @@ for name in CROPS:
     check(f"the AlipayHK receipt screencap {name} is served",
           [] if s_img == 200 and n_img > 800 else [f"status {s_img}, {n_img} bytes"],
           f"{n_img / 1024:.1f} KB")
-check(f"the six receipt screencaps weigh under 100 KB together",
-      [] if total_kb < 100 else [f"{total_kb:.1f} KB"], f"{total_kb:.1f} KB")
+check(f"the twelve receipt screencaps weigh under 200 KB together",
+      [] if total_kb < 200 else [f"{total_kb:.1f} KB"], f"{total_kb:.1f} KB")
 # the five 400px crops are gone, and a page still pointing at one is a 404 waiting
 for gone in (1, 2, 3, 4, 5):
     s_old, _ = fetch_status(f"/assets/help/alipay-receipt-step-{gone}.webp")
