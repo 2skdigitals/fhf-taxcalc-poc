@@ -13,8 +13,8 @@ two files are generated from one source, so a bad transform shows up only here.
 import sys
 from playwright.sync_api import sync_playwright
 
-ZH = "https://2skdigitals.github.io/zh/"
-EN = "https://2skdigitals.github.io/en/"
+ZH = "https://2skdigitals.github.io/fh-taxcalculator-zh/"
+EN = "https://2skdigitals.github.io/fh-taxcalculator-en/"
 ok = bad = 0
 
 
