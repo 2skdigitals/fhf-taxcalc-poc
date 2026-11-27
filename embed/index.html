@@ -1,0 +1,2092 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK" data-widget="fhf-taxcalc">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5.0">
+<meta name="robots" content="noindex, nofollow">
+<title>慈善捐款扣稅計算機</title>
+<link rel="icon" href="data:,">
+<style>
+/* ─────────────────────────────────────────────────────────────
+   Fred Hollows HK · donation tax calculator — DIRECTION B
+   "confident contrast": a deep-navy result panel as the anchor,
+   white cards on an off-white ground, navy as the selected state,
+   orange reserved for the action / the saving / the active rung.
+   Flat colour only: no gradients, no blur, no drop shadows.
+   ───────────────────────────────────────────────────────────── */
+:root{
+  /* brand */
+  --orange:#E97824; --orange-h:#D06A1C; --on-action:#0A0909;
+  --navy:#01014E;
+
+  /* ink on light */
+  --ink:#16161C; --ink-2:#3F3F4A; --muted:#6A6A75;
+  --ground:#fff;
+  --line:rgba(1,1,78,.14); --line-2:rgba(1,1,78,.26);
+  --rule:1px solid var(--line);
+  --wash:rgba(1,1,78,.055);
+
+  /* ink on navy */
+  --on-navy-2:#C6C8DD;
+  --hair-inv:rgba(255,255,255,.22);
+
+  --white:#fff; --field:#F6F6FD;
+  --sans:system-ui,-apple-system,"PingFang HK","Noto Sans HK","Hiragino Sans HK","Microsoft JhengHei",Helvetica,Arial,sans-serif;
+  --err:#A3161C; --ok:#1a6b3c;
+
+  /* type roles — five steps plus the display figure */
+  --t-eyebrow:.75rem;                  /* 12 · step numerals */
+  --t-cap:.8125rem;                    /* 13 · labels, notes, disclaimers */
+  --t-sm:1rem;                         /* 16 · controls, ledger rows */
+  --t-body:1.125rem;                   /* 18 · running text */
+  --t-num:1.375rem;                    /* 22 · ledger figures */
+  --t-h:clamp(1.5rem,3.6vw,2rem);      /* 24→32 · block heading */
+  --t-lede:clamp(1.125rem,2.2vw,1.25rem); /* 18→20 · one statement */
+  --t-display:clamp(2.875rem,11vw,4.5rem);   /* 46→72 · the number */
+
+  --gut:clamp(18px,4.6vw,32px);
+  /* One 4px scale for the gaps BETWEEN blocks. Measured on 23 Nov: the
+     document used 0/2/6/8/10/12/14/16/18/20/22/26/36 — fourteen values and
+     no ratio, which is what made the rhythm read as assembled. Optical
+     values inside one surface (a caption under its figure) stay as they are. */
+  --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:32px;
+  /* 34em, not 34rem: the var is substituted where it is used, so the measure
+     resolves against each element's own size — 68ch at 17px and at 13px alike.
+     As a fixed 544px it gave the 17px lede 64ch and the 13px note 103ch. */
+  --measure:34em;
+  --radius:4px;
+  --ease:cubic-bezier(.23,1,.32,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:light;background:var(--ground)}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ground);
+  font-family:var(--sans);font-weight:400;font-size:var(--t-body);line-height:1.56;
+  color:var(--ink);-webkit-font-smoothing:antialiased;
+  overflow-wrap:break-word;word-break:normal;
+  font-variant-numeric:tabular-nums;
+}
+img,svg{display:block;max-width:100%}
+a{color:var(--navy)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--navy);outline-offset:3px}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+::selection{background:rgba(1,1,78,.14)}
+
+/* ── the column ────────────────────────────────────────────── */
+.wrap{max-width:80rem;margin:0 auto;padding:clamp(18px,3.4vw,26px) var(--gut) 24px}
+section.panel{padding:0;border:0}
+/* 32px at the narrow end, where 26px used to equal the 26px inside the FAQ
+   cluster — the section boundary was not distinguishable from a sub-gap. */
+section.panel + section.panel{margin-top:clamp(32px,4.4vw,36px)}
+
+h2{
+  font-size:var(--t-h);line-height:1.2;font-weight:700;letter-spacing:-.024em;
+  margin:0;color:var(--navy);text-wrap:balance;
+}
+.lede{font-size:var(--t-body);line-height:1.56;color:var(--ink-2);margin:var(--s3) 0 0;max-width:var(--measure)}
+.hint{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:var(--s2) 0 0;max-width:var(--measure)}
+.fine{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:var(--s4) 0 0;max-width:var(--measure)}
+/* The consent line is the last fine print in the document, so it stands off the
+   last block by more than the 8px that separates a paragraph from its caption. */
+.wrap > p.fine{margin-top:var(--s6)}
+/* The remark under the band ladder is a NOTE on the description above it, not
+   body copy: it sits one step under the 13px hint (23 Nov — the client asked for
+   it to read slightly smaller than the text it follows). 12px is the smallest
+   step the system already owns, so nothing new enters the scale. */
+.note{font-size:var(--t-eyebrow);line-height:1.6;color:var(--muted);margin:var(--s3) 0 0;max-width:var(--measure)}
+
+/* below the HK$100 floor no estimate is shown — the client's own sentence takes
+   its place. Nothing is clamped: the donor's figure stays what they typed. */
+#result.is-below-min .result,
+#result.is-below-min .benefit,
+#result.is-below-min .assump-block{display:none}
+.min-note{
+  margin:var(--s4) 0 0;padding:var(--s4) 16px;border:1px solid var(--line-2);
+  border-radius:var(--radius);background:var(--white);color:var(--ink);
+  font-size:var(--t-body);line-height:1.5;max-width:var(--measure);
+}
+
+/* ── step marker: a filled navy disc with a white numeral ───── */
+.step{display:flex;align-items:center;gap:11px;margin:0 0 16px}
+/* A heading must sit closer to its own block than to the one above it. The
+   calculator's second heading followed a card at 0px and its own card at
+   16px — the one inversion in the document, and the reason block 2 read as
+   a caption on block 1. 24px above, 16px below. */
+.card + .step{margin-top:var(--s6)}
+.step-n{
+  flex:0 0 auto;display:grid;place-items:center;
+  width:26px;height:26px;border-radius:50%;
+  background:var(--navy);color:#fff;
+  font-size:var(--t-eyebrow);font-weight:700;line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+/* Payment and receipt carry a numeral only inside the combined document, where
+   they are steps 4 and 5 of one journey. Embedded alone they render exactly as
+   they did before ?part=all existed — no renumbering of the split blocks. */
+body:not([data-part="all"]) #payment > .step > .step-n,
+body:not([data-part="all"]) #receipt > .step > .step-n{display:none}
+
+/* ── surfaces: one hairline, generous inside ───────────────── */
+.card{
+  background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+  padding:clamp(16px,4.4vw,22px);
+}
+.card + .card{margin-top:var(--s4)}
+
+/* ── 1 · your gift ─────────────────────────────────────────── */
+.fieldset{border:0;margin:0;padding:0;min-width:0}
+legend.flabel{display:block;width:100%;padding:0;margin:0 0 2px}
+.field{margin-top:var(--s5)}
+.flabel{display:block;font-size:var(--t-cap);color:var(--ink-2);font-weight:600;margin:0 0 8px}
+.gotoline{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:var(--s5)}
+.gotoline .btn{width:100%}
+
+/* the mode switch: two cells, the chosen one filled navy */
+.seg{
+  display:grid;grid-template-columns:1fr 1fr;
+  border:1px solid var(--line-2);border-radius:3px;overflow:hidden;
+  background:var(--white);margin:0;
+}
+.seg label{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  min-height:46px;padding:0 8px;margin:0;text-align:center;
+  font-size:var(--t-sm);font-weight:500;color:var(--ink-2);cursor:pointer;
+  transition:background-color 160ms var(--ease),color 160ms var(--ease);
+}
+.seg label + label{border-left:1px solid var(--line-2)}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label:has(input:checked){background:var(--navy);color:#fff;font-weight:600}
+.seg label:has(input:focus-visible){outline:2px solid var(--navy);outline-offset:-3px}
+@media (hover:hover) and (pointer:fine){
+  .seg label:hover:not(:has(input:checked)){background:var(--wash);color:var(--ink)}
+}
+
+/* the amount is the biggest number in the block after the result */
+.amt{
+  display:flex;align-items:center;gap:.34em;
+  border:1px solid var(--line-2);border-radius:3px;background:var(--white);
+  padding:1px 13px;
+  transition:border-color 160ms var(--ease);
+}
+.amt:focus-within{border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy)}
+.amt .pre{font-size:var(--t-sm);color:var(--muted);flex:0 0 auto;font-weight:600;letter-spacing:-.01em}
+.amt input{
+  flex:1 1 auto;min-width:0;border:0;background:none;outline:0;padding:10px 0;
+  font-family:inherit;font-size:clamp(1.5rem,6.4vw,2rem);font-weight:700;
+  letter-spacing:-.03em;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--navy);
+}
+
+/* The four quick-amount chips were removed on 23 Nov at the client's
+   instruction, so the field is the only control for the gift — one question,
+   one control, and ~106px of the block's height handed back. */
+
+select#months,select.band-select{
+  width:100%;font:inherit;font-size:var(--t-sm);color:var(--ink);
+  min-height:46px;padding:0 32px 0 12px;
+  border:1px solid var(--line-2);border-radius:3px;background-color:var(--white);
+  -webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--navy) 50%),linear-gradient(135deg,var(--navy) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 55%,calc(100% - 9px) 55%;
+  background-size:6px 6px,6px 6px;background-repeat:no-repeat;
+  transition:border-color 160ms var(--ease);
+}
+select#months:focus,select.band-select:focus{outline:0;border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy)}
+
+/* the income ladder — a compact ruled card, tabular rates to the right */
+.bands{display:grid;margin-top:var(--s4);border-top:1px solid var(--line)}
+.bands label{
+  position:relative;display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:10px;align-items:center;
+  min-height:44px;padding:9px 8px 9px 13px;border-bottom:1px solid var(--line);
+  font-size:var(--t-cap);color:var(--ink-2);cursor:pointer;white-space:nowrap;
+  transition:background-color 150ms var(--ease),color 150ms var(--ease);
+}
+.bands label::before{
+  content:"";position:absolute;left:0;top:-1px;bottom:-1px;width:3px;
+  background:var(--orange);opacity:0;transition:opacity 150ms var(--ease);
+}
+.bands input{
+  appearance:none;-webkit-appearance:none;width:14px;height:14px;margin:0;
+  border:1.5px solid #9a9aa8;border-radius:50%;flex:0 0 auto;background:var(--white);
+  transition:border-color 150ms var(--ease),border-width 150ms var(--ease);
+}
+.bands input:checked{border-color:var(--navy);border-width:4.5px}
+.bands label:has(input:checked){color:var(--ink);font-weight:600;background:var(--wash)}
+.bands label:has(input:checked)::before{opacity:1}
+.bands .r{
+  font-size:var(--t-eyebrow);color:var(--muted);font-weight:400;
+  font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;letter-spacing:0;
+}
+.bands label:has(input:checked) .r{color:var(--navy);font-weight:600}
+.band-select{display:none;margin-top:var(--s4)}
+
+/* ── disclosure rows ───────────────────────────────────────── */
+details.q{margin-top:var(--s4);border-top:1px solid var(--line)}
+/* inside a card the rule already exists at the card edge, so the disclosure only
+   needs a whisper of separation */
+details.q.inset{margin-top:var(--s3);padding-top:2px}
+/* the two precisions of one question: a quiet link, 44px tall, not a second field */
+.swap{display:inline-flex;align-items:center;min-height:44px;margin-top:2px;padding:0;
+      background:none;border:0;color:var(--navy);font:inherit;font-size:var(--t-sm);
+      font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left}
+/* was color:var(--orange-ink) — an undefined var, so the declaration was
+   invalid at computed-value time and the button had no hover state at all.
+   Orange on white is 3.6:1 at 15px, so the cue is weight, not colour. */
+.swap:hover{text-decoration-thickness:2px}
+.swap:focus-visible{outline:2px solid var(--navy);outline-offset:3px}
+/* the closing reference group: questions, not a step */
+.faq{margin-top:var(--s6);padding-top:var(--s4);border-top:1px solid var(--line-2)}
+.faq-h{margin:0 0 2px;font-size:var(--t-cap);font-weight:600;letter-spacing:.06em;
+       text-transform:uppercase;color:var(--muted)}
+details.q summary{
+  list-style:none;display:flex;align-items:center;gap:12px;min-height:48px;
+  cursor:pointer;font-size:var(--t-sm);font-weight:500;color:var(--navy);
+  transition:color 150ms var(--ease);
+}
+details.q summary::-webkit-details-marker{display:none}
+details.q summary::before{
+  content:"";flex:0 0 auto;width:8px;height:8px;margin-right:2px;
+  border-right:2px solid currentColor;border-bottom:2px solid currentColor;
+  transform:rotate(-45deg) translate(-1px,-1px);
+  transition:transform 160ms var(--ease);
+}
+details.q[open] summary::before{transform:rotate(45deg) translate(-2px,-2px)}
+details.q > :not(summary){margin:2px 0 12px}
+details.q p{font-size:var(--t-sm);line-height:1.62;color:var(--ink-2);max-width:var(--measure)}
+details.q p + p{margin-top:8px}
+details.q ul{margin:6px 0 10px;padding-left:1.1em;font-size:var(--t-sm);line-height:1.6;color:var(--ink-2);max-width:var(--measure)}
+details.q li{margin:3px 0}
+
+/* ── 2 · what it costs you — the navy panel is the anchor ──── */
+.result{
+  background:var(--navy);color:#fff;
+  border-radius:var(--radius);
+  padding:clamp(20px,5.4vw,30px);
+  margin-top:4px;
+}
+.result .net-label{
+  font-size:var(--t-sm);line-height:1.4;color:var(--on-navy-2);
+  font-weight:500;margin:0;
+}
+.net{
+  font-size:var(--t-display);font-weight:700;letter-spacing:-.04em;line-height:1;
+  margin:6px 0 0;color:#fff;font-variant-numeric:tabular-nums;
+}
+.net .cur{
+  font-size:.32em;font-weight:600;letter-spacing:0;color:var(--on-navy-2);
+  margin-right:.22em;vertical-align:.62em;
+}
+.net.is-range{font-size:clamp(1.625rem,6.6vw,2.5rem);letter-spacing:-.03em;line-height:1.2}
+.net.swap{opacity:.55;transition:opacity 160ms var(--ease)}
+.result .hint{color:var(--on-navy-2);margin:var(--s3) 0 0;font-size:var(--t-cap);line-height:1.5;max-width:none}
+/* The monthly caption is ONE sentence of 75 characters (see #net-caption). At
+   13px that is 79ch on a single line; pushed into the 68ch measure it breaks
+   into two lines of ~37ch — shorter than the 45ch floor, so the fix trades one
+   defect for another and costs 19px of the block's declared height. It keeps
+   the panel measure instead, and the sentence is flagged for a copy trim. */
+
+/* the supporting rows: a two-column ledger inside the panel */
+.figs{
+  display:grid;grid-template-columns:1fr;
+  margin:var(--s6) 0 0;border-top:1px solid var(--hair-inv);
+}
+.figs > div{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:16px;
+  padding:11px 0;border-bottom:1px solid var(--hair-inv);min-width:0;
+}
+.figs dt{font-size:var(--t-cap);line-height:1.35;color:var(--on-navy-2);margin:0;min-width:0}
+.figs dd{
+  margin:0;font-size:var(--t-num);font-weight:600;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;white-space:nowrap;color:#fff;
+}
+.figs dd.is-range{font-size:var(--t-sm);white-space:nowrap;line-height:1.4;letter-spacing:0;font-weight:600}
+#saved{color:var(--orange)}
+#rate{color:#fff}
+
+.benefit{
+  font-size:var(--t-lede);line-height:1.56;letter-spacing:-.008em;
+  color:var(--ink);font-weight:500;margin:20px 0 0;max-width:var(--measure);
+}
+.assump{font-size:var(--t-cap);line-height:1.6;color:var(--muted);margin:0;max-width:var(--measure)}
+/* The assumption is a numbered note of three lines (23 Nov). It closes the
+   block on the same rule and the same rhythm the single line used. */
+.assump-block{margin-top:var(--s6);padding-top:var(--s4);border-top:1px solid var(--line)}
+.assump-block .assump + .assump{margin-top:6px}
+.scope{font-size:var(--t-cap);line-height:1.55;color:var(--ink-2);margin:var(--s4) 0 0;max-width:var(--measure)}
+
+/* ── 3 · how you give ──────────────────────────────────────── */
+.rails{display:grid;border-top:var(--rule);margin-top:var(--s5)}
+/* the payment pair: one source of truth for the grid width, the gap between the
+   two tiles, and the width of the tile that carries the code */
+:root{--pairw:760px;--pairgap:24px}
+/* ── payment: two tiles on a desktop, tap-through rows on a phone ──────────────
+   A donor cannot scan the screen they are reading, so the two arrangements are
+   mutually exclusive rather than progressive. Breakpoint 720px: below it every
+   real phone and every narrow CMS column gets the rows. */
+.rails a.r-alipay{border-left:3px solid #1677FF;padding-left:14px}
+.rails a.r-card{border-left:3px solid var(--navy);padding-left:14px}
+/* Below 720px the desktop tiles collapse to the one thing a phone needs from
+   them — the AlipayHK receipt line, which keeps its exact place between the two
+   rails, its rule, its inset and its own spacing. The desktop pass (Option B,
+   24 Nov) is therefore invisible on a phone: no rail row, no spacing and no
+   copy on this block changes, and `qa/shot_pay_desktop_20261124.py` proves it
+   by pixel-diffing the 390px block before and after. */
+@media (max-width:719.98px){
+  .paygrid{display:block}
+  .tile-a > *:not(.tile-a-txt),.tile-a-txt > *:not(.payhelp),.tile-b{display:none}
+}
+@media (min-width:720px){
+  .rails{display:block;border-top:0;margin-top:0}
+  .rails > a{display:none}
+  /* ── Option B, "size by function" (approved by Kevin 24 Nov) ───────────────
+     The QR is the only element that has to be a picture, so its tile takes the
+     width; the card is a link, so it becomes a compact tile. Both tiles are
+     click-anywhere, built as a STRETCHED LINK: the receipt note carries a
+     <button>, and a button may not be nested inside an <a> — so the tile is a
+     <div>, its own <a> paints the whole surface with ::after, and the note is
+     lifted above that overlay so the ? stays clickable and in tab order. */
+  .paygrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);
+           gap:var(--pairgap);max-width:min(100%,var(--pairw));
+           border-top:var(--rule);margin-top:var(--s5);padding-top:var(--s6);
+           align-items:stretch}
+  .tile{position:relative;display:flex;border:1px solid var(--line);border-radius:3px;
+        transition:border-color 140ms var(--ease)}
+  .tile:hover{border-color:var(--line-2)}
+  .tile-a{align-items:center;gap:var(--s6);padding:22px}
+  /* the tight crop (264x264, code + its 4-module quiet zone) at 190px: a ~152px
+     code on screen, which is the first size OpenCV decodes reliably. The old
+     450x350 card put the same code at ~90px inside 119px of white. */
+  .tile-a .tile-qr{flex:none;width:190px;height:190px;border-radius:3px}
+  .tile-a-txt{display:flex;flex-direction:column;min-width:0}
+  .tile-link{color:inherit;text-decoration:none;align-self:flex-start}
+  /* the whole tile is the hit area; the link stays the only tab stop */
+  .tile-link::after{content:"";position:absolute;inset:0;z-index:1;border-radius:3px}
+  .tile-link:focus-visible{outline:none}
+  .tile-link:focus-visible::after{outline:2px solid var(--navy);outline-offset:2px}
+  .tile-nm{display:block;font-size:var(--t-body);font-weight:600;letter-spacing:-.01em;line-height:1.3}
+  .tile:hover .tile-nm{color:var(--navy)}
+  .tile-sub{display:block;font-size:var(--t-cap);line-height:1.45;color:var(--muted);margin-top:3px}
+  /* the card tile: glyph, name, and where it goes on a ruled foot line */
+  .tile-b{flex-direction:column;justify-content:space-between;padding:22px}
+  .tile-b .tile-glyph{display:flex;align-items:center;color:var(--navy)}
+  .tile-b .tile-glyph svg{width:56px;height:40px}
+  .tile-b .tile-link{margin-top:14px}
+  .tile-b .tile-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;
+                     margin-top:auto;padding-top:var(--s3);border-top:var(--rule);
+                     font-size:var(--t-cap);line-height:1.45;color:var(--muted)}
+  .tile-b .tile-foot .go{color:var(--navy);font-size:1rem}
+  .tile-b:hover .go{transform:translate(2px,-2px)}
+  /* A 190px code and a 363px tile leave the label column 105px wide in the band
+     just above the breakpoint, so the tile steps down once there rather than
+     squeezing the note into one word a line. */
+}
+@media (min-width:720px) and (max-width:899px){
+  .tile-a{gap:var(--s5);padding:18px}
+  .tile-a .tile-qr{width:160px;height:160px}
+  .tile-b{padding:18px}
+}
+/* direct children only: the desktop tiles keep their own link treatment */
+.rails > a{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:1px 16px;
+  min-height:64px;padding:13px 0;border-bottom:var(--rule);
+  text-decoration:none;color:var(--ink);
+  transition:color 140ms var(--ease);
+}
+.rails .nm{font-size:var(--t-body);font-weight:600;letter-spacing:-.01em}
+.rails .sub{grid-column:1;font-size:var(--t-cap);color:var(--muted);line-height:1.45}
+.rails .go{
+  grid-row:1 / span 2;grid-column:2;align-self:center;font-size:1rem;color:var(--muted);
+  transition:transform 140ms var(--ease),color 140ms var(--ease);
+}
+.rails > a:hover{color:var(--navy)}
+.rails > a:hover .go{transform:translate(2px,-2px);color:var(--navy)}
+.alt{margin:var(--s4) 0 0;font-size:var(--t-sm)}
+.alt a{color:var(--navy);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-color:rgba(1,1,78,.32);min-height:44px;display:inline-flex;align-items:center}
+.alt a:hover{text-decoration-color:var(--navy)}
+
+/* ── 4 · claim your receipt ────────────────────────────────── */
+.rform{display:grid;gap:var(--s5);margin-top:var(--s5)}
+.rrow{display:grid;gap:var(--s5)}
+/* Inside a grid the gap and a child margin ADD: the disclaimer caveat sat 36px
+   from the consent while every other form row sat 20px, and the closing hint
+   28px under the button. One gap, no per-child margins. */
+.rform > *{margin-top:0}
+.rform label{display:block;font-size:var(--t-cap);color:var(--muted);margin-bottom:1px}
+.rform input[type=text],.rform input[type=email]{
+  width:100%;font:inherit;font-size:var(--t-body);color:var(--ink);
+  min-height:44px;padding:6px 0 8px;border:0;border-bottom:var(--rule);border-radius:0;
+  background:none;outline:0;
+  transition:border-color 140ms var(--ease);
+}
+.rform input::placeholder{color:#A9A9B2}
+.rform input:focus{border-bottom-color:var(--navy);box-shadow:0 1px 0 var(--navy)}
+.rform .consent{
+  display:grid;grid-template-columns:20px minmax(0,1fr);gap:12px;align-items:start;
+  min-height:44px;padding:6px 0;cursor:pointer;max-width:var(--measure);
+  font-size:var(--t-cap);line-height:1.55;color:var(--ink-2);font-weight:400;
+}
+.rform .consent input{
+  appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:1px 0 0;
+  border:1.5px solid #9a9aa8;border-radius:2px;background:none;cursor:pointer;
+  transition:border-color 140ms var(--ease),background-color 140ms var(--ease);
+}
+.rform .consent input:checked{border-color:var(--navy);background:var(--navy)}
+.rform .consent input:checked::after{
+  content:"";display:block;width:6px;height:11px;margin:1px 0 0 6px;
+  border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(40deg);
+}
+.msg{font-size:var(--t-cap);margin:5px 0 0;color:var(--err)}
+.msg.ok{color:var(--ok)}
+
+/* ── the payment-reference help popover ────────────────────────
+   It walks the donor to the AlipayHK transaction ID. An overlay INSIDE this
+   frame, anchored to its own field — never a viewport-fixed dialog: the host
+   hands the iframe a fixed height, and in ?part=all a full-screen modal would
+   centre hundreds of pixels below where the donor is looking. Width is capped at
+   the column and height at 560px with its own scroll, so the host can never clip
+   it. Flat, like everything else: a hairline and white, no shadow, no blur. */
+.reffield{position:relative}
+.reflabel{display:flex;align-items:center;gap:8px}
+.helpbtn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:44px;height:44px;margin:-13px -12px -13px -6px;padding:0;
+  border:0;background:none;color:var(--navy);cursor:pointer;
+}
+.helpbtn .i{
+  display:grid;place-items:center;width:19px;height:19px;border-radius:50%;
+  border:1.5px solid currentColor;font-size:12px;font-weight:700;line-height:1;
+}
+.helpbtn:hover .i,.helpbtn[aria-expanded="true"] .i{background:var(--navy);color:#fff}
+.helppop{
+  position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;
+  max-width:560px;
+  /* The panel must END inside the smallest frame the client declares for this
+     block (810px). Its top sits as low as 498px at phone width (English receipt
+     form), so a 60vh cap put the bottom 108px past the frame and scrolled the
+     host's fixed box — the one failure a fixed-height embed cannot absorb. It is
+     therefore bounded by the space actually left below it, with a floor for very
+     short frames and 560px as the ceiling on a tall one; the steps scroll inside
+     the panel rather than the frame. */
+  max-height:clamp(240px,calc(100vh - 512px),560px);
+  overflow:auto;overscroll-behavior:contain;
+  padding:var(--s4);background:var(--white);
+  border:1px solid var(--line-2);border-radius:6px;
+}
+/* 23 Nov: Kevin asked for the panel beside the trigger rather than beneath it —
+   it opened low and, on a fixed-height frame, ran past the declared height. */
+@media(min-width:641px){
+  .helppop{left:auto;right:0;top:-10px;max-width:470px;max-height:clamp(240px,calc(100vh - 250px),520px)}
+}
+.helppop h3{margin:0 22px var(--s2) 0;font-size:var(--t-sm);font-weight:700;
+            letter-spacing:-.01em;color:var(--navy)}
+.helppop p{font-size:var(--t-cap);line-height:1.55;color:var(--muted);margin:0;max-width:var(--measure)}
+.hclose{
+  position:absolute;right:4px;top:4px;width:44px;height:44px;
+  border:0;background:none;color:var(--muted);font-size:17px;line-height:1;cursor:pointer;
+}
+.hclose:hover{color:var(--navy)}
+.hsteps{list-style:none;margin:var(--s3) 0 0;padding:0;display:grid;gap:var(--s4)}
+.hsteps li{display:grid;gap:6px}
+.hsteps .n{font-size:var(--t-eyebrow);font-weight:700;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--muted)}
+.hsteps img{width:100%;height:auto;border:1px solid var(--line);border-radius:4px}
+.hsteps p{font-size:var(--t-cap);line-height:1.55;color:var(--ink-2);margin:0}
+/* Two flows, one panel (24 Nov 2026). The client sent both routes a donor can
+   take — ticking the receipt box while giving, or claiming it afterwards — and
+   the tooltip only taught the second. Two headed sections, still ONE dialog: no
+   tabs and no second popover, because Option 1 must be read first and the panel
+   already scrolls inside its own max-height.
+
+   The heading is the 13px --t-cap step in bold navy; the step labels under it
+   stay 12px uppercase letterspaced muted (--t-eyebrow). Two roles, no new size,
+   colour, face or shadow. The hairline is the same --line the panel border
+   uses, so the sections separate without a card. */
+.hsec{margin:var(--s4) 0 0;padding-top:var(--s3);border-top:1px solid var(--line)}
+.hsec-h{margin:0;font-size:var(--t-cap);line-height:1.5;font-weight:700;color:var(--navy)}
+.hsec-sub{margin:6px 0 0;font-size:var(--t-cap);line-height:1.55;color:var(--muted)}
+.houtro{margin:var(--s4) 0 0;font-size:var(--t-cap);line-height:1.55;color:var(--muted)}
+
+/* ── the AlipayHK receipt line ───────────────────────────────────────────
+   Phase 1 has no in-widget receipt form (that is section 5, which returns
+   with PayMe), but a wallet gift still needs a receipt and AlipayHK issues it
+   from inside its own app. So the rail carries the route: one line of copy and
+   the SAME disclosure the payment-reference field uses — .helpbtn + .helppop,
+   aria-expanded, role="dialog", Escape closes, focus returns. One pattern in
+   this widget, never two.
+
+   It sits with the AlipayHK rail in both arrangements: between the two rows on
+   a phone (blue 3px rule and the rail's own 14px inset, so the copy starts on the
+   same left edge as the rail above it), and under
+   the QR tile on a desktop, where only the <a> rows go and this line stays.
+   Fine print only — the 13px token, the muted ink, no new size, colour, face
+   or shadow. */
+.payhelp{position:relative;padding:11px 0 12px 14px}
+.rails .payhelp{border-left:3px solid #1677FF}
+.payhelp-line{display:flex;align-items:center;gap:0;margin:0;
+              font-size:var(--t-cap);line-height:1.55;color:var(--muted)}
+.payhelp .helpbtn{margin:-13px -12px -13px -3px}
+/* The panel is the reference popover's, re-anchored for a SHORT block: the
+   payment block is declared at 640px (750px in English) and this trigger is the
+   last thing in it, so a panel growing downward from a top:-10px anchor ends
+   past the declared height every time — the one failure a fixed-height frame
+   cannot absorb. So: full width below the trigger on a phone, beside it at
+   ≥641px, and opening UPWARD from ≥720px where the trigger sits low and the
+   space above it is the space that exists. Its bottom is pinned to the trigger,
+   so it can never leave the frame at the bottom; the height cap keeps its top
+   inside the frame too, and the steps scroll inside the panel. */
+#payhelp .helppop{max-height:clamp(200px,calc(100vh - 300px),340px)}
+@media(min-width:641px){
+  /* left-anchored, not right: this trigger lives at the left edge of the
+     payment block, so a right-anchored panel would open away from it */
+  #payhelp .helppop{left:0;right:auto}
+}
+@media(min-width:720px){
+  .rails{display:block;border-top:0;margin-top:0}
+  .rails > a{display:none}
+  /* Option B puts the receipt note INSIDE the AlipayHK tile, under its sub-line,
+     so the mobile rail's 3px blue rule and 14px inset go: the tile edge is the
+     container now, and a 6px dot marks the note. It is lifted above the tile's
+     stretched link (z-index) — that is what keeps the ? a real, clickable,
+     keyboard-reachable button rather than a shape under an overlay. */
+  .rails .payhelp{border-left:0;padding:0;max-width:none}
+  .payhelp{padding:0;margin-top:var(--s3);position:relative;z-index:2}
+  .payhelp-dot{display:inline-block;width:6px;height:6px;border-radius:50%;
+               background:#1677FF;margin-right:6px;vertical-align:middle}
+  /* text and button on one row: the text may wrap, the button stays beside it
+     rather than being pushed to the column's right edge */
+  .payhelp-line{display:block;max-width:none;color:var(--ink-2)}
+  .payhelp-line .helpbtn{display:inline-flex;vertical-align:middle;margin:0 0 0 3px}
+  /* The trigger used to be the last thing in the block, so the panel opened
+     UPWARD and had the whole block above it. Inside the tile it sits ~130px down
+     from the tile's top and ~320px down a 640px frame — upward there is no room
+     left. It now opens DOWNWARD from the note (over the tile's lower edge and the
+     disclaimer), capped so its bottom always lands inside the declared height,
+     at a width that clears the right edge at 720px. Measured in
+     `qa/probe_panel_fit.py` at 320–1440px, both languages. */
+  #payhelp .helppop{top:0;bottom:auto;left:0;right:auto;
+                    width:min(420px,calc(100vw - 32px));max-width:420px;
+                    /* a floor, because a host frame shorter than 340px would make
+                       the subtraction negative and collapse the panel to nothing */
+                    max-height:clamp(240px,calc(100vh - 340px),380px)}
+}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;
+  min-height:52px;padding:14px 24px;border:0;border-radius:3px;
+  background:var(--orange);color:var(--on-action);
+  font-size:var(--t-body);font-weight:700;letter-spacing:.002em;
+  cursor:pointer;text-decoration:none;
+  transition:background-color 160ms var(--ease),transform 120ms var(--ease);
+}
+.btn:hover{background:var(--orange-h)}
+.btn:active{transform:scale(.988)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+
+#dbg{position:fixed;right:8px;bottom:8px;z-index:99;font:11px/1.45 ui-monospace,Menlo,monospace;background:rgba(1,1,78,.92);color:#fff;padding:8px 10px;border-radius:6px;max-width:min(320px,70vw);pointer-events:none;display:none}
+#dbg.on{display:block}
+#dbg b{color:#ffd7a8}
+
+/* ── part mode: the CMS requires a defined height ──────────── */
+html[data-fit="fixed"] .wrap{padding-bottom:0}
+body[data-part] section.panel{display:none}
+body[data-part="calc"] #calculator,
+body[data-part="calc"] #result,
+body[data-part="input"] #calculator,
+body[data-part="result"] #result,
+body[data-part="pay"] #payment,
+body[data-part="receipt"] #receipt,
+body[data-part="all"] #calculator,
+body[data-part="all"] #result,
+body[data-part="all"] #payment,
+body[data-part="all"] #receipt{display:block}
+/* ── phase 1: section 5 is hidden, never deleted ──────────────────────────
+   Section 5 renders nothing while PHASE1 is true, and a frame still pointed
+   at ?part=receipt must return an EMPTY frame that reports ~60px rather than a
+   half-drawn block — so the disclaimer goes quiet there too, and only there:
+   every part that carries real content still closes with it. #receipt keeps
+   its markup, its form, its popover and its analytics wiring, which is what
+   makes PHASE1 a one-line return for PayMe. */
+html[data-phase="1"] #receipt{display:none!important}
+body[data-part="input"] #goto-row,
+body[data-part="result"] #goto-row,
+body[data-part="calc"] #goto-row{display:none!important}
+html[data-embed="part"] #deeplink-test,
+html[data-embed="part"] .wrap > p.fine{display:none}
+body[data-part="calc"] .wrap > p.fine,
+body[data-part="all"] .wrap > p.fine{display:block}
+html[data-embed="part"] .wrap,
+body[data-part] .wrap{min-height:100vh;padding-block:clamp(14px,3vw,22px)}
+
+/* ── phones ────────────────────────────────────────────────── */
+@media (max-width:720px){
+  .bands{display:none}
+  .band-select{display:block}
+}
+@media (min-width:721px){
+  /* nine rungs, two columns, filled DOWN each column so the ladder still
+     reads top to bottom (1–5 left, 6–9 right) instead of alternating */
+  .bands{grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,auto);
+         grid-auto-flow:column;column-gap:24px}
+}
+@media (min-width:560px){
+  .rrow{grid-template-columns:1fr 1fr}
+}
+@media (max-width:420px){
+  .result{padding:20px 18px}
+  .figs > div{gap:12px}
+  .figs dd{font-size:1.1875rem}
+  .figs dd.is-range{font-size:.875rem}
+}
+/* the native band select has to hold a long range string on a 320px phone */
+@media (max-width:380px){
+  select.band-select{font-size:.8125rem;padding-right:26px}
+}
+@media (max-width:360px){
+  .step-n{width:24px;height:24px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:1ms!important}
+}
+
+</style>
+</head>
+<body>
+<div class="wrap" id="root">
+
+  <!-- ── 1 · your gift ─────────────────────────────────────────── -->
+  <section class="panel" id="calculator" aria-labelledby="s1h">
+    <div class="step"><span class="step-n" aria-hidden="true">1</span><h2 id="s1h" data-i18n="s1.h">Please select and input your donation amount</h2></div>
+
+    <div class="card">
+      <fieldset class="fieldset">
+        <legend class="sr" data-i18n="s1.legend">One-off or monthly</legend>
+        <div class="seg">
+          <label><input type="radio" name="mode" value="once" checked><span data-i18n="s1.once">One-off</span></label>
+          <label><input type="radio" name="mode" value="monthly"><span data-i18n="s1.monthly">Monthly</span></label>
+        </div>
+      </fieldset>
+
+      <div class="field">
+        <label class="flabel" for="gift" data-i18n="s1.gift">Donation amount</label>
+        <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="gift" type="text" inputmode="numeric" autocomplete="off" value="100"></div>
+        <p class="hint" id="gift-min" data-i18n="s1.min">捐款金額達到或超過 HK$100 可獲得稅收減免。</p>
+      </div>
+    </div>
+
+    <div class="step"><span class="step-n" aria-hidden="true">2</span><h2 id="s1bh" data-i18n="s1.band.label">Please select your income range or input your yearly income</h2></div>
+
+    <div class="card" id="income-card">
+      <fieldset class="fieldset" aria-describedby="band-hint" id="band-wrap">
+        <legend class="sr" data-i18n="s1.band.label">Your assessable income this year, roughly</legend>
+        <p class="hint" id="band-hint" data-i18n="s1.band.hint">Estimated based on a single person’s basic allowance of HK$145,000</p>
+        <div class="bands">
+          <label><input type="radio" name="band" value="unknown"><span data-i18n="s1.band.unknown">Not sure</span><span class="r">2% – 17%</span></label>
+          <label><input type="radio" name="band" value="r0"><span data-i18n="s1.band.r0.label">Below HK$145,000</span><span class="r" data-i18n="s1.band.r0">No tax</span></label>
+          <label><input type="radio" name="band" value="r2"><span>HK$145,000 – 195,000</span><span class="r" data-i18n="s1.band.r2">About 2%</span></label>
+          <label><input type="radio" name="band" value="r6"><span>HK$195,000 – 245,000</span><span class="r" data-i18n="s1.band.r6">About 6%</span></label>
+          <label><input type="radio" name="band" value="r10"><span>HK$245,000 – 295,000</span><span class="r" data-i18n="s1.band.r10">About 10%</span></label>
+          <label><input type="radio" name="band" value="r14"><span>HK$295,000 – 345,000</span><span class="r" data-i18n="s1.band.r14">About 14%</span></label>
+          <label><input type="radio" name="band" value="r17" checked><span>HK$345,000 – 2,132,500</span><span class="r" data-i18n="s1.band.r17">About 17%</span></label>
+          <label><input type="radio" name="band" value="r15"><span>HK$2,132,500 – 5,000,000</span><span class="r" data-i18n="s1.band.r15">Standard 15%</span></label>
+          <label><input type="radio" name="band" value="r16"><span data-i18n="s1.band.r16.label">HK$5,000,000 and above</span><span class="r" data-i18n="s1.band.r16">Standard 16%</span></label>
+        </div>
+        <!-- narrow screens: nine ruled rows cost too much of a fixed-height frame;
+             a native select is the same choice, thumb-sized and height-stable -->
+        <select id="band-mobile" class="band-select" aria-label="Your assessable income this year, roughly" data-i18n-aria="s1.band.aria">
+          <option value="unknown" data-i18n="s1.mob.unknown">Not sure · 2%–17%</option>
+          <option value="r0" data-i18n="s1.mob.r0">Below HK$145,000 · no tax</option>
+          <option value="r2" data-i18n="s1.mob.r2">HK$145,000 – 195,000 · 2%</option>
+          <option value="r6" data-i18n="s1.mob.r6">HK$195,000 – 245,000 · 6%</option>
+          <option value="r10" data-i18n="s1.mob.r10">HK$245,000 – 295,000 · 10%</option>
+          <option value="r14" data-i18n="s1.mob.r14">HK$295,000 – 345,000 · 14%</option>
+          <option value="r17" selected data-i18n="s1.mob.r17">HK$345,000 – 2,132,500 · 17%</option>
+          <option value="r15" data-i18n="s1.mob.r15">HK$2,132,500 – 5,000,000 · std 15%</option>
+          <option value="r16" data-i18n="s1.mob.r16">HK$5,000,000 and above · std 16%</option>
+        </select>
+        <p class="note" data-i18n="s1.band.note">Note: Standard rates (15% on the first HK$5M; 16% thereafter) apply once Net Chargeable Income exceeds HK$2,132,500, lowering the marginal rate for the top two brackets (not a calculation error).</p>
+      </fieldset>
+
+      <!-- Same question, higher precision. Swapped in place rather than stacked:
+           one income control at a time, and the value is used for the maths only —
+           it never enters an analytics payload, never leaves the frame. -->
+      <div id="exact-wrap" hidden>
+        <label class="flabel" for="exact" data-i18n="s1.exact.label">Assessable income for the year</label>
+        <div class="amt"><span class="pre" aria-hidden="true">HK$</span><input id="exact" type="text" inputmode="numeric" autocomplete="off" value="145,000" placeholder="e.g. 500,000" aria-describedby="exact-hint" data-i18n-ph="s1.exact.ph"></div>
+        <p class="hint" id="exact-hint" data-i18n="s1.exact.hint">Calculated with exact income, progressive tax rates, and 35% deduction cap. Processed locally; never stored.</p>
+      </div>
+
+      <button type="button" class="swap" id="exact-toggle" aria-controls="band-wrap exact-wrap" aria-expanded="false">
+        <span data-i18n="s1.exact.summary">Enter exact income instead</span>
+      </button>
+    </div>
+
+    <div class="gotoline" id="goto-row">
+      <a class="btn" href="#result" id="goto-result" data-i18n="s1.goto">Check the calculation result</a>
+      <span id="upd" class="msg ok" hidden data-i18n="s1.updated">Result updated</span>
+    </div>
+  </section>
+
+  <!-- ── 2 · what it costs you ─────────────────────────────────── -->
+  <section class="panel hero" id="result" aria-labelledby="s2h">
+    <div class="step"><span class="step-n" aria-hidden="true">3</span><h2 id="s2h" data-i18n="s2.h">Tax Deduction Summary</h2></div>
+
+    <div class="result">
+      <p class="net-label" id="net-label" data-i18n="s2.netlabel">Your donation</p>
+      <p class="net" id="net"><span class="cur">HK$</span>100</p>
+      <p class="hint" id="net-caption" data-i18n="s2.caption">gift powers sight-saving work—with a tax deduction in return</p>
+      <p class="sr" id="announce" aria-live="polite"></p>
+
+      <dl class="figs">
+        <div><dt id="saved-label" data-i18n="s2.saved">Tax saved</dt><dd id="saved">HK$14 至 HK$17</dd></div>
+        <div><dt id="rate-label" data-i18n="s2.rate">Rate</dt><dd id="rate">14% – 17%</dd></div>
+      </dl>
+    </div>
+
+    <p class="min-note" id="min-note" data-i18n="s2.min" hidden>捐款金額達到或超過 HK$100 可獲得稅收減免。</p>
+
+    <p class="benefit" id="benefit" data-i18n="s2.benefit">Your HK$100 gift qualifies for full tax deduction (est. HK$14 – 17 relief), meaning just HK$83 – 86 net support delivers the full sight-saving impact.</p>
+
+    <!-- the assumption, as the client numbered it on 23 Nov. Line 1 is the
+         premise (the band, or the figure the donor typed), line 2 the 35% cap,
+         line 3 the scope — that third line RESTORES the salaries-tax-only
+         statement an earlier round removed, which closes a compliance gap. -->
+    <div class="assump-block" id="assumption">
+      <p class="assump" id="assume-1">Assumed Net Chargeable Income Range: HK$345,000 – 2,132,500</p>
+      <p class="assump" id="cap">2. 35% deduction cap: Your full donation qualifies for deduction</p>
+      <p class="assump" id="assume-3">Estimate for personal Salaries Tax only; does not constitute tax advice</p>
+    </div>
+  </section>
+
+  <!-- ── 3 · how you give ──────────────────────────────────────── -->
+  <section class="panel" id="payment" aria-labelledby="s3h">
+    <div class="step"><span class="step-n" aria-hidden="true">4</span><h2 id="s3h" data-i18n="s3.h">How you give</h2></div>
+    <p class="lede" data-i18n="s3.lede">Scan the code with your phone, or open the app on this device.</p>
+
+
+    <!-- Mobile: no QR (you cannot scan your own screen) — each row opens the payment
+         app or the card page directly. The <i class="mark"> slot is where an official
+         logo goes once the client supplies one; until then the brand rule carries it. -->
+    <div class="rails">
+      <a href="https://render.alipay.hk/p/s/hkwallet/landing?scheme=alipayhk%3A%2F%2Fplatformapi%2Fstartapp%3FappId%3D20000067%26url%3Dhttps%253A%252F%252Fcod.run%252Fzf950015iae7uhyx" target="_top" rel="noopener" data-rail="alipay" class="r-alipay">
+        <span class="nm">AlipayHK</span>
+        <span class="sub" data-i18n="s3.alipay.sub">Open AlipayHK and give</span>
+        <span class="go" aria-hidden="true">↗</span>
+      </a>
+
+      <!-- Desktop, Option B (approved 24 Nov): the QR is the only element that has
+           to be a picture, so its tile carries the width; the card is a link, so it
+           becomes a compact tile. Both tiles are click-anywhere, but the tile is a
+           <div> and only its own <a> stretches over it: the receipt note inside the
+           AlipayHK tile holds a <button>, and a button may not live inside an <a>.
+           The code is the tight crop — 264px, the code plus the spec's 4-module
+           quiet zone — because the published card is 450x350 with the code at 212px
+           inside 119px of white a side, which at 190px rendered a ~90px code no
+           scanner decodes. Same code, same destination, bigger on screen. -->
+      <div class="paygrid">
+        <div class="tile tile-a">
+          <img class="tile-qr" loading="eager" src="../assets/logos/alipayhk-qr.png" width="264" height="264"
+               alt="AlipayHK donation QR code for The Fred Hollows Foundation" data-i18n-alt="s3.qr.alt.alipay">
+          <div class="tile-a-txt">
+            <a class="tile-link" href="https://render.alipay.hk/p/s/hkwallet/landing?scheme=alipayhk%3A%2F%2Fplatformapi%2Fstartapp%3FappId%3D20000067%26url%3Dhttps%253A%252F%252Fcod.run%252Fzf950015iae7uhyx" target="_top" rel="noopener" data-rail="alipay">
+              <b class="tile-nm">AlipayHK</b>
+            </a>
+            <span class="tile-sub" data-i18n="s3.scan">Scan with your phone</span>
+            <!-- Phase 1: the receipt route for an AlipayHK gift. AlipayHK issues the
+                 receipt inside its own app, so the rail carries the instruction plus
+                 six crops that walk a donor through BOTH routes Denise sent (24 Nov):
+                 ticking 「需要收據」 while giving (two steps, led first — it is the
+                 easier path), or claiming afterwards from the donation records (four
+                 steps). The copy deliberately stops short of promising an issued
+                 receipt: it names where to apply.
+
+                 The crops are the client's own donor-side screens, 320 wide, in
+                 BOTH app languages: the Chinese set (24 Nov) for zh-Hant-HK and the
+                 English set Denise captured (27 Nov) for en. Each frame shows its own
+                 language's crops via data-src-zh / data-src-en, and the English
+                 sentences therefore name the English labels (Receipt request,
+                 Charity, Mine, Donation record) instead of Chinese ones the English
+                 reader cannot find on screen. The English crops carry the same
+                 treatment as the Chinese: red highlight redrawn, transaction
+                 reference and gift amount masked (qa/make_alipay_help_crops_en.py). -->
+            <div class="payhelp" id="payhelp">
+              <p class="payhelp-line">
+                <span class="payhelp-dot" aria-hidden="true"></span>
+                <span data-i18n="s3.receipt.line">Need a receipt? Apply inside AlipayHK.</span>
+                <button type="button" class="helpbtn" id="alipay-help" aria-expanded="false"
+                        aria-controls="alipay-help-panel" data-help="alipay-help-panel"
+                        data-i18n-aria="s3.receipt.btn">
+                  <span class="i" aria-hidden="true">?</span>
+                </button>
+              </p>
+
+              <div class="helppop" id="alipay-help-panel" role="dialog"
+                   aria-labelledby="alipay-help-title" hidden>
+                <button type="button" class="hclose" data-help-close
+                        aria-label="Close" data-i18n-aria="s3.rcpt.close">&#10005;</button>
+                <h3 id="alipay-help-title" data-i18n="s3.rcpt.title">Getting a receipt from AlipayHK</h3>
+                <p data-i18n="s3.rcpt.intro">Two ways. The first is easiest: tick the box while you give.</p>
+
+                <div class="hsec" data-opt="1" role="group" aria-labelledby="alipay-o1-h">
+                  <h4 class="hsec-h" id="alipay-o1-h" data-i18n="s3.rcpt.o1head">Option 1 — when you donate</h4>
+                  <p class="hsec-sub" data-i18n="s3.rcpt.o1sub">Request a donation receipt and enter your personal details when donating.</p>
+                  <ol class="hsteps">
+                    <li>
+                      <span class="n" data-i18n="s3.rcpt.o1.s1t">Step 1</span>
+                      <img loading="eager" src="../assets/help/alipay-receipt-o1-step-1.webp?v=20261124b" width="320" height="213"
+                           alt="AlipayHK donation detail screen: the charity, the suggested amounts and, at the foot, the unticked 「需要收據」 box" data-i18n-alt="s3.rcpt.o1.alt1"
+                           data-src-zh="../assets/help/alipay-receipt-o1-step-1.webp?v=20261124b" data-wh-zh="320x213"
+                           data-src-en="../assets/help/alipay-receipt-en-o1-step-1.webp?v=20261127" data-wh-en="320x92">
+                      <p data-i18n="s3.rcpt.o1.s1">Tick 「需要收據」 (need a receipt) under the amount.</p>
+                    </li>
+
+                    <li>
+                      <span class="n" data-i18n="s3.rcpt.o1.s2t">Step 2</span>
+                      <img loading="lazy" src="../assets/help/alipay-receipt-o1-step-2.webp?v=20261124b" width="320" height="452"
+                           alt="The same screen with 「需要收據」 ticked and the 「捐款人資料」 form open below it: name in English, email, phone and address" data-i18n-alt="s3.rcpt.o1.alt2"
+                           data-src-zh="../assets/help/alipay-receipt-o1-step-2.webp?v=20261124b" data-wh-zh="320x452"
+                           data-src-en="../assets/help/alipay-receipt-en-o1-step-2.webp?v=20261127" data-wh-en="320x479">
+                      <p data-i18n="s3.rcpt.o1.s2">The donor form appears — name in English, email, phone. Fill it in, then confirm the gift.</p>
+                    </li>
+
+                  </ol>
+                </div>
+
+                <div class="hsec" data-opt="2" role="group" aria-labelledby="alipay-o2-h">
+                  <h4 class="hsec-h" id="alipay-o2-h" data-i18n="s3.rcpt.o2head">Option 2 — after you give</h4>
+                  <p class="hsec-sub" data-i18n="s3.rcpt.o2sub">If you forgot to tick the box, you can still claim it from your donation records.</p>
+                  <ol class="hsteps">
+                    <li>
+                      <span class="n" data-i18n="s3.rcpt.o2.s1t">Step 1</span>
+                      <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-1.webp?v=20261124b" width="320" height="370"
+                           alt="AlipayHK home screen with 慈善捐款 in the shortcut grid, fourth in the first row" data-i18n-alt="s3.rcpt.o2.alt1"
+                           data-src-zh="../assets/help/alipay-receipt-o2-step-1.webp?v=20261124b" data-wh-zh="320x370"
+                           data-src-en="../assets/help/alipay-receipt-en-o2-step-1.webp?v=20261127" data-wh-en="320x375">
+                      <p data-i18n="s3.rcpt.o2.s1">Open AlipayHK and go to 慈善捐款.</p>
+                    </li>
+
+                    <li>
+                      <span class="n" data-i18n="s3.rcpt.o2.s2t">Step 2</span>
+                      <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-2.webp?v=20261124b" width="320" height="239"
+                           alt="The 慈善捐款 page with its menu of donation options, including the 捐款記錄 row" data-i18n-alt="s3.rcpt.o2.alt2"
+                           data-src-zh="../assets/help/alipay-receipt-o2-step-2.webp?v=20261124b" data-wh-zh="320x239"
+                           data-src-en="../assets/help/alipay-receipt-en-o2-step-2.webp?v=20261127" data-wh-en="320x253">
+                      <p data-i18n="s3.rcpt.o2.s2">Tap 我的捐款 at the bottom, then 捐款記錄.</p>
+                    </li>
+
+                    <li>
+                      <span class="n" data-i18n="s3.rcpt.o2.s3t">Step 3</span>
+                      <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-3.webp?v=20261124b" width="320" height="207"
+                           alt="The 交易記錄 list showing one gift to 護瞳行動 with its date and amount" data-i18n-alt="s3.rcpt.o2.alt3"
+                           data-src-zh="../assets/help/alipay-receipt-o2-step-3.webp?v=20261124b" data-wh-zh="320x207"
+                           data-src-en="../assets/help/alipay-receipt-en-o2-step-3.webp?v=20261127" data-wh-en="320x163">
+                      <p data-i18n="s3.rcpt.o2.s3">Find the gift by the charity and the date.</p>
+                    </li>
+
+                    <li>
+                      <span class="n" data-i18n="s3.rcpt.o2.s4t">Step 4</span>
+                      <img loading="lazy" src="../assets/help/alipay-receipt-o2-step-4.webp?v=20261124b" width="320" height="88"
+                           alt="The 捐款結果 screen with the blue 申請收據 button at the foot, above the return link" data-i18n-alt="s3.rcpt.o2.alt4"
+                           data-src-zh="../assets/help/alipay-receipt-o2-step-4.webp?v=20261124b" data-wh-zh="320x88"
+                           data-src-en="../assets/help/alipay-receipt-en-o2-step-4.webp?v=20261127" data-wh-en="320x92">
+                      <p data-i18n="s3.rcpt.o2.s4">Tap 申請收據 and submit your details.</p>
+                    </li>
+
+                  </ol>
+                </div>
+
+                <p class="houtro" data-i18n="s3.rcpt.outro">The app is shown in Chinese; the buttons sit in the same place on your screen.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tile tile-b">
+          <span class="tile-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 17" width="46" height="33" fill="none" stroke="currentColor" stroke-width="1.4">
+              <rect x="1" y="1" width="22" height="15" rx="2.5"/>
+              <path d="M1 6h22" stroke-width="2.6"/>
+              <path d="M4.5 11.5h5"/>
+            </svg>
+          </span>
+          <a class="tile-link" href="https://www.hollows.org/zh-Hant-HK/donate/" target="_top" rel="noopener" data-rail="card">
+            <b class="tile-nm" data-i18n="s3.card.nm">Credit card</b>
+          </a>
+          <span class="tile-foot">
+            <span data-i18n="s3.card.sub">On the Foundation's donation page</span>
+            <span class="go" aria-hidden="true">↗</span>
+          </span>
+        </div>
+      </div>
+      <a href="https://www.hollows.org/zh-Hant-HK/donate/" target="_top" rel="noopener" data-rail="card" class="r-card">
+        <span class="nm" data-i18n="s3.card.nm">Credit card</span>
+        <span class="sub" data-i18n="s3.card.sub">On the Foundation's donation page</span>
+        <span class="go" aria-hidden="true">↗</span>
+      </a>
+    </div>
+
+  </section>
+
+  <!-- ── 4 · claim your receipt ────────────────────────────────── -->
+  <section class="panel" id="receipt" aria-labelledby="rch">
+    <div class="step"><span class="step-n" aria-hidden="true">5</span><h2 id="rch" data-i18n="rc.h">Claim your receipt</h2></div>
+    <p class="lede" data-i18n="rc.lede">Three details: the name for the receipt, an email address, and the reference from your payment.</p>
+    <p class="hint" data-i18n="rc.threshold">A receipt is issued once your gifts for the year of assessment reach HK$100.</p>
+
+    <form class="rform" id="rform" novalidate>
+      <div class="rrow">
+        <div>
+          <label for="rname" data-i18n="rc.name">Name on the receipt</label>
+          <input id="rname" type="text" autocomplete="name" placeholder="Chan Tai Man" aria-describedby="rname-msg" data-i18n-ph="rc.name.ph">
+          <p class="msg" id="rname-msg" hidden></p>
+        </div>
+        <div>
+          <label for="rmail" data-i18n="rc.email">Email</label>
+          <input id="rmail" type="email" autocomplete="email" placeholder="name@example.com" aria-describedby="rmail-msg">
+          <p class="msg" id="rmail-msg" hidden></p>
+        </div>
+      </div>
+      <div class="reffield">
+        <div class="reflabel">
+          <label for="rref" data-i18n="rc.ref">Payment reference</label>
+          <button type="button" class="helpbtn" id="ref-help" aria-expanded="false"
+                  aria-controls="ref-help-panel" data-help="ref-help-panel"
+                  data-i18n-aria="rc.ref.help.btn">
+            <span class="i" aria-hidden="true">?</span>
+          </button>
+        </div>
+        <input id="rref" type="text" autocomplete="off" placeholder="e.g. 2026111800123"
+               aria-describedby="rref-hint rref-msg" data-i18n-ph="rc.ref.ph">
+        <p class="hint" id="rref-hint" data-i18n="rc.ref.hint">The transaction ID in your payment app, or on your card receipt.</p>
+        <p class="msg" id="rref-msg" hidden></p>
+
+        <!-- Where the donor finds the AlipayHK transaction ID. Both screencaps are
+             crops of Denise's donor-side payment record: the top of it, which
+             identifies the payment, and the foot of it, where the ID sits above
+             the barcode. Two captures were deliberately not used — the success
+             screen, which carries the donor's own avatar and a HK$1.00 test
+             amount under an HK$100 minimum, and the merchant-console view, which
+             is the ops screen and not a path a donor can follow. -->
+        <div class="helppop" id="ref-help-panel" role="dialog" aria-labelledby="ref-help-title" hidden>
+          <button type="button" class="hclose" data-help-close
+                  aria-label="Close" data-i18n-aria="rc.help.close">&#10005;</button>
+          <h3 id="ref-help-title" data-i18n="rc.help.title">Finding your AlipayHK transaction ID</h3>
+          <p data-i18n="rc.help.intro">When the payment completes, AlipayHK files it under Transaction History — the transaction ID is the long string of letters and numbers at the foot of that record.</p>
+          <ol class="hsteps">
+            <li>
+              <span class="n" data-i18n="rc.help.s2t">Step 1</span>
+              <img loading="eager" src="../assets/help/alipay-step-2.jpg" width="760" height="605"
+                   alt="AlipayHK transaction detail page" data-i18n-alt="rc.help.alt2">
+              <p data-i18n="rc.help.s2">Open the payment again from Transaction History: the detail page repeats the merchant, the amount and the time.</p>
+            </li>
+            <li>
+              <span class="n" data-i18n="rc.help.s3t">Step 2</span>
+              <img loading="eager" src="../assets/help/alipay-step-3.jpg" width="760" height="202"
+                   alt="The transaction ID at the foot of the record" data-i18n-alt="rc.help.alt3">
+              <p data-i18n="rc.help.s3">At the bottom of that page, the code above the barcode is the transaction ID. Copy the whole string and paste it here.</p>
+            </li>
+          </ol>
+          <p data-i18n="rc.help.outro">The screens above are examples; your transaction ID appears in the same place.</p>
+        </div>
+      </div>
+      <label class="consent">
+        <input id="consent" type="checkbox">
+        <span data-i18n="rc.consent">I agree that the Foundation may use these details to match my gift and issue my tax receipt.</span>
+      </label>
+      <!-- The sentence used to link to #disclaimer. The disclaimer now lives on
+           the host page, so the anchor is gone and this is plain text. -->
+      <p class="fine" data-i18n="rc.disclink">Read the disclaimer before you send anything.</p>
+      <button class="btn" type="submit" id="rsubmit" data-i18n="rc.submit">Request my receipt</button>
+      <p class="msg" id="capture-status" aria-live="polite" hidden></p>
+      <p class="hint" data-i18n="rc.keep">Keep the receipt for six years — the IRD may ask to see it.</p>
+    </form>
+
+  </section>
+
+  <!-- The legal fine print used to close this document: a one-line "Based on IRD
+       tax rates…" note plus a five-sentence numbered disclaimer, outside every
+       panel so that every part carried it. It now belongs to the client's own
+       page (their Rich Text Editor block), so the widget does not carry it in
+       any part and no part's height includes it. The CSS for the block is left
+       in place on purpose — it is the record of what shipped, and the phase-1
+       rule for the empty `?part=receipt` frame still names it. Do not rebuild
+       the block here: two copies of a legal notice is the defect this pass fixes. -->
+
+  <div id="dbg" aria-hidden="true"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  /* ============================================================
+     FHF HK donation tax calculator — iframe POC widget
+     Tax engine: verified YA2026/27 constants (unchanged from spec).
+     ============================================================ */
+  var V = "1.3.0";
+  /* ── CAMPAIGN PHASE ────────────────────────────────────────────────────
+     Phase 1 ships AlipayHK and the credit card, nothing else. PayMe is not in
+     phase 1, and section 5 (the receipt module) exists ONLY to claim a PayMe
+     receipt — the AlipayHK route is inside the AlipayHK app itself, and the
+     card route is handled on the Foundation's own donation page. So section 5
+     is switched OFF here rather than deleted: flip PHASE1 to false when PayMe
+     ships and the section, its form, its popover and ?part=receipt all come
+     back with no other edit. The constant is the whole switch — the CSS that
+     consumes it reads html[data-phase="1"], which is set immediately below,
+     and nothing else in this file knows the phase. */
+  var PHASE1 = true;
+  if (PHASE1) document.documentElement.setAttribute("data-phase", "1");
+  /* lo/hi are the ASSESSABLE-INCOME ends of each band. Band mode brackets the
+     saving between them; the picker itself is unchanged. */
+  var BANDS = {
+    unknown:{lo:0,       hi:0},
+    r0:  {lo:0,       hi:145000},
+    r2:  {lo:145000,  hi:195000},
+    r6:  {lo:195000,  hi:245000},
+    r10: {lo:245000,  hi:295000},
+    r14: {lo:295000,  hi:345000},
+    r17: {lo:345000,  hi:2132500},
+    r15: {lo:2132500, hi:5000000},
+    r16: {lo:5000000, hi:10000000}
+  };
+  var st = {amount:100, band:"r17", mode:"once", exact:0};
+  /* Monthly is a full year of gifts. The client slide-2 note removes the
+     months control, so the annual deduction is amount x 12 — stated in the
+     caption, never silently assumed. */
+  var MONTHS = 12;
+  var touched = false, lastH = 0, sent = {};
+
+  /* ============================================================
+     LANGUAGE LAYER — one build, two authored string tables.
+
+     Nothing below this comment knows about tax, and nothing in the tax
+     engine or the event wiring knows about language. `?lang=en` at boot,
+     or {type:"fhf-config", config:{lang:"en"}} at any moment, swaps every
+     user-facing string in place. The frame is never re-loaded: re-setting
+     iframe.src from inside a ready handler is the infinite-reload trap
+     (docs/INTERFACE.md §4).
+
+     The Chinese table is the delivered zh-HK copy, character for character;
+     qa/lang_parity.py proves it against the pre-change file. The English
+     column is authored English, not a transliteration — IRD terminology,
+     second person, short sentences.
+     ============================================================ */
+  var I18N = {
+    "zh-HK": {
+      "title": "慈善捐款扣稅計算機",
+      "s1.h": "請選擇並輸入您的捐款金額",
+      "s1.legend": "單次或每月",
+      "s1.once": "單次",
+      "s1.monthly": "每月",
+      "s1.gift": "捐款金額",
+      "s1.min": "捐款金額達到或超過 HK$100 可獲得稅收減免。",
+      "s1.band.label": "請選擇您的收入範圍或輸入您的全年收入",
+      "s1.band.hint": "以單身人士免稅額 HK$145,000 估算",
+      "s1.band.aria": "請選擇您的收入範圍或輸入您的全年收入",
+      "s1.band.unknown": "不確定",
+      "s1.band.r0": "無須繳稅",
+      "s1.band.r2": "約 2%",
+      "s1.band.r6": "約 6%",
+      "s1.band.r10": "約 10%",
+      "s1.band.r14": "約 14%",
+      "s1.band.r17": "約 17%",
+      "s1.band.r15": "標準 15%",
+      "s1.band.r16": "標準 16%",
+      "s1.band.r0.label": "HK$145,000 以下",
+      "s1.band.r16.label": "HK$5,000,000 以上",
+      "s1.band.note": "註：應評稅入息淨額超過 HK$2,132,500 後改按標準稅率（首 500 萬 15%，其後 16%）計算，故最頂兩級的邊際稅率有所回落，並非計算錯誤。",
+      "s1.mob.unknown": "不確定 · 2%–17%",
+      "s1.mob.r0": "HK$145,000 以下 · 無須繳稅",
+      "s1.mob.r2": "HK$145,000 – 195,000 · 2%",
+      "s1.mob.r6": "HK$195,000 – 245,000 · 6%",
+      "s1.mob.r10": "HK$245,000 – 295,000 · 10%",
+      "s1.mob.r14": "HK$295,000 – 345,000 · 14%",
+      "s1.mob.r17": "HK$345,000 – 2,132,500 · 17%",
+      "s1.mob.r15": "HK$2,132,500 – 5,000,000 · 標準 15%",
+      "s1.mob.r16": "HK$5,000,000 以上 · 標準 16%",
+      "s1.exact.summary": "改用實際入息計算",
+      "s1.exact.back": "改以入息範圍計算",
+      "s1.exact.label": "全年應評稅入息",
+      "s1.exact.ph": "例如 500,000",
+      "s1.exact.hint": "按實際入息、累進稅級及 35% 扣稅上限計算。僅於本機運算，不會上傳或儲存。",
+      "s1.goto": "查看計算結果",
+      "s1.updated": "結果已更新",
+      "s2.h": "捐款扣稅計算結果",
+      "s2.netlabel": "您的全額捐款",
+      "s2.caption": "帶來滿滿救盲力量，同時享扣稅回饋",
+      "s2.saved": "預計慈善捐款扣稅額",
+      "s2.rate": "稅率",
+      "s2.benefit": "您的 HK$100 捐款可全數扣稅，享約 HK$14 – 17 稅務扣減；只需約 HK$83 – 86 實際支持，即可成就全額100%救盲力量。",
+      "s2.min": "捐款金額達到或超過 HK$100 可獲得稅收減免。",
+      "s2.line3": "以上僅估算個人薪俸稅下的捐款扣稅，並不構成稅務建議",
+      "s3.h": "捐款方式",
+      "s3.scan": "用手機掃描",
+      "s3.qr.alt.alipay": "AlipayHK 捐款二維碼（護瞳行動）",
+      "s3.lede": "以手機掃描 AlipayHK 二維碼，或於護瞳行動網站以信用卡付款。",
+      "s3.alipay.sub": "開啟 AlipayHK 完成捐款",
+      "s3.card.nm": "信用卡",
+      "s3.card.sub": "以信用卡捐款",
+      "s3.receipt.line": "需要收據？可於 AlipayHK 內申請。",
+      "s3.receipt.btn": "如何在 AlipayHK 內申請收據",
+      "s3.rcpt.title": "在 AlipayHK 索取捐款收據",
+      "s3.rcpt.intro": "兩種方法。最簡單是第一種：捐款時直接勾選。",
+      "s3.rcpt.o1head": "方法一：捐款時",
+      "s3.rcpt.o1sub": "捐款時直接選擇需要捐款收據並填寫您的個人資料。",
+      "s3.rcpt.o1.s1t": "第 1 步",
+      "s3.rcpt.o1.s1": "在金額下方勾選「需要收據」。",
+      "s3.rcpt.o1.s2t": "第 2 步",
+      "s3.rcpt.o1.s2": "畫面展開「捐款人資料」：英文姓名、電郵、電話。填妥後確認捐款。",
+      "s3.rcpt.o1.alt1": "AlipayHK 捐款詳情畫面：受惠機構護瞳行動、建議捐款金額，以及畫面底部尚未勾選的「需要收據」方格",
+      "s3.rcpt.o1.alt2": "同一畫面已勾選「需要收據」，下方展開「捐款人資料」表格：英文姓名、電郵、電話及郵寄地址",
+      "s3.rcpt.o2head": "方法二：捐款後補領",
+      "s3.rcpt.o2sub": "如捐款時忘記勾選，仍可在捐款記錄中補領。",
+      "s3.rcpt.o2.s1t": "第 1 步",
+      "s3.rcpt.o2.s1": "開啟 AlipayHK，進入「慈善捐款」。",
+      "s3.rcpt.o2.s2t": "第 2 步",
+      "s3.rcpt.o2.s2": "點按底部「我的捐款」，再點按「捐款記錄」。",
+      "s3.rcpt.o2.s3t": "第 3 步",
+      "s3.rcpt.o2.s3": "按受惠機構與日期找到該筆捐款。",
+      "s3.rcpt.o2.s4t": "第 4 步",
+      "s3.rcpt.o2.s4": "點按「申請收據」，填寫個人資料並提交。",
+      "s3.rcpt.o2.alt1": "AlipayHK 首頁，捷徑列第一行第四個為「慈善捐款」圖示",
+      "s3.rcpt.o2.alt2": "「慈善捐款」頁面及其捐款選項清單，當中包括「捐款記錄」一列",
+      "s3.rcpt.o2.alt3": "「交易記錄」清單顯示一筆護瞳行動的捐款，附日期與金額",
+      "s3.rcpt.o2.alt4": "「捐款結果」畫面，底部為藍色的「申請收據」按鈕，下方有返回機構頁的連結",
+      "s3.rcpt.outro": "截圖為 AlipayHK 的中文介面；您手機上的按鈕位置相同。",
+      "s3.rcpt.close": "關閉",
+      "rc.h": "索取扣稅收據",
+      "rc.lede": "收據抬頭、電郵、付款參考編號。",
+      "rc.threshold": "全年捐款總額滿 HK$100 即發出收據。",
+      "rc.name": "姓名（收據抬頭）",
+      "rc.name.ph": "陳大文",
+      "rc.email": "電郵",
+      "rc.ref": "付款參考編號",
+      "rc.ref.ph": "例如 2026111800123",
+      "rc.ref.hint": "付款 App 交易紀錄或信用卡收據上的交易編號。",
+      "rc.ref.help.btn": "如何找到 AlipayHK 交易編號",
+      "rc.help.title": "如何找到 AlipayHK 交易編號",
+      "rc.help.intro": "付款完成後，AlipayHK 會把該筆捐款存入「交易紀錄」；交易編號就是紀錄頁最底部的長串字母與數字。",
+      "rc.help.s2t": "第 1 步",
+      "rc.help.s2": "在 AlipayHK 的「交易紀錄」找回這筆付款並開啟詳情頁，頁面會顯示受惠機構、金額及時間。",
+      "rc.help.s3t": "第 2 步",
+      "rc.help.s3": "在該頁最底部，條碼上方的那串字元就是交易編號；請整段複製並貼到上方的付款參考編號欄。",
+      "rc.help.outro": "以上畫面僅供參考；您的交易編號會出現在相同位置。",
+      "rc.help.close": "關閉",
+      "rc.help.alt2": "AlipayHK 交易詳情頁",
+      "rc.help.alt3": "交易詳情頁最底部的交易編號",
+      "rc.consent": "本人同意護瞳行動使用上述資料核對捐款，並發出扣稅收據。",
+      "rc.disclink": "提交前請先閱讀免責聲明。",
+      "rc.submit": "提交收據申請",
+      "rc.keep": "請保留收據六年；稅務局可能要求查閱。",
+      "band.unknown": "不確定",
+      "band.r0": "HK$145,000 以下",
+      "band.r2": "HK$145,000 – 195,000",
+      "band.r6": "HK$195,000 – 245,000",
+      "band.r10": "HK$245,000 – 295,000",
+      "band.r14": "HK$295,000 – 345,000",
+      "band.r17": "HK$345,000 – 2,132,500",
+      "band.r15": "HK$2,132,500 – 5,000,000",
+      "band.r16": "HK$5,000,000 以上",
+      "d.netlabel.once": "您的全額捐款",
+      "d.netlabel.monthly": "您的全額捐款",
+      "d.cap.monthly": "每月 {a} × {n} 個月 = 全年 {total}。",
+      "d.cap.empty": "輸入捐款金額後即會顯示。",
+      "d.range.sep": " 至 ",
+      "d.rate.generic": "稅率",
+      "d.rate.marginal": "邊際稅率",
+      "d.rate.standard": "標準稅率",
+      "d.ratelabel.generic": "採用的稅率",
+      "d.ratelabel.marginal": "邊際稅率",
+      "d.ratelabel.standard": "標準稅率",
+      "d.assume.empty": "尚未輸入捐款金額。",
+      "d.assume.exact": "根據您輸入的全年應評稅入息 {inc} 計算",
+      "d.assume.unknown": "未指定入息範圍。",
+      "d.assume.band": "假設全年應評稅入息範圍：{band}",
+      "d.capline.empty": "扣稅上限為應評稅入息的 35%（全年合計）。",
+      "d.capline.exact.capped": "35% 捐款扣稅上限：可扣除 {taxed}，其餘不能扣除",
+      "d.capline.exact.ok": "35% 捐款扣稅上限：此捐款額可全數扣除",
+      "d.capline.unknown": "已計 35% 捐款扣稅上限。",
+      "d.capline.zero": "扣稅上限為應評稅入息的 35%（全年合計）；捐款仍可扣除，但沒有應繳稅款可減少。",
+      "d.capline.band.capped": "35% 捐款扣稅上限：範圍下限可扣除 {d}，其餘不能扣除",
+      "d.capline.band.ok": "35% 捐款扣稅上限：此捐款額可全數扣除",
+      "d.benefit.empty": "輸入捐款金額後，即顯示實際付出。",
+      "d.benefit.ok": "您的 {g} 捐款可全數扣稅，享約 {s} 稅務扣減；只需約 {n} 實際支持，即可成就全額100%救盲力量。",
+      "d.benefit.capped": "您的 {g} 捐款的扣稅額受 35% 上限所限，享約 {s} 稅務扣減；只需約 {n} 實際支持，即可成就全額100%救盲力量。",
+      "d.benefit.zero": "您捐 {g}。以此入息水平無須繳付薪俸稅，捐款不會減少稅款。",
+      "d.announce.monthly": "每月 {a}，共 {n} 個月，全年合計 {total}。",
+      "d.announce.once": "捐款 {v}。",
+      "d.announce.range": " 預計節省稅款 {lo} 至 {hi}。",
+      "d.announce.single": " 預計節省稅款 {v}，{w} {p}。",
+      "d.months.one": "1 個月",
+      "d.months.n": "{n} 個月",
+      "d.rv.name": "請輸入收據抬頭姓名。",
+      "d.rv.mail": "請輸入有效電郵。",
+      "d.rv.ref": "請輸入付款參考編號。",
+      "d.rv.consent": "請先勾選同意。",
+      "d.rv.ok": "此原型尚未接上收據系統，您輸入的資料沒有送出，亦沒有儲存。",
+      "d.rv.done": "尚未送出"
+    },
+    "en": {
+      "title": "Donation tax calculator",
+      "s1.h": "Please select and input your donation amount",
+      "s1.legend": "One-off or monthly",
+      "s1.once": "One-off",
+      "s1.monthly": "Monthly",
+      "s1.gift": "Donation amount",
+      "s1.min": "Donation amount at HK$100 or above will receive tax deduction receipt",
+      "s1.band.label": "Please select your income range or input your yearly income",
+      "s1.band.hint": "Estimated based on a single person\u2019s basic allowance of HK$145,000",
+      "s1.band.aria": "Please select your income range or input your yearly income",
+      "s1.band.unknown": "Not sure",
+      "s1.band.r0": "No tax",
+      "s1.band.r2": "About 2%",
+      "s1.band.r6": "About 6%",
+      "s1.band.r10": "About 10%",
+      "s1.band.r14": "About 14%",
+      "s1.band.r17": "About 17%",
+      "s1.band.r15": "Standard 15%",
+      "s1.band.r16": "Standard 16%",
+      "s1.band.r0.label": "Below HK$145,000",
+      "s1.band.r16.label": "HK$5,000,000 and above",
+      "s1.band.note": "Note: Standard rates (15% on the first HK$5M; 16% thereafter) apply once Net Chargeable Income exceeds HK$2,132,500, lowering the marginal rate for the top two brackets (not a calculation error).",
+      "s1.mob.unknown": "Not sure · 2%–17%",
+      "s1.mob.r0": "Below HK$145,000 · no tax",
+      "s1.mob.r2": "HK$145,000 – 195,000 · 2%",
+      "s1.mob.r6": "HK$195,000 – 245,000 · 6%",
+      "s1.mob.r10": "HK$245,000 – 295,000 · 10%",
+      "s1.mob.r14": "HK$295,000 – 345,000 · 14%",
+      "s1.mob.r17": "HK$345,000 – 2,132,500 · 17%",
+      "s1.mob.r15": "HK$2,132,500 – 5,000,000 · std 15%",
+      "s1.mob.r16": "HK$5,000,000 and above · std 16%",
+      "s1.exact.summary": "Enter exact income instead",
+      "s1.exact.back": "Use an income range instead",
+      "s1.exact.label": "Assessable income for the year",
+      "s1.exact.ph": "e.g. 500,000",
+      "s1.exact.hint": "Calculated with exact income, progressive tax rates, and 35% deduction cap. Processed locally; never stored.",
+      "s1.goto": "Check the calculation result",
+      "s1.updated": "Result updated",
+      "s2.h": "Tax Deduction Summary",
+      "s2.netlabel": "Your donation",
+      "s2.caption": "gift powers sight-saving work\u2014with a tax deduction in return",
+      "s2.saved": "Estimated charitable tax deduction",
+      "s2.rate": "Rate",
+      "s2.benefit": "Your HK$100 gift qualifies for full tax deduction (est. HK$14 \u2013 17 relief), meaning just HK$83 \u2013 86 net support delivers the full sight-saving impact.",
+      "s2.min": "Donation amount at HK$100 or above will receive tax deduction receipt",
+      "s2.line3": "Estimate for personal Salaries Tax only; does not constitute tax advice",
+      "s3.h": "How you give",
+      "s3.scan": "Scan with your phone",
+      "s3.qr.alt.alipay": "AlipayHK donation QR code for The Fred Hollows Foundation",
+      "s3.lede": "Scan the AlipayHK code with your phone, or pay by credit card on the Foundation's donation page.",
+      "s3.alipay.sub": "Open AlipayHK and give",
+      "s3.card.nm": "Credit card",
+      "s3.card.sub": "Pay by card",
+      "s3.receipt.line": "Need a receipt? Apply inside AlipayHK.",
+      "s3.receipt.btn": "How to apply for a receipt in AlipayHK",
+      "s3.rcpt.title": "Getting a receipt from AlipayHK",
+      "s3.rcpt.intro": "Two ways. The first is easiest: tick the box while you give.",
+      "s3.rcpt.o1head": "Option 1 — when you donate",
+      "s3.rcpt.o1sub": "Request a donation receipt and enter your personal details when donating.",
+      "s3.rcpt.o1.s1t": "Step 1",
+      "s3.rcpt.o1.s1": "Tick Receipt request under the amount.",
+      "s3.rcpt.o1.s2t": "Step 2",
+      "s3.rcpt.o1.s2": "The Donor information form appears — name in English, email, phone. Fill it in, then confirm the gift.",
+      "s3.rcpt.o1.alt1": "AlipayHK donation detail screen with the Variable Amount row and, below it, the unticked Receipt request box",
+      "s3.rcpt.o1.alt2": "The same screen with Receipt request ticked and the Donor information form open below it: name in English, receipt header, email, phone and postal address, all still blank",
+      "s3.rcpt.o2head": "Option 2 — after you give",
+      "s3.rcpt.o2sub": "If you forgot to tick the box, you can still claim it from your donation records.",
+      "s3.rcpt.o2.s1t": "Step 1",
+      "s3.rcpt.o2.s1": "Open AlipayHK and go to Charity.",
+      "s3.rcpt.o2.s2t": "Step 2",
+      "s3.rcpt.o2.s2": "Tap Mine at the bottom, then Donation record.",
+      "s3.rcpt.o2.s3t": "Step 3",
+      "s3.rcpt.o2.s3": "Find the gift by the charity and the date.",
+      "s3.rcpt.o2.s4t": "Step 4",
+      "s3.rcpt.o2.s4": "Tap Receipt request and submit your details.",
+      "s3.rcpt.o2.alt1": "AlipayHK home screen with Charity in the shortcut grid, fourth in the first row",
+      "s3.rcpt.o2.alt2": "The Mine menu listing Donor Profile, My e-Flag, Monthly donation management, Fiscal year summary, Donation record and User Guide",
+      "s3.rcpt.o2.alt3": "The Transaction record list showing one gift to The Fred Hollows Foundation with its date",
+      "s3.rcpt.o2.alt4": "The donation result screen with the blue Receipt request button, above the Back to Charity page link",
+      "s3.rcpt.outro": "These screens are from AlipayHK's English interface; your buttons sit in the same place.",
+      "s3.rcpt.close": "Close",
+      "rc.h": "Claim your receipt",
+      "rc.lede": "Name, email, and your payment reference.",
+      "rc.threshold": "A receipt follows once your gifts for the year reach HK$100.",
+      "rc.name": "Name on the receipt",
+      "rc.name.ph": "Chan Tai Man",
+      "rc.email": "Email",
+      "rc.ref": "Payment reference",
+      "rc.ref.ph": "e.g. 2026111800123",
+      "rc.ref.hint": "The transaction ID in your payment app, or on your card receipt.",
+      "rc.ref.help.btn": "How to find your AlipayHK transaction ID",
+      "rc.help.title": "Finding your AlipayHK transaction ID",
+      "rc.help.intro": "When the payment completes, AlipayHK files it under Transaction History \u2014 the transaction ID is the long string of letters and numbers at the foot of that record.",
+      "rc.help.s2t": "Step 1",
+      "rc.help.s2": "Open the payment again from Transaction History: the detail page repeats the merchant, the amount and the time.",
+      "rc.help.s3t": "Step 2",
+      "rc.help.s3": "At the bottom of that page, the code above the barcode is the transaction ID. Copy the whole string and paste it here.",
+      "rc.help.outro": "The screens above are examples; your transaction ID appears in the same place.",
+      "rc.help.close": "Close",
+      "rc.help.alt2": "AlipayHK transaction detail page",
+      "rc.help.alt3": "The transaction ID at the foot of the record",
+      "rc.consent": "I agree that the Foundation may use these details to match my gift and issue my tax receipt.",
+      "rc.disclink": "Read the disclaimer before you send anything.",
+      "rc.submit": "Request my receipt",
+      "rc.keep": "Keep the receipt for six years — the IRD may ask to see it.",
+      "band.unknown": "not sure",
+      "band.r0": "below HK$145,000",
+      "band.r2": "HK$145,000 – 195,000",
+      "band.r6": "HK$195,000 – 245,000",
+      "band.r10": "HK$245,000 – 295,000",
+      "band.r14": "HK$295,000 – 345,000",
+      "band.r17": "HK$345,000 – 2,132,500",
+      "band.r15": "HK$2,132,500 – 5,000,000",
+      "band.r16": "HK$5,000,000 and above",
+      "d.netlabel.once": "Your donation",
+      "d.netlabel.monthly": "Your donation",
+      "d.cap.monthly": "{a} a month × {n} months = {total} for the year.",
+      "d.cap.empty": "Enter an amount and this fills in.",
+      "d.range.sep": " to ",
+      "d.rate.generic": "rate",
+      "d.rate.marginal": "marginal rate",
+      "d.rate.standard": "standard rate",
+      "d.ratelabel.generic": "Rate used",
+      "d.ratelabel.marginal": "Marginal rate",
+      "d.ratelabel.standard": "Standard rate",
+      "d.assume.empty": "No amount entered yet.",
+      "d.assume.exact": "Based on your entered Net Chargeable Income of {inc}",
+      "d.assume.unknown": "No income range given.",
+      "d.assume.band": "Assumed Net Chargeable Income Range: {band}",
+      "d.capline.empty": "The cap is 35% of assessable income for the year",
+      "d.capline.exact.capped": "35% deduction cap: {taxed} is deductible, the rest is not",
+      "d.capline.exact.ok": "35% deduction cap: Your full donation qualifies for deduction",
+      "d.capline.unknown": "35% deduction cap applied",
+      "d.capline.zero": "The cap is 35% of assessable income for the year; the gift is still deductible, but there is no tax to reduce",
+      "d.capline.band.capped": "35% deduction cap: {d} is deductible at the low end of your range",
+      "d.capline.band.ok": "35% deduction cap: Your full donation qualifies for deduction",
+      "d.benefit.empty": "Enter an amount to see what it costs you.",
+      "d.benefit.ok": "Your {g} gift qualifies for full tax deduction (est. {s} relief), meaning just {n} net support delivers the full sight-saving impact.",
+      "d.benefit.capped": "Your {g} gift is deductible up to the 35% cap (est. {s} relief), meaning just {n} net support delivers the full sight-saving impact.",
+      "d.benefit.zero": "You give {g}. At this income you pay no salaries tax, so the gift saves you nothing.",
+      "d.announce.monthly": "{a} a month, {n} months, {total} for the year.",
+      "d.announce.once": "Donation {v}.",
+      "d.announce.range": " Estimated tax saved {lo} to {hi}.",
+      "d.announce.single": " Estimated tax saved {v}, {w} {p}.",
+      "d.months.one": "1 month",
+      "d.months.n": "{n} months",
+      "d.rv.name": "Please enter the name for the receipt.",
+      "d.rv.mail": "Please enter a valid email address.",
+      "d.rv.ref": "Please enter the payment reference from your app or receipt.",
+      "d.rv.consent": "Please tick the consent box first.",
+      "d.rv.ok": "This prototype has no receipt system connected: nothing you entered has been sent or stored.",
+      "d.rv.done": "Not sent"
+    }
+  };
+
+  var L = "zh-HK";
+  function normLang(v){
+    v = String(v || "").toLowerCase();
+    return (v === "en" || v.indexOf("en-") === 0) ? "en" : "zh-HK";
+  }
+  function t(k, v){
+    var s = I18N[L] ? I18N[L][k] : undefined;
+    if (s === undefined && I18N["zh-HK"]) s = I18N["zh-HK"][k];
+    if (s === undefined) return k;
+    if (v) for (var p in v) s = s.split("{" + p + "}").join(v[p]);
+    return s;
+  }
+  /* Swap every user-facing string in place. Nothing is re-fetched and the
+     frame is never re-loaded — this is the same discipline the height config
+     already uses (docs/INTERFACE.md §4). The tax engine is untouched: render()
+     reads the same numbers and formats them in the current table. */
+  function applyLang(l){
+    L = normLang(l);
+    document.documentElement.setAttribute("lang", L === "en" ? "en" : "zh-Hant-HK");
+    document.title = t("title");
+    $$("[data-i18n]").forEach(function(e){ e.textContent = t(e.getAttribute("data-i18n")); });
+    $$("[data-i18n-html]").forEach(function(e){ e.innerHTML = t(e.getAttribute("data-i18n-html")); });
+    $$("[data-i18n-ph]").forEach(function(e){ e.setAttribute("placeholder", t(e.getAttribute("data-i18n-ph"))); });
+    $$("[data-i18n-aria]").forEach(function(e){ e.setAttribute("aria-label", t(e.getAttribute("data-i18n-aria"))); });
+    $$("[data-i18n-alt]").forEach(function(e){ e.setAttribute("alt", t(e.getAttribute("data-i18n-alt"))); });
+    /* The receipt-help crops are the client's own app screens, so they exist
+       per language: the Chinese build for zh-Hant-HK, the English interface
+       for en. src and the pre-load aspect box move together, or the panel is
+       distorted until the file decodes (the same step is 213px tall in
+       Chinese and 92px in English). */
+    $$("[data-src-zh]").forEach(function(e){
+      var k = (L === "en") ? "en" : "zh";
+      var s = e.getAttribute("data-src-" + k);
+      var d = (e.getAttribute("data-wh-" + k) || "").split("x");
+      if (s && e.getAttribute("src") !== s) e.setAttribute("src", s);
+      if (d.length === 2) { e.setAttribute("width", d[0]); e.setAttribute("height", d[1]); }
+    });
+    render();
+    scheduleHeight();
+  }
+  function setLang(l){ if (normLang(l) === L) { applyLang(l); return; } applyLang(l); }
+
+  var $ = function (s, r) { return (r||document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+
+  function fmt(n){ return Math.round(n).toLocaleString("en-US"); }
+  function money(n){ return "HK$" + fmt(n); }
+  function pct(x){ var v = Math.round(x*1000)/10; return (Math.abs(v - Math.round(v)) < 1e-9 ? Math.round(v) : v) + "%"; }
+  function digits(s){ var d = String(s).replace(/[^0-9]/g,""); return d === "" ? 0 : Math.min(parseInt(d,10), 99999999); }
+
+  /* ============================================================
+     TAX ENGINE — one pure function, no DOM, no globals.
+     YA2026/27, single person. Reproduces the six verified worked
+     examples exactly (qa/test_tax_engine.py runs this block in
+     node, headlessly). The defect this replaces multiplied the
+     gift by a flat marginal rate, which ignores the 35% cap and
+     ignores progression across bands — it overstated a HK$250,000
+     gift at HK$500,000 income by 46% (42,500 vs 29,150).
+     Rules encoded:
+       · progressive 2/6/10/14% on HK$50,000 slices, 17% above
+       · standard rate is an ALTERNATIVE on net income (two-tier
+         since 2024/25: 15% to 5M, 16% above) — NOT income minus
+         the allowance, which is the usual way to get this wrong
+       · tax payable = MIN(progressive, standard)
+       · a donation is a DEDUCTION capped at 35% of assessable
+         income, so saving = tax(inc) − tax(inc − deductible).
+         It is never gift × rate: that is only right while the
+         gift stays inside one slice and under the cap.
+     ============================================================ */
+  /* FHF_TAX_ENGINE_START */
+  var __fhfTax = (function () {
+    var ALLOWANCE = 145000, CAP = 0.35, STD_TIER = 5000000, STD_ZONE = 2132500;
+    var SLICE = [50000, 50000, 50000, 50000], RATE = [0.02, 0.06, 0.10, 0.14], TOP = 0.17;
+    function n(v){ var x = +v; return isFinite(x) && x > 0 ? x : 0; }
+    function progressive(net){
+      var t = 0, rest = net, i, s;
+      for (i = 0; i < SLICE.length; i++){
+        if (rest <= 0) break;
+        s = Math.min(rest, SLICE[i]); t += s * RATE[i]; rest -= s;
+      }
+      if (rest > 0) t += rest * TOP;
+      return t;
+    }
+    function standard(income){
+      return Math.min(income, STD_TIER) * 0.15 + Math.max(0, income - STD_TIER) * 0.16;
+    }
+    function taxOn(income){
+      var inc = n(income);
+      return Math.min(progressive(Math.max(0, inc - ALLOWANCE)), standard(inc));
+    }
+    function deductible(gift, income){ return Math.min(n(gift), CAP * n(income)); }
+    function saving(gift, income){
+      var g = n(gift), inc = n(income);
+      if (g <= 0 || inc <= 0) return 0;
+      var d = deductible(g, inc);
+      return taxOn(inc) - taxOn(inc - d);
+    }
+    /* Top marginal rate at this income — decides which of the three rate words
+       the result row may use (marginal / standard / generic). It never produces
+       a figure, and it holds no locale string: the words live in I18N. */
+    function marginal(income){
+      var inc = n(income), net;
+      if (inc <= ALLOWANCE) return 0;
+      net = inc - ALLOWANCE;
+      if (inc >= STD_ZONE) return inc >= STD_TIER ? 0.16 : 0.15;
+      if (net <= 50000) return 0.02;
+      if (net <= 100000) return 0.06;
+      if (net <= 150000) return 0.10;
+      if (net <= 200000) return 0.14;
+      return 0.17;
+    }
+    return {allowance:ALLOWANCE, cap:CAP, stdZoneFrom:STD_ZONE,
+            progressive:progressive, standard:standard, taxOn:taxOn,
+            deductible:deductible, saving:saving, marginal:marginal};
+  })();
+  /* FHF_TAX_ENGINE_END */
+
+  /* ---------- host bridge (postMessage) ---------- */
+  var ORIGINS = null; // null = accept any parent for the POC; production pins an allowlist
+  var host = (function(){ try { return window.parent !== window ? window.parent : null; } catch(e){ return null; } })();
+  function post(msg){
+    if (!host) return;
+    msg.source = "fhf-taxcalc"; msg.v = V; msg.lang = L;
+    try { host.postMessage(msg, "*"); } catch(e){}
+  }
+  /* exactly eight events, coarse-band only — no income, no rate, no amount */
+  function track(name, params){
+    var p = params || {};
+    /* `lang` is a DIMENSION (zh-HK | en), like band and state: it names which
+       build the donor used, and carries no amount, income or rate. It needs a
+       7th GA4 custom dimension (Event scope) or it reads as (not set). */
+    p.lang = L;
+    post({type:"event", name:name, params:p});
+    if (GTM_ID && gtmLoaded) {
+      /* the frame's URL is not the page the donor is on. document.referrer is the
+         only honest source for it from inside a cross-origin frame, and without it
+         GA4 files the calculator as its own site and splits the session. */
+      var dl = {event:name};
+      for (var k in p) if (Object.prototype.hasOwnProperty.call(p,k)) dl[k] = p[k];
+      dl.widget_lang = L; delete dl.lang;
+      dl.page_location = (document.referrer || "").split("#")[0] || location.href;
+      (window.dataLayer = window.dataLayer || []).push(dl);
+    }
+    if (cfg.debug) console.log("[fhf-taxcalc]", name, p);
+    dbg("event: " + name + " " + JSON.stringify(p));
+    if (name === "calc_result_shown") sent.result = true;
+    if (typeof window.__pocEventLog !== "undefined") { /* test hook */ }
+    try { (window.__pocEvents = window.__pocEvents || []).push({name:name, params:p}); } catch(e){}
+  }
+
+  /* ---------- height protocol ---------- */
+  var ro = null;
+  function measure(){
+    var doc = document.documentElement, b = document.body;
+    return Math.ceil(Math.max(doc.scrollHeight, doc.offsetHeight, b.scrollHeight, b.offsetHeight));
+  }
+  function pushHeight(force){
+    var h = measure();
+    if (!force && Math.abs(h - lastH) < 1) return;
+    lastH = h;
+    post({type:"resize", height:h, fixed: document.documentElement.getAttribute("data-fit") === "fixed"});
+    dbg("resize → " + h);
+  }
+  var raf = 0;
+  function scheduleHeight(){
+    if (raf) return;
+    raf = requestAnimationFrame(function(){ raf = 0; pushHeight(false); });
+  }
+  if (window.ResizeObserver) {
+    ro = new ResizeObserver(scheduleHeight);
+    ro.observe(document.body);
+    ro.observe($("#root"));
+  }
+  window.addEventListener("load", function(){ pushHeight(true);
+    /* after paint: the container must never delay the calculator */
+    if (window.requestIdleCallback) requestIdleCallback(gtmLoad, {timeout: 2500}); else setTimeout(gtmLoad, 1200);
+  });
+  window.addEventListener("resize", scheduleHeight);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleHeight);
+
+  /* ---------- config from host ---------- */
+  var qs = new URLSearchParams(location.search);
+  var cfg = {
+    height: qs.get("h") || "auto",   // "auto" | number (fixed host height, px)
+    theme: qs.get("theme") || "light",
+    locale: qs.get("locale") || "zh-Hant-HK",
+    lang: normLang(qs.get("lang")),
+    debug: qs.get("debug") === "1"
+  };
+  L = cfg.lang;   /* fhf_init below must report the language, not the default */
+  /* ---------- in-frame container ----------
+     The client's container lives inside this frame, so its id can only be named
+     here, at build time. It must never come from the URL: a ?gtm= parameter was
+     removed on 23 Nov because any crafted link could load an attacker's container
+     into this origin, and a container runs Custom HTML — arbitrary JS with access
+     to the donor's form (security assessment, finding A3). A constant cannot be
+     substituted by a link, so it does not reopen that hole.
+     Empty = the widget stays container-free (the host-bridge arrangement). */
+  var GTM_ID = "GTM-M7QJ9DZK";   /* the client's container, loaded inside this frame */
+  var GTM_WAIT_FOR_CONSENT = false;          /* true = hold the container until the host says yes */
+  var gtmLoaded = false, gtmConsent = !GTM_WAIT_FOR_CONSENT;
+
+  function gtmLoad(){
+    if (gtmLoaded || !GTM_ID || !gtmConsent) return;
+    gtmLoaded = true;
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({"gtm.start": new Date().getTime(), event: "gtm.js"});
+    var g = document.createElement("script");
+    g.async = true;
+    g.src = "https://www.googletagmanager.com/gtm.js?id=" + encodeURIComponent(GTM_ID);
+    document.head.appendChild(g);
+  }
+
+  /* The ?gtm= parameter was removed (23 Nov). It accepted any GTM-XXXX id, shape-
+     checked only, and loaded it as a script in THIS origin — and a GTM container
+     can run Custom HTML, i.e. arbitrary JS with access to the donor's form and to
+     the engine state. A crafted link was a working PII harvester. Measurement is
+     the host's job: the widget posts events, the host pushes them into the
+     container it already loads. Nothing here may load third-party script. */
+  if (cfg.height !== "auto") document.documentElement.setAttribute("data-fit","fixed");
+  if (qs.get("debug") === "1") $("#dbg").classList.add("on");
+
+  /* ---------- part mode: one fixed-height piece per embed ----------
+     The CMS component requires a defined height, so the page is split into
+     independently embeddable parts. Each part carries only its own sections,
+     which is what makes a single mandatory height survivable.
+       ?part=calc     calculator + result
+       ?part=pay      the two rails + QR
+       ?part=receipt  the receipt request form
+     No state crosses between parts: the QR is amountless, so the payment part
+     needs nothing from the calculator. That is deliberate — it keeps every
+     embed stateless and means no donor figure ever crosses a frame boundary. */
+  /* `all` is the one-link arrangement: calculator -> result -> payment ->
+     receipt in one document, separated exactly as the design already
+     separates them. It is also the DEFAULT, so the link Kevin sends needs no
+     parameter at all. The four single-part embeds still work unchanged and
+     remain the recommended production arrangement (docs/INTERFACE.md §2). */
+  var part = qs.get("part") || "all";
+  var PART_SECTIONS = {
+    input:   ["calculator"],
+    result:  ["result"],
+    calc:    ["calculator","result"],
+    pay:     ["payment"],
+    receipt: ["receipt"],
+    all:     ["calculator","result","payment","receipt"]
+  };
+  if (part && PART_SECTIONS[part]) {
+    document.body.setAttribute("data-part", part);
+    document.documentElement.setAttribute("data-embed", "part");
+  }
+
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (!d || typeof d !== "object") return;
+    if (d.type === "fhf-config") {
+      if (d.config && d.config.height) {
+        cfg.height = d.config.height;
+        document.documentElement.setAttribute("data-fit", d.config.height === "auto" ? "auto" : "fixed");
+        pushHeight(true);
+      }
+      if (d.config && d.config.reveal) {
+        var el = document.getElementById(d.config.reveal);
+        if (el) el.scrollIntoView({block:"start"});
+      }
+      /* language arrives the same way height does — by postMessage, never by
+         re-setting iframe.src (that is the infinite-reload trap, INTERFACE §4) */
+      if (d.config && d.config.lang) setLang(d.config.lang);
+    }
+    if (d.type === "fhf-ping") post({type:"pong", height: measure()});
+    if (d.type === "fhf-consent") { cfg.consent = !!d.marketing;
+      gtmConsent = cfg.consent; if (gtmConsent) gtmLoad(); }
+  }, false);
+
+  function dbg(t){
+    var el = $("#dbg");
+    if (el && el.classList.contains("on")) el.innerHTML = "<b>" + V + "</b> h=" + lastH + "<br>" + t;
+  }
+
+  /* ---------- render ---------- */
+  var annT = 0;
+  function render(){
+    var b = BANDS[st.band];
+    var once = digits(st.amount);
+    var months = MONTHS;
+    var annual = st.mode === "monthly" ? once * months : once;
+    var exactInc = st.exact > 0 ? st.exact : 0;
+    var isUnknown = st.band === "unknown";
+    var lo = b.lo, hi = b.hi;
+    var savedLow = 0, savedHigh = 0, isRange = false, capped = false, taxed = 0;
+
+    if (annual > 0) {
+      if (exactInc) {
+        savedHigh = savedLow = Math.round(__fhfTax.saving(annual, exactInc));
+        capped = __fhfTax.deductible(annual, exactInc) < annual;
+        taxed = __fhfTax.deductible(annual, exactInc);
+      } else if (isUnknown) {
+        /* No band selected, so there is no floor/ceiling pair to bracket. The
+           honest bounds are analytic: 0% is reachable (any income at or below
+           the allowance pays no tax) and 17% is the top marginal rate, so
+           gift × 17% can never be exceeded. */
+        savedLow = 0;
+        savedHigh = Math.round(annual * 0.17);
+      } else {
+        /* Band mode: compute at BOTH ends of the selected band. The saving in
+           Hong Kong is a function of the income the deduction is taken from,
+           so a band wide enough to cross a slice produces a genuine range —
+           not one invented rate. */
+        var atLo = Math.round(__fhfTax.saving(annual, lo));
+        var atHi = Math.round(__fhfTax.saving(annual, hi));
+        savedLow = Math.min(atLo, atHi); savedHigh = Math.max(atLo, atHi);
+        /* ignore an end whose income is 0: its deductible is 0 by arithmetic,
+           not because the 35% ceiling bites (that is the r0 band, below the
+           allowance, where there is simply no tax to save) */
+        capped = (lo > 0 && __fhfTax.deductible(annual, lo) < annual)
+              || (hi > 0 && __fhfTax.deductible(annual, hi) < annual);
+      }
+      isRange = annual > 0 && savedLow !== savedHigh;
+    }
+    /* Below HK$100 there is no deduction to estimate. The figure is NOT
+       clamped: the donor keeps what they typed and reads the client's own
+       sentence instead of a number. */
+    var belowMin = once > 0 && once < 100;
+    $("#result").classList.toggle("is-below-min", belowMin);
+    var mn = $("#min-note"); if (mn) mn.hidden = !belowMin;
+
+    var netLow = annual - savedHigh, netHigh = annual - savedLow;
+    var rateLow = annual > 0 ? savedLow / annual : 0;
+    var rateHigh = annual > 0 ? savedHigh / annual : 0;
+
+    /* hero — the figure is the DONATION itself (23 Nov): the block's headline
+       label is 您的全額捐款 / Your donation, and the ledger row that used to
+       repeat the gift is gone, so the amount lives here and nowhere else. The
+       net-cost figure did not disappear — it is the 實際支持 number in the
+       benefit sentence, computed from the donor's own gift. */
+    var netEl = $("#net");
+    netEl.innerHTML = '<span class="cur">HK$</span>' + (annual > 0 ? fmt(annual) : "—");
+    netEl.classList.remove("is-range");
+    $("#net-label").textContent = st.mode === "monthly"
+      ? t("d.netlabel.monthly") : t("d.netlabel.once");
+    /* The caption is the client's brand line, not a computation: the range
+       provenance it used to carry now lives in assumption line 1. */
+    $("#net-caption").textContent = annual <= 0 ? t("d.cap.empty") : t("s2.caption");
+
+    /* the ledger: the saving and the rate. The gift row is gone. */
+    $("#saved").textContent = annual <= 0 ? money(0)
+      : isRange ? money(savedLow) + t("d.range.sep") + money(savedHigh)
+      : money(savedHigh);
+    $("#saved").classList.toggle("is-range", isRange);
+
+    /* the rate word: marginal only where the saving really is marginal (one
+       rate across the deducted amount); standard in the standard-rate zone;
+       generic once the gift crosses slices, because the average is then not a
+       marginal rate. */
+    var rateKey = "generic";
+    if (!isRange && !isUnknown && exactInc) {
+      var marg = __fhfTax.marginal(exactInc);
+      if (Math.abs(rateHigh - marg) < 0.0006) {
+        rateKey = exactInc >= __fhfTax.stdZoneFrom ? "standard" : "marginal";
+      }
+    }
+    $("#rate-label").textContent = t("d.ratelabel." + rateKey);
+    $("#rate").textContent = annual <= 0 ? "—"
+      : isRange ? pct(rateLow) + " – " + pct(rateHigh) : pct(rateHigh);
+
+    /* the numbered assumption. Line 1 is the premise — the band, or the figure
+       the donor typed; line 2 the 35% cap, computed so it can never claim the
+       gift is fully deductible once the cap bites; line 3 is static copy. */
+    /* numbering (23 Nov): with an exact income the three lines are 1-2-3; with a
+       band the premise line is unnumbered and the cap carries 1. */
+    var nx = exactInc ? "1. " : "";
+
+    $("#assume-1").textContent = nx + (annual <= 0 ? t("d.assume.empty")
+      : exactInc ? t("d.assume.exact", {inc: money(exactInc)})
+      : isUnknown ? t("d.assume.unknown")
+      : t("d.assume.band", {band: t("band." + st.band)}));
+    $("#assume-3").textContent = (exactInc ? "3. " : "2. ") + t("s2.line3");
+
+    $("#cap").textContent = (exactInc ? "2. " : "1. ") + (annual <= 0
+      ? t("d.capline.empty")
+      : exactInc ? (capped
+          ? t("d.capline.exact.capped", {taxed: money(taxed)})
+          : t("d.capline.exact.ok"))
+      : isUnknown ? t("d.capline.unknown")
+      : (!isRange && savedHigh === 0)
+          ? t("d.capline.zero")
+      : (capped
+          ? t("d.capline.band.capped", {d: money(__fhfTax.deductible(annual, lo))})
+          : t("d.capline.band.ok")));
+
+    /* C6 — "you give this, you get that back". The sentence is the client's
+       (23 Nov); every figure in it computes from the donor's own gift. Two
+       shapes, because one sentence cannot be true for a capped gift: the
+       "可全數扣稅 / full tax deduction" clause belongs to the uncapped case
+       only, and the capped shape says so instead. */
+    var bEl = $("#benefit");
+    if (bEl) {
+      /* HK$182 – 221, HK$1,079 – 1,118: one currency mark, then the second
+         figure bare — the client's own rendering of a two-figure range. */
+      var span2 = function (a, b) {
+        a = Math.round(a); b = Math.round(b);
+        return a === b ? money(a) : "HK$" + fmt(a) + " – " + fmt(b);
+      };
+      var netLo = annual - savedHigh, netHi = annual - savedLow;
+      if (annual <= 0) {
+        bEl.textContent = t("d.benefit.empty");
+      } else if (savedHigh === 0) {
+        bEl.textContent = t("d.benefit.zero", {g: money(annual)});
+      } else {
+        bEl.textContent = t(capped ? "d.benefit.capped" : "d.benefit.ok", {
+          g: money(annual),
+          s: span2(savedLow, savedHigh),
+          n: span2(netLo, netHi)
+        });
+      }
+    }
+
+    $$(".qr-amount").forEach(function(e){ e.textContent = money(annual); });
+
+    /* announce once, settled */
+    clearTimeout(annT);
+    annT = setTimeout(function(){
+      $("#announce").textContent = belowMin ? t("s2.min") :
+        (st.mode === "monthly"
+          ? t("d.announce.monthly", {a: money(once), n: months, total: money(annual)})
+          : t("d.announce.once", {v: money(annual)}))
+        + (annual <= 0 ? ""
+          : isRange ? t("d.announce.range", {lo: money(savedLow), hi: money(savedHigh)})
+          : t("d.announce.single", {v: money(savedHigh), w: t("d.rate." + rateKey), p: pct(rateHigh)}));
+    }, 600);
+
+    if (touched) { $("#upd").hidden = false; }
+    scheduleHeight();
+  }
+  /* ---------- events ---------- */
+  var started = false;
+  function firstTouch(){
+    if (started) return; started = true;
+    track("calc_started", {
+      page_location: (document.referrer || "").split("#")[0] || location.href,
+      embed_url: location.href
+    });
+  }
+  var resultT = 0;
+  function resultShown(){
+    /* below the floor no result is shown, so no result event is claimed */
+    if (digits(st.amount) > 0 && digits(st.amount) < 100) return;
+    clearTimeout(resultT);
+    resultT = setTimeout(function(){
+      /* Coarse only. `exact` says whether the donor supplied an income figure —
+         never the figure, never a rate, never an amount. */
+      var annual = digits(st.amount) * (st.mode === "monthly" ? MONTHS : 1);
+      var inc = st.exact > 0 ? st.exact : (st.band === "unknown" ? 0 : BANDS[st.band].lo);
+      track("calc_result_shown", {
+        band: st.band === "unknown" ? "unknown" : "band",
+        donation_type: st.mode,
+        exact: st.exact > 0 ? "yes" : "no",
+        cap_state: annual <= 0 ? "unlikely"
+          : inc <= 0 ? (annual >= 50000 ? "may_apply" : "unlikely")
+          : (annual > __fhfTax.deductible(annual, inc) ? "may_apply" : "unlikely")
+      });
+    }, 800);
+  }
+  var coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  function state(){ return coarse ? "mobile" : "desktop"; }
+
+  /* ---------- wiring ---------- */
+  $("#gift").addEventListener("input", function (e) {
+    firstTouch(); touched = true;
+    var v = digits(e.target.value);
+    st.amount = v;
+    e.target.value = v ? fmt(v) : "";
+    render(); resultShown();
+  });
+  $$("input[name=mode]").forEach(function (r) {
+    r.addEventListener("change", function () {
+      firstTouch(); touched = true;
+      st.mode = r.value;
+      render(); resultShown();
+    });
+  });
+  $$("input[name=band]").forEach(function (r) {
+    r.addEventListener("change", function () {
+      firstTouch(); touched = true; st.band = r.value;
+      clearExact();
+      var bm = $("#band-mobile"); if (bm) bm.value = r.value;
+      render(); resultShown();
+    });
+  });
+  $("#band-mobile").addEventListener("change", function (e) {
+    firstTouch(); touched = true; st.band = e.target.value;
+    clearExact();
+    var radio = document.querySelector('input[name="band"][value="' + st.band + '"]');
+    if (radio) radio.checked = true;
+    render(); resultShown();
+  });
+
+  /* optional exact income. Picking a band again clears it, so the two inputs
+     never disagree about which one is in force. The value stays in memory only:
+     it is never posted, never pushed to dataLayer, never persisted. */
+  /* 23 Nov: the exact-income field has a starting value — the single person's
+     basic allowance (HK$145,000), the bottom of the income input — rather than an
+     empty box. It is a default, never a floor: typing replaces it, nothing clamps,
+     and picking a band puts it back so the two controls cannot disagree. */
+  var EXACT_DEFAULT = 145000;
+  function clearExact(){
+    var ex = $("#exact");
+    if (ex) ex.value = fmt(EXACT_DEFAULT);
+    if (!st.exact) return;
+    st.exact = 0;
+  }
+  /* One question, two precisions. The band picker and the exact figure are the same
+     answer at different confidence, so only one is on screen: swapping keeps the
+     donor's place, and turning exact off clears it so the two can never disagree. */
+  var exactMode = false, $swap = $("#exact-toggle");
+  function setExactMode(on) {
+    exactMode = !!on;
+    var bw = $("#band-wrap"), ew = $("#exact-wrap");
+    if (bw) bw.hidden = exactMode;
+    if (ew) ew.hidden = !exactMode;
+    if ($swap) {
+      $swap.setAttribute("aria-expanded", exactMode ? "true" : "false");
+      var lab = $swap.querySelector("span") || $swap;
+      lab.setAttribute("data-i18n", exactMode ? "s1.exact.back" : "s1.exact.summary");
+      lab.textContent = t(exactMode ? "s1.exact.back" : "s1.exact.summary");
+    }
+    if (!exactMode) clearExact();
+    else {
+      /* the field carries a starting value (the basic allowance), so opening
+         it adopts that value rather than leaving the box ahead of the maths */
+      var ex0 = $("#exact");
+      if (ex0) { if (!digits(ex0.value)) ex0.value = fmt(EXACT_DEFAULT); st.exact = digits(ex0.value); ex0.focus(); }
+    }
+    render(); scheduleHeight();
+  }
+  if ($swap) $swap.addEventListener("click", function () { firstTouch(); setExactMode(!exactMode); });
+
+  var $exact = $("#exact");
+  if ($exact) {
+    $exact.addEventListener("input", function (e) {
+      firstTouch(); touched = true;
+      var v = digits(e.target.value);
+      st.exact = v;
+      e.target.value = v ? fmt(v) : "";
+      render(); resultShown();
+    });
+  }
+  $("#goto-result").addEventListener("click", function () { render(); scheduleHeight(); });
+
+  /* payment surface */
+  var qrSeen = false;
+  function markQr(){
+    if (qrSeen) return; qrSeen = true;
+    track("qr_view", {rail: "all", state: state()});
+  }
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (ents) {
+      ents.forEach(function (en) { if (en.isIntersecting) markQr(); });
+    }, {threshold: .35}).observe($("#payment"));
+  } else { markQr(); }
+
+  $$("[data-rail]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      track("rail_click", {rail: el.dataset.rail, state: state()});
+      markQr();
+    });
+  });
+
+  $$("[data-deeplink]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var rail = b.dataset.deeplink;
+      var msg = $("#deeplink-msg");
+      /* AlipayHK is the only wallet rail on the page: one scheme, one app name,
+         and nothing to branch on. */
+      if (rail !== "alipay") return;
+      var scheme = "alipays://platformapi/startapp";
+      var alive = true;
+
+      /* Report BEFORE attempting: a successful app-open can navigate the top
+         frame away, and a destroyed page cannot send its own verdict. The
+         absence of a follow-up "result" message IS the success signal. */
+      post({type:"deeplink", rail:rail, phase:"attempt"});
+      track("rail_click", {rail: rail + "_app", state: state()});
+
+      msg.textContent = t("d.dl.open", {app: "AlipayHK"});
+
+      if (window.top === window) {
+        msg.textContent = t("d.dl.notframed");
+        post({type:"deeplink", rail:rail, phase:"result", blocked:true, reason:"not_framed"});
+        return;
+      }
+
+      try {
+        window.top.location.href = scheme;
+      } catch (e) { alive = false; }
+
+      setTimeout(function () {
+        if (!alive) {
+          msg.textContent = t("d.dl.blocked");
+          post({type:"deeplink", rail:rail, phase:"result", blocked:true});
+          return;
+        }
+        /* still on the page after the attempt → the scheme was not handled */
+        msg.textContent = t("d.dl.noapp");
+        post({type:"deeplink", rail:rail, phase:"result", blocked:true});
+      }, 1200);
+    });
+  });
+
+  /* receipt capture: this build keeps the form in page memory only */
+  $("#rform").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = $("#rname").value.trim(), mail = $("#rmail").value.trim(), ok = true;
+    /* the reference is the only thing that ties this claim to money that actually
+       arrived — a QR gift is invisible to this page, so without it the charity is
+       issuing a receipt on a self-report. Kept deliberately permissive: donors
+       will paste whatever their app shows them. */
+    var ref = $("#rref").value.trim().replace(/\s+/g, " ");
+    $("#rname-msg").hidden = $("#rmail-msg").hidden = $("#rref-msg").hidden = true;
+    if (name.length < 2) { $("#rname-msg").textContent = t("d.rv.name"); $("#rname-msg").hidden = false; ok = false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) { $("#rmail-msg").textContent = t("d.rv.mail"); $("#rmail-msg").hidden = false; ok = false; }
+    if (ref.length < 4 || ref.length > 40) { $("#rref-msg").textContent = t("d.rv.ref"); $("#rref-msg").hidden = false; ok = false; }
+    if (!$("#consent").checked) { $("#capture-status").textContent = t("d.rv.consent"); $("#capture-status").className = "msg"; $("#capture-status").hidden = false; return; }
+    if (!ok) return;
+    var s = $("#capture-status");
+    s.textContent = t("d.rv.ok");
+    s.className = "msg ok"; s.hidden = false;
+    track("email_capture", {donation_type: st.mode, state: state()});
+    /* the reference itself never leaves the browser in the POC; only whether one
+       was given is reported, because a transaction ID is an identifier, not a metric */
+    track("receipt_request", {method: "web_form", has_reference: ref ? "yes" : "no"});
+    $("#rsubmit").disabled = true;
+    $("#rsubmit").textContent = t("d.rv.done");
+    scheduleHeight();
+  });
+  ["#rname","#rmail","#rref"].forEach(function(sel){ $(sel).addEventListener("input", scheduleHeight); });
+  $$("details.q").forEach(function(d){
+    d.addEventListener("toggle", function(){ scheduleHeight(); });
+  });
+  /* ---------- the payment-reference help popover ----------
+     A disclosure that happens to be an overlay: a real <button> with
+     aria-expanded, a panel with role="dialog" and aria-labelledby, Escape to
+     close, focus returned to the button, and NO focus trap — the panel is not
+     modal, so Tab must still be able to leave it. */
+  /* ---------- the help popovers (ONE pattern, two triggers) ----------
+     A disclosure that happens to be an overlay: a real <button> with
+     aria-expanded, a panel with role="dialog" and aria-labelledby, Escape to
+     close, focus returned to the button, and NO focus trap — the panel is not
+     modal, so Tab must still be able to leave it.
+
+     Two triggers share it, which is why this is a loop rather than a one-off:
+       #ref-help     the payment-reference field (section 5, back with PayMe)
+       #alipay-help  the receipt route inside the AlipayHK app (phase 1)
+     `data-help` names the panel, so a third one is an attribute, not code. The
+     loop is the same contract the single-instance version had — same events,
+     same order, same focus behaviour — so neither trigger can drift. */
+  $$("[data-help]").forEach(function (btn) {
+    var pop = document.getElementById(btn.getAttribute("data-help"));
+    if (!pop) return;
+    /* A lazy image inside a hidden panel starts its request at open time, so the
+       first paint can be an empty box — it reads as a missing asset. Four of the
+       six crops are lazy on purpose (a donor who never opens the panel never pays
+       for them), so start their fetches the moment the panel is revealed. */
+    var warmed = false;
+    function warmCrops(){
+      if (warmed) return;
+      warmed = true;
+      $$("img[loading=lazy]", pop).forEach(function (im) {
+        var preload = new Image(); preload.src = im.getAttribute("src");
+      });
+    }
+    function helpOpen(on){
+      pop.hidden = !on;
+      btn.setAttribute("aria-expanded", on ? "true" : "false");
+      if (on) warmCrops();
+      scheduleHeight();
+    }
+    btn.addEventListener("click", function () { helpOpen(pop.hidden); });
+    pop.addEventListener("click", function (e) {
+      var el = e.target;
+      while (el && el !== pop) {
+        if (el.hasAttribute && el.hasAttribute("data-help-close")) {
+          helpOpen(false); btn.focus(); return;
+        }
+        el = el.parentNode;
+      }
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !pop.hidden) { helpOpen(false); btn.focus(); }
+    });
+    document.addEventListener("click", function (e) {
+      if (pop.hidden) return;
+      if (pop.contains(e.target) || btn.contains(e.target)) return;
+      helpOpen(false);
+    });
+  });
+
+  /* ---------- boot ---------- */
+  /* Container inside the frame. The host page is never touched, so GTM runs
+     here; document.referrer is the embedding page, which is what reports need
+     in order to group by page rather than by embed URL. */
+  applyLang(cfg.lang);   /* applies every string, then renders */
+  post({type:"ready", height: measure(), contract: 1});
+  setTimeout(function(){ pushHeight(true); }, 60);
+  setTimeout(function(){ pushHeight(true); }, 600);
+  /* the engine, exported for the headless test (qa/test_tax_engine.py) and for
+     anyone reading the numbers; harmless inside an iframe */
+  window.__fhfTax = __fhfTax;
+})();
+</script>
+</body>
+</html>
