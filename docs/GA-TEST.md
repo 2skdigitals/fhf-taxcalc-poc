@@ -6,6 +6,33 @@ There is no clever alternative (no cookie sharing, no `gtag` cross-frame call, n
 
 ---
 
+## Status — 27 Nov 2026 (the media agency's report)
+
+The agency reports **purchase tracking working, view tracking still to be verified.** That pairing is
+normal and it does not mean the widget is broken: a donation *purchase* is a conversion they own end to
+end (the payment lands on their side), while a *view* only exists if the bridge tag is firing AND the GA4
+event is configured on their side. Two different owners, two different failure points.
+
+Before anyone debugs the iframe, settle **which event "view" means** — the answer decides the next step:
+
+| If "view" means… | Where it lives | How to confirm in 2 minutes |
+|---|---|---|
+| the campaign page being seen (`page_view`) | their GTM, not us | GA4 Realtime with the page open — a `page_view` row appears |
+| the calculator result being shown (`calc_result_shown`) | our widget → their bridge tag | our `/events/` page must show it; then their GTM Preview on the live page |
+| the QR panel being seen (`qr_view`) | our widget → their bridge tag | scroll block 3 with GTM Preview open |
+
+- **If `page_view` is the one missing**, GTM/GA4 is misconfigured on their side and nothing in this repo
+  can change it — it is their container, their tag.
+- **If `calc_result_shown` / `qr_view` is missing**, run `qa/poc_test.py` first: it proves the widget emits
+  all eight events. If our side is clean, the bridge tag is missing or firing on the wrong container
+  (check `curl -sL <page> | grep -oE 'GTM-[A-Z0-9]+'` — a container id arriving in an email is a claim,
+  not the page's state).
+- **What to ask them for:** the event name they call "view", the GA4 property it should land in, and one
+  screenshot of GA4 DebugView or GTM Preview with the page open. Without those three, "needs verification"
+  cannot be closed from our side.
+
+---
+
 ## Level 0 — what the widget actually sends
 
 Exactly eight events, coarse-band only:
