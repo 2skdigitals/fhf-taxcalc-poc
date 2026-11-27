@@ -22,7 +22,7 @@
 set -euo pipefail
 
 BRANCH=gh-pages
-PATHS=(embed assets .nojekyll robots.txt)
+PATHS=(embed .nojekyll robots.txt)
 DRY=0
 [[ "${1:-}" == "--dry-run" ]] && DRY=1
 
@@ -35,10 +35,17 @@ cd "$(git rev-parse --show-toplevel)"
 stray=$(grep -oE '(src|href)="\.\./[^"]+"' embed/index.html | grep -vE '"\.\./assets/' || true)
 [[ -z "$stray" ]] || { echo "embed/ references paths outside the publish set:" >&2; echo "$stray" >&2; exit 1; }
 
+# Only the assets the widget actually asks for. The folder also holds a PayMe QR
+# (that rail was dropped on 21 Nov) and _test_* strips from the POC bench; those
+# are dead weight on a public host and one of them names a rail that no longer
+# exists. Grep the whole file, so a url() inside the <style> block counts too.
+mapfile -t ASSETS < <(grep -oE 'assets/[A-Za-z0-9_./-]+' embed/index.html | sort -u)
+echo "${#ASSETS[@]} assets referenced by embed/index.html"
+
 IDX=$(mktemp)
 export GIT_INDEX_FILE=$IDX
 git read-tree --empty
-git add -A -- "${PATHS[@]}"
+git add -A -- "${PATHS[@]}" "${ASSETS[@]}"
 TREE=$(git write-tree)
 unset GIT_INDEX_FILE
 
