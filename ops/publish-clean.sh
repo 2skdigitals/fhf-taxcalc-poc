@@ -39,7 +39,9 @@ stray=$(grep -oE '(src|href)="\.\./[^"]+"' embed/index.html | grep -vE '"\.\./as
 # (that rail was dropped on 21 Nov) and _test_* strips from the POC bench; those
 # are dead weight on a public host and one of them names a rail that no longer
 # exists. Grep the whole file, so a url() inside the <style> block counts too.
-mapfile -t ASSETS < <(grep -oE 'assets/[A-Za-z0-9_./-]+' embed/index.html | sort -u)
+ASSETS=()
+while IFS= read -r a; do ASSETS+=("$a"); done \
+  < <(grep -oE 'assets/[A-Za-z0-9_./-]+' embed/index.html | sort -u)
 echo "${#ASSETS[@]} assets referenced by embed/index.html"
 
 IDX=$(mktemp)
