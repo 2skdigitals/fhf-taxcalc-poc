@@ -1,5 +1,17 @@
 # Embed snippets — one iframe per language
 
+**NEW URLS (27 Nov 2026) — two individual paths, no campaign name in the address:**
+
+| Page | src | Height |
+|---|---|---|
+| Chinese | `https://2skdigitals.github.io/zh/` | 2010 |
+| English | `https://2skdigitals.github.io/en/` | 2130 |
+
+Both verified live (390px, tooltip open, images decode, calculator computes). The
+language is the path, not a query parameter, so nothing else has to be appended.
+The old `/fhf-taxcalc-poc/embed/…` URLs still resolve while the swap is pending;
+they are retired once both pages point at the new paths.
+
 **One frame replaces the three part-frames on the English page.** The bare `/embed/` URL already renders the
 calculator, the result, the payment panel and the receipt block in sequence, so there is nothing to assemble on
 their side.
@@ -16,7 +28,7 @@ Already correct today. No change needed. For reference:
 
 ```html
 <iframe
-  src="https://2skdigitals.github.io/fhf-taxcalc-poc/embed/"
+  src="https://2skdigitals.github.io/zh/"
   title="慈善捐款扣稅計算機"
   style="border:0;width:100%;height:2010px;display:block"
   loading="lazy"></iframe>
@@ -29,7 +41,7 @@ this **one**:
 
 ```html
 <iframe
-  src="https://2skdigitals.github.io/fhf-taxcalc-poc/embed/?lang=en"
+  src="https://2skdigitals.github.io/en/"
   title="Tax deduction calculator"
   style="border:0;width:100%;height:2130px;display:block"
   loading="lazy"></iframe>
